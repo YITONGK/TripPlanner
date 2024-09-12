@@ -28,7 +28,7 @@ import com.example.tripplanner.databinding.ActivityMainBinding;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity{
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             .commit();
                     return true;
                 }
-                // To show Relative layout demonstration
+                // To show Location layout demonstration
                 else if (id == R.id.navigation_map) {
                     Fragment Location_layout = HomeFragment.newInstance(HomeFragment.LOCATION);
                     getSupportFragmentManager()
@@ -81,8 +81,4 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
     }
 
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-
-    }
 }

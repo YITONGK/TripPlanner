@@ -63,7 +63,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         Bundle bundle = new Bundle();
         bundle.putInt(LAYOUT_TYPE, layout);
         fragment.setArguments(bundle);
-
         return fragment;
     }
 }
