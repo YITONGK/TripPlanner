@@ -1,5 +1,6 @@
 package com.example.tripplanner;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -34,6 +35,14 @@ public class SignupActivity extends AppCompatActivity {
         TextView password = (TextView) findViewById(R.id.password);
         TextView confirmPassword = (TextView) findViewById(R.id.confirmPassword);
 
+        binding.buttonBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(SignupActivity.this, LoginActivity.class);
+                startActivity(intent);
+            }
+        });
+
         binding.registerBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -50,14 +59,16 @@ public class SignupActivity extends AppCompatActivity {
                     Toast.makeText(SignupActivity.this, "Mismatch password", Toast.LENGTH_SHORT).show();
                 } else {
                     // store user authentication details to database
-
                     Toast.makeText(SignupActivity.this, "Sign up successfully", Toast.LENGTH_SHORT).show();
                     createAccount(email.getText().toString(), password.getText().toString());
+
+                    // jump to MainActivity
+                    Intent intent = new Intent(SignupActivity.this, MainActivity.class);
+                    startActivity(intent);
                 }
 
             }
         });
-
 
     }
 
@@ -83,4 +94,5 @@ public class SignupActivity extends AppCompatActivity {
                 });
         // [END create_user_with_email]
     }
+
 }

@@ -41,11 +41,6 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 signIn(email.getText().toString(), password.getText().toString());
-                // if (email.getText().toString().equals("admin") && password.getText().toString().equals("admin")) {
-                //     Toast.makeText(LoginActivity.this, "Login Successful", Toast.LENGTH_SHORT).show();
-                // } else {
-                //     Toast.makeText(LoginActivity.this, "Login Failed", Toast.LENGTH_SHORT).show();
-                // }
             }
         });
 
@@ -69,6 +64,10 @@ public class LoginActivity extends AppCompatActivity {
                             // Sign in success, update UI with the signed-in user's information
                             Log.d("TAG", "signInWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
+
+                            // Jump to MainActivity
+                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                            startActivity(intent);
 //                            updateUI(user);
                         } else {
                             // If sign in fails, display a message to the user.
