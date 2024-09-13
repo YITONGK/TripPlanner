@@ -90,7 +90,6 @@ public class SignupActivity extends AppCompatActivity {
                                 Map<String, Object> userData = new HashMap<>();
                                 userData.put("name", username);
                                 userData.put("email", email);
-
                                 // Add the user document with the Firebase User's UID
                                 db.collection("users").document(uid)
                                         .set(userData)

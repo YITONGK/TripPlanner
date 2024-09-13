@@ -19,6 +19,9 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.Date;
+import java.util.Map;
+
 public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding binding;
     private FirebaseAuth mAuth;
@@ -52,6 +55,17 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+
+        FirestoreDB firestoreDB = new FirestoreDB();
+        Trip newTrip = new Trip("Holiday in Paris", new Date(), new Date());
+        Location eiffelTower = new Location("Eiffel Tower", 48.8584, 2.2945);
+
+        // Assuming you have methods in FirestoreDB to handle these actions:
+        firestoreDB.createTrip("userId123", newTrip);
+        newTrip.addLocation(eiffelTower);
+        firestoreDB.addLocationToTrip("userId123", "tripId123", eiffelTower);
+
     }
 
     private void signIn(String email, String password) {
