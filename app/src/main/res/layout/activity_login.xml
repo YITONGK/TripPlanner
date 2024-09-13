@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#AD009688"
+    android:background="@color/blue"
     tools:context=".LoginActivity">
 
     <TextView
@@ -32,6 +32,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
+            android:background="@color/beige"
             android:padding="28dp">
 
             <TextView
@@ -84,24 +85,24 @@
                 android:inputType="textPassword"
                 android:drawableEnd="@drawable/password_icon"/>
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+<!--            <RelativeLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content">-->
 
-                <CheckBox
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Remeber me"
-                    android:layout_centerVertical="true"
-                    android:alpha="0.7" />
+<!--                <CheckBox-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="Remeber me"-->
+<!--                    android:layout_centerVertical="true"-->
+<!--                    android:alpha="0.7" />-->
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="I forgot my password"
-                    android:layout_centerVertical="true"
-                    android:layout_alignParentEnd="true"/>
-            </RelativeLayout>
+<!--                <TextView-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:text="I forgot my password"-->
+<!--                    android:layout_centerVertical="true"-->
+<!--                    android:layout_alignParentEnd="true"/>-->
+<!--            </RelativeLayout>-->
 
             <View
                 android:layout_width="wrap_content"
@@ -111,7 +112,19 @@
                 android:id="@+id/loginBtn"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:text="Login "/>
+                android:text="Login"
+                app:backgroundTint="@color/darkblue"/>
+
+            <View
+                android:layout_width="wrap_content"
+                android:layout_height="10dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/signupBtn"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="Sign up"
+                app:backgroundTint="@color/darkblue"/>
 
             <View
                 android:layout_width="wrap_content"
