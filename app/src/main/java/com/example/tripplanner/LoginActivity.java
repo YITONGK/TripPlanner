@@ -48,6 +48,15 @@ public class LoginActivity extends AppCompatActivity {
                 // }
             }
         });
+
+        // jump to sign up page
+        binding.signupBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(LoginActivity.this, SignupActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     private void signIn(String email, String password) {
