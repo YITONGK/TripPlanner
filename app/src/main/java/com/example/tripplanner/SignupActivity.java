@@ -11,14 +11,22 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.tripplanner.databinding.ActivitySignupBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthResult;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SignupActivity extends AppCompatActivity {
     private ActivitySignupBinding binding;
     private FirebaseAuth mAuth;
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,41 +66,61 @@ public class SignupActivity extends AppCompatActivity {
                 else if (! password.getText().toString().equals(confirmPassword.getText().toString())) {
                     Toast.makeText(SignupActivity.this, "Mismatch password", Toast.LENGTH_SHORT).show();
                 } else {
-                    // store user authentication details to database
-                    Toast.makeText(SignupActivity.this, "Sign up successfully", Toast.LENGTH_SHORT).show();
-                    createAccount(email.getText().toString(), password.getText().toString());
-
-                    // jump to MainActivity
-                    Intent intent = new Intent(SignupActivity.this, MainActivity.class);
-                    startActivity(intent);
+                    // Call createAccount function to sign up user
+                    createAccount(email.getText().toString(), password.getText().toString(), username.getText().toString());
                 }
-
             }
         });
 
     }
 
-    private void createAccount(String email, String password) {
-        // [START create_user_with_email]
+    private void createAccount(String email, String password, String username) {
+        // Create a new user with email and password
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            Log.d("TAG", "createUserWithEmail:success");
+                            // Sign in success
                             FirebaseUser user = mAuth.getCurrentUser();
-//                            updateUI(user);
+                            if (user != null) {
+                                String uid = user.getUid();
+
+                                // Create a user object to save to Firestore
+                                Map<String, Object> userData = new HashMap<>();
+                                userData.put("name", username);
+                                userData.put("email", email);
+
+                                // Add the user document with the Firebase User's UID
+                                db.collection("users").document(uid)
+                                        .set(userData)
+                                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
+                                                Log.d("TAG", "User document added with UID: " + uid);
+                                                Toast.makeText(SignupActivity.this, "Sign up successfully", Toast.LENGTH_SHORT).show();
+
+                                                // Jump to MainActivity
+                                                Intent intent = new Intent(SignupActivity.this, MainActivity.class);
+                                                startActivity(intent);
+                                            }
+                                        })
+                                        .addOnFailureListener(new OnFailureListener() {
+                                            @Override
+                                            public void onFailure(@NonNull Exception e) {
+                                                Log.w("TAG", "Error adding user document", e);
+                                                Toast.makeText(SignupActivity.this, "Failed to add user to Firestore", Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                            }
                         } else {
-                            // If sign in fails, display a message to the user.
+                            // If sign up fails, display a message to the user
                             Log.w("TAG", "createUserWithEmail:failure", task.getException());
-                            Toast.makeText(SignupActivity.this, "Authentication failed.",
+                            Toast.makeText(SignupActivity.this, "Authentication failed: " + task.getException().getMessage(),
                                     Toast.LENGTH_SHORT).show();
-//                            updateUI(null);
                         }
                     }
                 });
-        // [END create_user_with_email]
     }
 
 }
