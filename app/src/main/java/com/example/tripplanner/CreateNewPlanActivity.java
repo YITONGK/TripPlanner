@@ -1,5 +1,6 @@
 package com.example.tripplanner;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -62,6 +63,18 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             AutocompletePrediction prediction = adapter.getItem(position);
             editTextMessage.setText(prediction.getFullText(null));
         });
+
+        listViewAutocomplete.setOnItemClickListener((parent, view, position, id) -> {
+            AutocompletePrediction prediction = adapter.getItem(position);
+            editTextMessage.setText(prediction.getFullText(null));
+
+            // Create an intent to start EditPlanActivity
+            Intent intent = new Intent(CreateNewPlanActivity.this, EditPlanActivity.class);
+            // Put the selected item's description as an extra in the intent
+            intent.putExtra("selectedPlace", prediction.getFullText(null).toString());
+            startActivity(intent);
+        });
+
 
         editTextMessage.addTextChangedListener(new TextWatcher() {
             @Override
