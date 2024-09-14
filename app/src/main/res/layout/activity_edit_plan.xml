@@ -44,8 +44,18 @@
     <TextView
         android:id="@+id/textViewSelectedPlace"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="24dp"
+        android:padding="16dp"
         android:layout_below="@+id/buttonPanel">
     </TextView>
+
+    <TextView
+        android:id="@+id/textViewDaysAndNights"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16dp"
+        android:padding="16dp"
+        android:layout_below="@+id/textViewSelectedPlace" />
 
 </RelativeLayout>

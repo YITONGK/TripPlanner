@@ -1,5 +1,6 @@
 package com.example.tripplanner;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -14,6 +15,10 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class EditPlanActivity extends AppCompatActivity {
 
+    private String selectedPlace;
+    private int days = 3;
+
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -24,11 +29,15 @@ public class EditPlanActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        String selectedPlace = getIntent().getStringExtra("selectedPlace");
+        selectedPlace = getIntent().getStringExtra("selectedPlace");
         if (selectedPlace != null) {
             // You can now use the selected place string as needed
-            TextView textView = findViewById(R.id.textViewSelectedPlace);
-            textView.setText(selectedPlace);
+            TextView tripTo = findViewById(R.id.textViewSelectedPlace);
+            String day = days > 1 ? " days" : " day";
+            tripTo.setText(days + day + " trip to " + selectedPlace);
+
+            TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);
+            daysAndNight.setText(days + " days and " + (days - 1) + " night");
         }
 
         ImageButton closeButton = findViewById(R.id.closeButton);
