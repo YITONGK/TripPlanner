@@ -5,7 +5,8 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".EditPlanActivity">
+    tools:context=".EditPlanActivity"
+    android:background="#b8d2e4">
 
     <ImageButton
         android:id="@+id/closeButton"
@@ -57,5 +58,25 @@
         android:textSize="16dp"
         android:padding="16dp"
         android:layout_below="@+id/textViewSelectedPlace" />
+
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textViewDaysAndNights"
+        android:layout_marginTop="9dp"
+        android:background="?android:attr/windowBackground"
+        app:menu="@menu/plan_detail_nav_menu" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragmentContainerView"
+        android:name="com.example.tripplanner.PlanFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/nav_view"
+        android:layout_marginTop="3dp"
+        android:background="?android:attr/windowBackground" />
+
 
 </RelativeLayout>
