@@ -16,6 +16,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.example.tripplanner.databinding.ActivityEditPlanBinding;
 import com.google.android.material.navigation.NavigationBarView;
@@ -30,6 +32,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private int days = 4;
     private ActivityEditPlanBinding binding;
     private ArrayList<Fragment> fragments = new ArrayList<>();
+    private FragmentManager fragmentManager;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -73,13 +76,38 @@ public class EditPlanActivity extends AppCompatActivity {
             }
         });
 
+        fragmentManager = getSupportFragmentManager();
         TabLayout tabLayout = binding.tabLayout;
+
+        // Create FragmentTransaction
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+
+        // Add Overview Fragment
         tabLayout.addTab(tabLayout.newTab().setText("Overview"));
-        fragments.add(PlanFragment.newInstance(PlanFragment.OVERVIEW));
+        Fragment overviewFragment = fragmentManager.findFragmentByTag("fragment_overview");
+        if (overviewFragment == null) {
+            overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
+            transaction.add(R.id.fragmentContainerView, overviewFragment, "fragment_overview");
+        }
+        fragments.add(overviewFragment);
+
+        // Add Specific Day Fragments
         for (int i = 0; i < days; i++) {
             tabLayout.addTab(tabLayout.newTab().setText("Day " + (i + 1)));
-            fragments.add(PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY));
+            Fragment dayFragment = fragmentManager.findFragmentByTag("fragment_day_" + i);
+            if (dayFragment == null) {
+                dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
+                transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
+                transaction.hide(dayFragment);
+            }
+            fragments.add(dayFragment);
         }
+
+        // Commit the transaction
+        transaction.commitNow();
+
+        // Show the first fragment
+        showFragment(0);
 
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -108,5 +136,19 @@ public class EditPlanActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.fragmentContainerView, fragment)
                 .commit();
+    }
+
+    private void showFragment(int index) {
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        for (int i = 0; i < fragments.size(); i++) {
+            Fragment fragment = fragments.get(i);
+            if (i == index) {
+                transaction.show(fragment);
+            } else {
+                transaction.hide(fragment);
+            }
+        }
+        // Commit immediately to apply changes
+        transaction.commitNow();
     }
 }

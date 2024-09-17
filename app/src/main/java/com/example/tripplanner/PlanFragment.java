@@ -33,84 +33,61 @@ import androidx.lifecycle.ViewModelProvider;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+
 public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
-    static int OVERVIEW = R.layout.plan_overview;
-    static int PLAN_SPECIFIC_DAY = R.layout.plan_specific_day;
-    static String LAYOUT_TYPE = "type";
-    private int layout = R.layout.plan_overview;
+    public static final int OVERVIEW = 0;
+    public static final int PLAN_SPECIFIC_DAY = 1;
+    static final String LAYOUT_TYPE = "type";
+    private int layout = OVERVIEW;
+    private int dayIndex = -1; // To identify the day
     private GoogleMap mMap;
 
-    // designed for specific day plan
+
+    private PlanViewModel viewModel;
+
+    // For specific day plan
     private TextView addActivityLocation;
     private ListView activityLocationList;
     private ArrayList<ActivityItem> activityItemArray;
     private ActivityItemAdapter adapter;
 
-    private PlanViewModel viewModel;
-
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 获取 ViewModel 实例
+        // Get ViewModel instance
         viewModel = new ViewModelProvider(requireActivity()).get(PlanViewModel.class);
 
         if (this.getArguments() != null) {
-            this.layout = getArguments().getInt(LAYOUT_TYPE);
+            this.layout = getArguments().getInt(LAYOUT_TYPE, OVERVIEW);
+            if (this.layout == PLAN_SPECIFIC_DAY) {
+                this.dayIndex = getArguments().getInt("dayIndex", -1);
+            }
         }
+    }
+
+    static PlanFragment newInstance(int layoutType, int dayIndex) {
+        PlanFragment fragment = new PlanFragment();
+        Bundle bundle = new Bundle();
+        bundle.putInt(LAYOUT_TYPE, layoutType);
+        bundle.putInt("dayIndex", dayIndex);
+        fragment.setArguments(bundle);
+        return fragment;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View rootView;
-        if (this.layout == OVERVIEW) {
-            rootView = inflater.inflate(R.layout.plan_overview, container, false);
-
-            EditText tripNoteEditText = rootView.findViewById(R.id.noteInput);
-
-            // 观察 ViewModel 中的 tripNote 数据
-            viewModel.getTripNote().observe(getViewLifecycleOwner(), new Observer<String>() {
-                @Override
-                public void onChanged(String s) {
-                    if (!tripNoteEditText.getText().toString().equals(s)) {
-                        tripNoteEditText.setText(s);
-                    }
-                }
-            });
-
-            // 监听 EditText 的内容变化，并更新 ViewModel 中的数据
-            tripNoteEditText.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                }
-
-                @Override
-                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                    viewModel.getTripNote().setValue(charSequence.toString());
-                }
-
-                @Override
-                public void afterTextChanged(Editable editable) {
-                }
-            });
-
-            // 初始化地图
-            SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
-                    .findFragmentById(R.id.map);
-            if (mapFragment != null) {
-                mapFragment.getMapAsync(this);
-            }
-
-        } else if (this.layout == PLAN_SPECIFIC_DAY) {
+        if (this.layout == PLAN_SPECIFIC_DAY) {
             rootView = inflater.inflate(R.layout.plan_specific_day, container, false);
 
             addActivityLocation = rootView.findViewById(R.id.addActivityLocation);
             activityLocationList = rootView.findViewById(R.id.activityLocationList);
 
-            activityItemArray = new ArrayList<>();
+            // Get the activity items list for this day from the ViewModel
+            activityItemArray = viewModel.getActivityItemArray(dayIndex);
             adapter = new ActivityItemAdapter(getContext(), activityItemArray);
             activityLocationList.setAdapter(adapter);
 
@@ -127,29 +104,16 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                     showEditActivityDialog(position);
                 }
             });
+
+        } else if (this.layout == OVERVIEW) {
+            rootView = inflater.inflate(R.layout.plan_overview, container, false);
+            // Existing code for the overview page
         } else {
-            // 默认情况，防止意外
+            // Handle default case
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
         }
 
         return rootView;
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-    }
-
-    static Fragment newInstance(int layout) {
-        Fragment fragment = new PlanFragment();
-        Bundle bundle = new Bundle();
-        bundle.putInt(LAYOUT_TYPE, layout);
-        fragment.setArguments(bundle);
-        return fragment;
     }
 
     private void showAddActivityDialog() {
@@ -160,7 +124,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
 
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int which) {
                 String activityName = input.getText().toString();
@@ -173,12 +137,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 }
             }
         });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int which) {
-                dialogInterface.cancel();
-            }
-        });
+        builder.setNegativeButton("Cancel", null);
 
         builder.show();
     }
@@ -203,6 +162,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         inputTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 Calendar calendar = Calendar.getInstance();
                 int hour = calendar.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar.get(Calendar.MINUTE);
@@ -227,14 +187,18 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 adapter.notifyDataSetChanged();
             }
         });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int which) {
-                dialogInterface.cancel();
-            }
-        });
+        builder.setNegativeButton("Cancel", null);
 
         builder.show();
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+
+        LatLng sydney = new LatLng(-34, 151);
+        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
     }
 
 }
