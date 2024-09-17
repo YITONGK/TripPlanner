@@ -21,6 +21,7 @@ import com.example.tripplanner.databinding.ActivityEditPlanBinding;
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.android.material.tabs.TabLayout;
 
+
 import java.util.ArrayList;
 
 public class EditPlanActivity extends AppCompatActivity {

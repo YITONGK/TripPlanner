@@ -4,7 +4,9 @@ import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +27,9 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -42,14 +47,64 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private ArrayList<ActivityItem> activityItemArray;
     private ActivityItemAdapter adapter;
 
+    private PlanViewModel viewModel;
+
+
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // 获取 ViewModel 实例
+        viewModel = new ViewModelProvider(requireActivity()).get(PlanViewModel.class);
+
         if (this.getArguments() != null) {
             this.layout = getArguments().getInt(LAYOUT_TYPE);
         }
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View rootView;
-        if (this.layout != R.layout.plan_overview) {
+        if (this.layout == OVERVIEW) {
+            rootView = inflater.inflate(R.layout.plan_overview, container, false);
+
+            EditText tripNoteEditText = rootView.findViewById(R.id.noteInput);
+
+            // 观察 ViewModel 中的 tripNote 数据
+            viewModel.getTripNote().observe(getViewLifecycleOwner(), new Observer<String>() {
+                @Override
+                public void onChanged(String s) {
+                    if (!tripNoteEditText.getText().toString().equals(s)) {
+                        tripNoteEditText.setText(s);
+                    }
+                }
+            });
+
+            // 监听 EditText 的内容变化，并更新 ViewModel 中的数据
+            tripNoteEditText.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    viewModel.getTripNote().setValue(charSequence.toString());
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+                }
+            });
+
+            // 初始化地图
+            SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
+                    .findFragmentById(R.id.map);
+            if (mapFragment != null) {
+                mapFragment.getMapAsync(this);
+            }
+
+        } else if (this.layout == PLAN_SPECIFIC_DAY) {
             rootView = inflater.inflate(R.layout.plan_specific_day, container, false);
 
             addActivityLocation = rootView.findViewById(R.id.addActivityLocation);
@@ -72,15 +127,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                     showEditActivityDialog(position);
                 }
             });
-
         } else {
+            // 默认情况，防止意外
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
-            SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
-                    .findFragmentById(R.id.map);
-            if (mapFragment != null) {
-                mapFragment.getMapAsync(this);
-            }
         }
+
         return rootView;
     }
 
