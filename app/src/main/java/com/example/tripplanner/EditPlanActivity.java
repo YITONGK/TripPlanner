@@ -19,12 +19,16 @@ import androidx.fragment.app.Fragment;
 
 import com.example.tripplanner.databinding.ActivityEditPlanBinding;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.material.tabs.TabLayout;
+
+import java.util.ArrayList;
 
 public class EditPlanActivity extends AppCompatActivity {
 
     private String selectedPlace;
-    private int days = 3;
+    private int days = 4;
     private ActivityEditPlanBinding binding;
+    private ArrayList<Fragment> fragments = new ArrayList<>();
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -42,12 +46,20 @@ public class EditPlanActivity extends AppCompatActivity {
         if (selectedPlace != null) {
             // You can now use the selected place string as needed
             TextView tripTo = findViewById(R.id.textViewSelectedPlace);
+            String dayAndNight;
+            if (days == 1) {
+                dayAndNight = "1 day";
+            }
+            else if (days == 2) {
+                dayAndNight = "2 days and 1 night";
+            } else {
+                dayAndNight = days + " days" + " and " + (days - 1) + " nights";
+            }
             String day = days > 1 ? " days" : " day";
-            String night = days - 1 > 1 ? " nights" : " night";
             tripTo.setText(days + day + " trip to " + selectedPlace);
 
             TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);
-            daysAndNight.setText(days + day + " and " + (days - 1) + night);
+            daysAndNight.setText(dayAndNight);
         }
 
         ImageButton closeButton = findViewById(R.id.closeButton);
@@ -60,42 +72,40 @@ public class EditPlanActivity extends AppCompatActivity {
             }
         });
 
-        Fragment overview_layout = PlanFragment.newInstance(PlanFragment.OVERVIEW);
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragmentContainerView, overview_layout)
-                .addToBackStack(null)
-                .commit();
+        TabLayout tabLayout = binding.tabLayout;
+        tabLayout.addTab(tabLayout.newTab().setText("Overview"));
+        fragments.add(PlanFragment.newInstance(PlanFragment.OVERVIEW));
+        for (int i = 0; i < days; i++) {
+            tabLayout.addTab(tabLayout.newTab().setText("Day " + (i + 1)));
+            fragments.add(PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY));
+        }
 
-        binding.navView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
-            @SuppressLint("NonConstantResourceId")
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int id = item.getItemId();
-
-                if (id == R.id.overview) {
-                    Log.d("overview", "Overview page selected ");
-                    Fragment overview_layout = PlanFragment.newInstance(PlanFragment.OVERVIEW);
-                    getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.fragmentContainerView, overview_layout)
-                            .addToBackStack(null)
-                            .commit();
-                    return true;
-                } else if (id == R.id.day) {
-                    Log.d("Day", "Day page selected");
-                    Fragment day_layout = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY);
-                    getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.fragmentContainerView, day_layout)
-                            .addToBackStack(null)
-                            .commit();
-                    return true;
-                }
-                return false;
+            public void onTabSelected(TabLayout.Tab tab) {
+                // Handle tab selection
+                Fragment selectedFragment;
+                int position = tab.getPosition();
+                Log.d("TabSelected", "Selected tab position: " + position);
+                selectedFragment = fragments.get(position);
+                loadFragment(selectedFragment);
+            }
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                // Handle tab unselection
             }
 
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                // Handle tab reselection
+            }
         });
+    }
 
+    private void loadFragment(Fragment fragment) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainerView, fragment)
+                .commit();
     }
 }

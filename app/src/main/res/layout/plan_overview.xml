@@ -1,28 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-     android:layout_width="match_parent"
-     android:layout_height="match_parent">
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/tripNote"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Trip note"
-        android:textSize="30sp"
-        android:textStyle="bold" />
-
-    <EditText
-        android:id="@+id/noteInput"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="add note"
-        android:layout_below="@+id/tripNote"/>
-
-    <fragment
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@+id/noteInput"/>
+        android:layout_height="wrap_content"
+        android:padding="16dp">
 
-</RelativeLayout>
+        <TextView
+            android:id="@+id/tripNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📝 Trip Note"
+            android:textSize="24sp"
+            android:layout_marginTop="16dp"
+            android:padding="8dp" />
+
+        <EditText
+            android:id="@+id/noteInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="add note..."
+            android:layout_below="@id/tripNote"
+            android:padding="8dp"
+            android:background="@android:color/white"
+            android:layout_marginTop="16dp"/>
+
+
+        <TextView
+            android:id="@+id/routineOverview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🗺️ Routine Overview"
+            android:layout_below="@id/noteInput"
+            android:textSize="24sp"
+            android:padding="8dp"
+            android:layout_marginTop="16dp" />
+
+        <fragment
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_below="@+id/routineOverview"
+            android:layout_marginTop="16dp"/>
+
+    </RelativeLayout>
+</ScrollView>
