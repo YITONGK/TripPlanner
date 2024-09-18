@@ -30,6 +30,7 @@ public class PlanDurationFragment extends Fragment {
 
     private CalendarDay startDate = null;
     private CalendarDay endDate = null;
+    private int defaultDays = 2;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -55,18 +56,11 @@ public class PlanDurationFragment extends Fragment {
         rangeDecorator = new HighlightRangeDecorator(requireContext());
         materialCalendarView.addDecorator(rangeDecorator);
 
-
-//        CalendarDay today = CalendarDay.today();
-//        materialCalendarView.setSelectedDate(today);
-//
-//        rangeDecorator.setDateRange(Collections.singletonList(today));
-//        materialCalendarView.invalidateDecorators();
-
         // display the start date and end date on the calendar
         materialCalendarView.setOnDateChangedListener(new OnDateSelectedListener() {
             @Override
             public void onDateSelected(@NonNull MaterialCalendarView widget, @NonNull CalendarDay date, boolean selected) {
-                materialCalendarView.clearSelection(); // 清除默认选择
+                materialCalendarView.clearSelection();
                 if (startDate == null) {
                     // choose start date
                     startDate = date;
@@ -104,10 +98,14 @@ public class PlanDurationFragment extends Fragment {
     }
 
     private void setupNumberPicker(NumberPicker numberPicker) {
+        numberPicker.setMaxValue(30);
+        numberPicker.setMinValue(1);
+        numberPicker.setValue(2);
         numberPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
             @Override
             public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-                System.out.println("Selected: " + newVal);
+                defaultDays = newVal;
+                System.out.println("Selected: " + defaultDays);
             }
         });
     }

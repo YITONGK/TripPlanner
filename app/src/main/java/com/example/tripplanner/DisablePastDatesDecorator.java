@@ -24,6 +24,6 @@ public class DisablePastDatesDecorator implements DayViewDecorator {
 
     @Override
     public void decorate(DayViewFacade view) {
-        view.setDaysDisabled(true); // 仅禁用日期，但不隐藏它们
+        view.setDaysDisabled(true);
     }
 }

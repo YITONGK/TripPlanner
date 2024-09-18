@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraint_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -23,7 +24,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/button_1"
+        android:id="@+id/button_add_location"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginStart="5dp"
@@ -38,23 +39,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/button_back" />
 
-    <Button
-        android:id="@+id/button_2"
-        android:layout_width="110dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:background="@null"
-        android:backgroundTint="@android:color/white"
-        android:drawableEnd="@drawable/baseline_close_24"
-        android:drawablePadding="8dp"
-        android:elevation="0dp"
-        android:padding="9dp"
-        android:text="@string/melbourne"
-        android:textColor="@android:color/black"
-        android:textSize="12sp"
-        app:layout_constraintStart_toEndOf="@id/button_1"
-        app:layout_constraintTop_toBottomOf="@id/button_back" />
+<!--    <Button-->
+<!--        android:id="@+id/button_2"-->
+<!--        android:layout_width="110dp"-->
+<!--        android:layout_height="50dp"-->
+<!--        android:layout_marginStart="8dp"-->
+<!--        android:layout_marginTop="8dp"-->
+<!--        android:background="@null"-->
+<!--        android:backgroundTint="@android:color/white"-->
+<!--        android:drawableEnd="@drawable/baseline_close_24"-->
+<!--        android:drawablePadding="8dp"-->
+<!--        android:elevation="0dp"-->
+<!--        android:padding="9dp"-->
+<!--        android:text="@string/melbourne"-->
+<!--        android:textColor="@android:color/black"-->
+<!--        android:textSize="12sp"-->
+<!--        app:layout_constraintStart_toEndOf="@id/button_add_location"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/button_back" />-->
 
     <TextView
         android:id="@+id/textView5"
@@ -68,7 +69,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_1" />
+        app:layout_constraintTop_toBottomOf="@id/button_add_location" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_layout"

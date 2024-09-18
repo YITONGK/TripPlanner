@@ -1,6 +1,7 @@
 package com.example.tripplanner;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -64,6 +65,12 @@ public class MainActivity extends AppCompatActivity{
                             .replace(R.id.fragmentContainerView, plan_layout)
                             .addToBackStack(null)
                             .commit();
+                    return true;
+                }
+                // To show add function layout demonstration
+                else if (id == R.id.navigation_add) {
+                    Intent intent = new Intent(getApplicationContext(), PlanDurationActivity.class);
+                    startActivity(intent); //
                     return true;
                 }
                 // To show Location layout demonstration
