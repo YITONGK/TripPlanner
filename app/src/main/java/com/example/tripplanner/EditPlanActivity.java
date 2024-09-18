@@ -33,14 +33,14 @@ import java.util.ArrayList;
 public class EditPlanActivity extends AppCompatActivity {
 
     private String selectedPlace;
-    private int days = 4;
+    private int days;
     private ActivityEditPlanBinding binding;
     private ArrayList<Fragment> fragments = new ArrayList<>();
     private FragmentManager fragmentManager;
 
-//    private JSONObject tripPlan;
-//    private JSONArray placeArray;
-//    ArrayList<String> placeList = new ArrayList<>();
+    private JSONObject tripPlan;
+    private JSONArray placeArray;
+    ArrayList<String> placeList = new ArrayList<>();
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -54,27 +54,28 @@ public class EditPlanActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        selectedPlace = getIntent().getStringExtra("selectedPlace");
-//        String jsonString = getIntent().getStringExtra("tripPlan");
-//        if (jsonString != null) {
-//            try {
-//                tripPlan = new JSONObject(jsonString);
-//                placeArray = tripPlan.getJSONArray("place");
-//                for (int i = 0; i < placeArray.length(); i++) {
-//                    placeList.add(placeArray.getString(i));
-//                }
-//                StringBuilder sb = new StringBuilder();
-//                for (String place : placeList) {
-//                    sb.append(place).append(", ");
-//                }
-//                if (sb.length() > 0) {
-//                    sb.setLength(sb.length() - 2);
-//                }
-//                selectedPlace = sb.toString();
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//        }
+//        selectedPlace = getIntent().getStringExtra("selectedPlace");
+        String jsonString = getIntent().getStringExtra("planDetails");
+        if (jsonString != null) {
+            try {
+                tripPlan = new JSONObject(jsonString);
+                placeArray = tripPlan.getJSONArray("location");
+                for (int i = 0; i < placeArray.length(); i++) {
+                    placeList.add(placeArray.getString(i));
+                }
+                StringBuilder sb = new StringBuilder();
+                for (String place : placeList) {
+                    sb.append(place).append(", ");
+                }
+                if (sb.length() > 0) {
+                    sb.setLength(sb.length() - 2);
+                }
+                selectedPlace = sb.toString();
+                days = tripPlan.getInt("days");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
 
 
         // You can now use the selected place string as needed

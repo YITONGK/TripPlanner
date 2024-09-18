@@ -9,6 +9,7 @@ constraintlayout = "2.1.4"
 navigationFragment = "2.7.7"
 navigationUi = "2.7.7"
 googleAndroidLibrariesMapsplatformSecretsGradlePlugin = "2.0.1"
+numberPicker = "2.4.12"
 playServicesMaps = "19.0.0"
 activity = "1.8.0"
 places = "3.5.0"
@@ -22,6 +23,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
+number-picker = { module = "com.shawnlin:number-picker", version.ref = "numberPicker" }
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 places = { group = "com.google.android.libraries.places", name = "places", version.ref = "places" }

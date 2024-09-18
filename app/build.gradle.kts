@@ -51,6 +51,8 @@ dependencies {
 
     // Maps SDK for Android
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("com.prolificinteractive:material-calendarview:1.4.3")
+    implementation("io.github.ShawnLin013:number-picker:2.4.13")
 }
 
 secrets {

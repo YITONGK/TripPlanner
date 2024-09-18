@@ -44,4 +44,9 @@
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
     <string name="title_activity_maps">MapsActivity</string>
+    <string name="melbourne">Melbourne</string>
+    <string name="done">Done</string>
+    <string name="add">Add</string>
+    <string name="location">Location</string>
+    <string name="plan">Plan</string>
 </resources>

@@ -61,7 +61,7 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             editTextMessage.setText(prediction.getFullText(null));
 
             // Create an intent to start EditPlanActivity
-            Intent intent = new Intent(CreateNewPlanActivity.this, EditPlanActivity.class);
+            Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
             // Put the selected item's description as an extra in the intent
             intent.putExtra("selectedPlace", prediction.getPrimaryText(null).toString());
             startActivity(intent);
