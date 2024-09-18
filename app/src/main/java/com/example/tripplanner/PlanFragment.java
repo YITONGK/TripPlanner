@@ -109,6 +109,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
         }
 
+        SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
+                .findFragmentById(R.id.map);
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }
+
         return rootView;
     }
 
