@@ -69,10 +69,10 @@ public class MainActivity extends AppCompatActivity{
                 }
                 // To create new plan activity
                 if (id == R.id.navigation_add) {
-                    Intent intent = new Intent(MainActivity.this, PlanDurationActivity.class);
-                    intent.putExtra("selectedPlace", "Sydney");
-                    startActivity(intent);
-//                    startActivity(new Intent(MainActivity.this, CreateNewPlanActivity.class));
+//                    Intent intent = new Intent(MainActivity.this, PlanDurationActivity.class);
+//                    intent.putExtra("selectedPlace", "Sydney");
+//                    startActivity(intent);
+                    startActivity(new Intent(MainActivity.this, CreateNewPlanActivity.class));
 
                     return true;
                 }
