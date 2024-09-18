@@ -10,9 +10,12 @@ import androidx.core.content.ContextCompat;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.util.ArrayList;
+
 public class ButtonDecorator {
     private ConstraintLayout constraintLayout;
     private int lastButtonId = 0;
+    private ArrayList<Button> buttonArrayList = new ArrayList<>();;
 
     public ButtonDecorator(ConstraintLayout layout) {
         this.constraintLayout = layout;
@@ -25,6 +28,7 @@ public class ButtonDecorator {
                 Button button = createButton(location);
                 constraintLayout.addView(button);
                 setConstraints(button, i);
+                setUpButtonListener(button, i);
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -46,6 +50,8 @@ public class ButtonDecorator {
         button.setCompoundDrawablePadding(8);
         button.setText(location);
 
+        buttonArrayList.add(button);
+
         return button;
     }
 
@@ -64,4 +70,30 @@ public class ButtonDecorator {
         constraintSet.applyTo(constraintLayout);
         lastButtonId = button.getId();
     }
+
+    public ArrayList<Button> getButtonArrayList() {
+        return buttonArrayList;
+    }
+
+    private void setUpButtonListener(Button button, int index) {
+        button.setOnClickListener(view -> {
+            removeButtonAndLocation(index);
+        });
+    }
+
+    private void removeButtonAndLocation(int index) {
+        // Remove button from view
+        Button button = buttonArrayList.get(index);
+        constraintLayout.removeView(button);
+
+        // Remove button and location from lists
+        buttonArrayList.remove(index);
+
+        // Update constraints for remaining buttons if needed
+        lastButtonId = buttonArrayList.isEmpty() ? 0 : buttonArrayList.get(buttonArrayList.size() - 1).getId();
+        for (int i = index; i < buttonArrayList.size(); i++) {
+            setConstraints(buttonArrayList.get(i), i);
+        }
+    }
+
 }

@@ -17,6 +17,8 @@ import android.widget.LinearLayout;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class PlanDurationActivity extends AppCompatActivity {
@@ -42,14 +44,6 @@ public class PlanDurationActivity extends AppCompatActivity {
         String location1 = "Shanghai";
         String location2 = "Beijing";
 
-        //2. add data into the JSONArray
-        //        planDetails = new JSONObject();
-////        try {
-////            planDetails.put("Location", new JSONArray(Arrays.asList("Shanghai", "Wuxi")));
-////        } catch (JSONException e) {
-////            throw new RuntimeException(e);
-////        }
-
         locationList = new JSONArray();
         locationList.put(location1);
         locationList.put(location2);
@@ -60,6 +54,8 @@ public class PlanDurationActivity extends AppCompatActivity {
         //3. add the button based on the JSONARRAY
         ButtonDecorator buttonDecorator = new ButtonDecorator( findViewById(R.id.constraint_layout));
         buttonDecorator.addButtonsFromJson(locationList);
+        ArrayList<Button> buttonList =  buttonDecorator.getButtonArrayList();
+
 
         //Back Button Functions
         Button backButton = findViewById(R.id.button_back);
