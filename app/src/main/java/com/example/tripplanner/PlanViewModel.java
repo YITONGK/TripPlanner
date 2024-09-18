@@ -8,14 +8,14 @@ import java.util.HashMap;
 
 public class PlanViewModel extends ViewModel {
     // For the Trip Note
-    private MutableLiveData<String> tripNote = new MutableLiveData<>();
+//    private MutableLiveData<String> tripNote = new MutableLiveData<>();
 
     // For storing Activity Items per day
     private HashMap<Integer, ArrayList<ActivityItem>> dayActivityMap = new HashMap<>();
 
-    public MutableLiveData<String> getTripNote() {
-        return tripNote;
-    }
+//    public MutableLiveData<String> getTripNote() {
+//        return tripNote;
+//    }
 
     // Method to get the list of activity items for a specific day
     public ArrayList<ActivityItem> getActivityItemArray(int dayIndex) {

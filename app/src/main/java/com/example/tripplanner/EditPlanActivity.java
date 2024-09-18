@@ -24,6 +24,10 @@ import com.google.android.material.navigation.NavigationBarView;
 import com.google.android.material.tabs.TabLayout;
 
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 
 public class EditPlanActivity extends AppCompatActivity {
@@ -33,6 +37,10 @@ public class EditPlanActivity extends AppCompatActivity {
     private ActivityEditPlanBinding binding;
     private ArrayList<Fragment> fragments = new ArrayList<>();
     private FragmentManager fragmentManager;
+
+//    private JSONObject tripPlan;
+//    private JSONArray placeArray;
+//    ArrayList<String> placeList = new ArrayList<>();
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -47,24 +55,44 @@ public class EditPlanActivity extends AppCompatActivity {
             return insets;
         });
         selectedPlace = getIntent().getStringExtra("selectedPlace");
-        if (selectedPlace != null) {
-            // You can now use the selected place string as needed
-            TextView tripTo = findViewById(R.id.textViewSelectedPlace);
-            String dayAndNight;
-            if (days == 1) {
-                dayAndNight = "1 day";
-            }
-            else if (days == 2) {
-                dayAndNight = "2 days and 1 night";
-            } else {
-                dayAndNight = days + " days" + " and " + (days - 1) + " nights";
-            }
-            String day = days > 1 ? " days" : " day";
-            tripTo.setText(days + day + " trip to " + selectedPlace);
+//        String jsonString = getIntent().getStringExtra("tripPlan");
+//        if (jsonString != null) {
+//            try {
+//                tripPlan = new JSONObject(jsonString);
+//                placeArray = tripPlan.getJSONArray("place");
+//                for (int i = 0; i < placeArray.length(); i++) {
+//                    placeList.add(placeArray.getString(i));
+//                }
+//                StringBuilder sb = new StringBuilder();
+//                for (String place : placeList) {
+//                    sb.append(place).append(", ");
+//                }
+//                if (sb.length() > 0) {
+//                    sb.setLength(sb.length() - 2);
+//                }
+//                selectedPlace = sb.toString();
+//            } catch (JSONException e) {
+//                e.printStackTrace();
+//            }
+//        }
 
-            TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);
-            daysAndNight.setText(dayAndNight);
+
+        // You can now use the selected place string as needed
+        TextView tripTo = findViewById(R.id.textViewSelectedPlace);
+        String dayAndNight;
+        if (days == 1) {
+            dayAndNight = "1 day";
         }
+        else if (days == 2) {
+            dayAndNight = "2 days and 1 night";
+        } else {
+            dayAndNight = days + " days" + " and " + (days - 1) + " nights";
+        }
+        String day = days > 1 ? " days" : " day";
+        tripTo.setText(days + day + " trip to " + selectedPlace);
+
+        TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);
+        daysAndNight.setText(dayAndNight);
 
         ImageButton closeButton = findViewById(R.id.closeButton);
         closeButton.setOnClickListener(new View.OnClickListener() {
@@ -85,10 +113,8 @@ public class EditPlanActivity extends AppCompatActivity {
         // Add Overview Fragment
         tabLayout.addTab(tabLayout.newTab().setText("Overview"));
         Fragment overviewFragment = fragmentManager.findFragmentByTag("fragment_overview");
-        if (overviewFragment == null) {
-            overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
-            transaction.add(R.id.fragmentContainerView, overviewFragment, "fragment_overview");
-        }
+        overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
+        transaction.add(R.id.fragmentContainerView, overviewFragment, "fragment_overview");
         fragments.add(overviewFragment);
 
         // Add Specific Day Fragments
@@ -103,11 +129,8 @@ public class EditPlanActivity extends AppCompatActivity {
             fragments.add(dayFragment);
         }
 
-        // Commit the transaction
         transaction.commitNow();
-
-        // Show the first fragment
-        showFragment(0);
+        loadFragment(fragments.get(0));
 
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -116,6 +139,7 @@ public class EditPlanActivity extends AppCompatActivity {
                 Fragment selectedFragment;
                 int position = tab.getPosition();
                 Log.d("TabSelected", "Selected tab position: " + position);
+//                showFragment(position);
                 selectedFragment = fragments.get(position);
                 loadFragment(selectedFragment);
             }
@@ -138,17 +162,16 @@ public class EditPlanActivity extends AppCompatActivity {
                 .commit();
     }
 
-    private void showFragment(int index) {
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        for (int i = 0; i < fragments.size(); i++) {
-            Fragment fragment = fragments.get(i);
-            if (i == index) {
-                transaction.show(fragment);
-            } else {
-                transaction.hide(fragment);
-            }
-        }
-        // Commit immediately to apply changes
-        transaction.commitNow();
-    }
+//    private void showFragment(int index) {
+//        FragmentTransaction transaction = fragmentManager.beginTransaction();
+//        for (int i = 0; i < fragments.size(); i++) {
+//            Fragment fragment = fragments.get(i);
+//            if (i == index) {
+//                transaction.show(fragment);
+//            } else {
+//                transaction.hide(fragment);
+//            }
+//        }
+//        transaction.commitNow();
+//    }
 }

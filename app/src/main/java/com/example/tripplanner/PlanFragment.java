@@ -105,11 +105,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 }
             });
 
-        } else if (this.layout == OVERVIEW) {
-            rootView = inflater.inflate(R.layout.plan_overview, container, false);
-            // Existing code for the overview page
         } else {
-            // Handle default case
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
         }
 

@@ -34,9 +34,6 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             Toast.makeText(this, "API key error", Toast.LENGTH_LONG).show();
             return;
         }
-        if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), apiKey);
-        }
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_create_new_plan);
@@ -59,11 +56,6 @@ public class CreateNewPlanActivity extends AppCompatActivity {
 
         adapter = new AutocompleteAdapter(this, new ArrayList<>());
         listViewAutocomplete.setAdapter(adapter);
-        listViewAutocomplete.setOnItemClickListener((parent, view, position, id) -> {
-            AutocompletePrediction prediction = adapter.getItem(position);
-            editTextMessage.setText(prediction.getFullText(null));
-        });
-
         listViewAutocomplete.setOnItemClickListener((parent, view, position, id) -> {
             AutocompletePrediction prediction = adapter.getItem(position);
             editTextMessage.setText(prediction.getFullText(null));
