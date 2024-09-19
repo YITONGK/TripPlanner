@@ -10,7 +10,16 @@ import android.view.View;
 import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+
+import android.util.Log;
+
 import com.example.tripplanner.databinding.PlanDurationBinding;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.tabs.TabLayout;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONArray;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
@@ -31,10 +40,19 @@ import org.json.JSONArray;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class PlanDurationActivity extends AppCompatActivity {
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
+public class PlanDurationActivity extends AppCompatActivity  implements OnFragmentInteractionListener{
     private PlanDurationBinding binding;
-    private JSONObject planDetails ;
-    private JSONArray locationList;
+    private JSONObject planDetails =  new JSONObject();;
+    private JSONArray locationList = new JSONArray();;
+    private int receivedDays;
+    private String receivedStartDate;
+    private String receivedEndDate;
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
     final String apiKey = BuildConfig.PLACES_API_KEY;
 
@@ -52,29 +70,9 @@ public class PlanDurationActivity extends AppCompatActivity {
         binding = PlanDurationBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        //1. get intent data from previous activity (String location)
-//        String location1 = "Shanghai";
-//        String location2 = "Beijing";
-
-        planDetails = new JSONObject();
-
-
         //2. add data into the JSONArray
-        locationList = new JSONArray();
         String location = getIntent().getStringExtra("selectedPlace");
         locationList.put(location);
-//        locationList.put(location2);
-
-        //hard code for testing
-        try {
-            planDetails.put("location", locationList);
-            planDetails.put("startDate", "2023-05-01");
-            planDetails.put("endDate", "2023-05-03");
-            planDetails.put("days", 3);
-        } catch (JSONException e) {
-            throw new RuntimeException(e);
-        }
-
 
         //Remove Button (Dynamic add based on the JSON Objects)
         //3. add the button based on the JSONARRAY
@@ -170,6 +168,8 @@ public class PlanDurationActivity extends AppCompatActivity {
                 });
 
 
+
+                // Display BottomSheetDialog
                 bottomSheetDialog.show();
             }
         });
@@ -197,10 +197,19 @@ public class PlanDurationActivity extends AppCompatActivity {
             public void onTabReselected(TabLayout.Tab tab) {}
         });
 
+        //Button Done
         Button doneButton = findViewById(R.id.button_done);
         doneButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                try {
+                    planDetails.put("location", locationList);
+                    planDetails.put("days" ,receivedDays);
+                    planDetails.put("startDate", receivedStartDate);
+                    planDetails.put("endDate", receivedEndDate);
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
                 Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
                 intent.putExtra("planDetails", planDetails.toString());
                 startActivity(intent);
@@ -210,10 +219,51 @@ public class PlanDurationActivity extends AppCompatActivity {
 
 
     private void loadFragment(Fragment fragment) {
+
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .commit();
+    }
+
+
+    @Override
+    public void DaysInteraction(String data) {
+
+
+        receivedDays =  Integer.parseInt(data);
+
+        Calendar calendar = Calendar.getInstance();
+        receivedStartDate =  dateFormat.format(calendar.getTime());
+
+        calendar.add(Calendar.DAY_OF_MONTH, receivedDays - 1);
+        receivedEndDate=dateFormat.format(calendar.getTime());
+    }
+
+    @Override
+    public void DatesInteraction(String startDate, String endDate){
+        receivedStartDate = startDate;
+        receivedEndDate = endDate;
+
+        try {
+            Date start = dateFormat.parse(startDate);
+            Date end = dateFormat.parse(endDate);
+
+            Calendar startCal = Calendar.getInstance();
+            Calendar endCal = Calendar.getInstance();
+            startCal.setTime(start);
+            endCal.setTime(end);
+
+            int daysDifference = 0;
+            while (!startCal.after(endCal)) {
+                startCal.add(Calendar.DAY_OF_MONTH, 1);
+                daysDifference++;
+            }
+            receivedDays = daysDifference;
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
     }
 
     private void performAutocomplete(String query, PlacesClient placesClient, AutocompleteAdapter adapter) {
@@ -232,6 +282,5 @@ public class PlanDurationActivity extends AppCompatActivity {
             }
         });
     }
-
 
 }

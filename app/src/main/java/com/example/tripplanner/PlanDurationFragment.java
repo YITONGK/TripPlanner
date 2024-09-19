@@ -1,10 +1,13 @@
 package com.example.tripplanner;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,7 +19,10 @@ import com.prolificinteractive.materialcalendarview.OnDateSelectedListener;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.shawnlin.numberpicker.NumberPicker;
 
+import org.json.JSONException;
+
 import java.util.List;
+import java.util.Locale;
 
 public class PlanDurationFragment extends Fragment {
 
@@ -31,6 +37,44 @@ public class PlanDurationFragment extends Fragment {
     private CalendarDay startDate = null;
     private CalendarDay endDate = null;
     private int defaultDays = 2;
+    private OnFragmentInteractionListener mListener;
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        try {
+            mListener = (OnFragmentInteractionListener) context;
+            Log.d("PlanDurationFragment", "onAttach: mListener set");
+        } catch (ClassCastException e) {
+            throw new ClassCastException(context.toString()
+                    + " must implement OnFragmentInteractionListener");
+        }
+    }
+
+    public void passDaysToActivity(String data) {
+        if (mListener != null) {
+            try {
+                mListener.DaysInteraction(data);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public void passDatesToActivity(CalendarDay startDate, CalendarDay endDate) {
+        if (mListener != null) {
+            try {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+                String formattedStartDate = dateFormat.format(startDate.getDate());
+                String formattedEndDate = dateFormat.format(endDate.getDate());
+
+                mListener.DatesInteraction(formattedStartDate, formattedEndDate);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -40,6 +84,7 @@ public class PlanDurationFragment extends Fragment {
         if (layout == DAYS) {
             NumberPicker numberPicker = view.findViewById(R.id.numberPicker);
             setupNumberPicker(numberPicker);
+
         } else if (layout == CALENDAR) {
             materialCalendarView = view.findViewById(R.id.materialCalendarView);
             setupCalendarView();
@@ -47,6 +92,23 @@ public class PlanDurationFragment extends Fragment {
         return view;
     }
 
+    //Number Picker Function
+    private void setupNumberPicker(NumberPicker numberPicker) {
+        numberPicker.setMaxValue(30);
+        numberPicker.setMinValue(1);
+        numberPicker.setValue(2);
+        passDaysToActivity(Integer.toString(defaultDays));
+        numberPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                defaultDays = newVal;
+                passDaysToActivity(Integer.toString(defaultDays));
+            }
+        });
+
+    }
+
+    //Calendar function
     private void setupCalendarView() {
         materialCalendarView.setSelectionMode(MaterialCalendarView.SELECTION_MODE_RANGE);
 
@@ -85,6 +147,8 @@ public class PlanDurationFragment extends Fragment {
                         }
 
                         rangeDecorator.setDateRange(datesInRange);
+
+                        passDatesToActivity(startDate, endDate);
                     }
                 } else {
                     // choose again
@@ -97,19 +161,6 @@ public class PlanDurationFragment extends Fragment {
         });
     }
 
-    private void setupNumberPicker(NumberPicker numberPicker) {
-        numberPicker.setMaxValue(30);
-        numberPicker.setMinValue(1);
-        numberPicker.setValue(2);
-        numberPicker.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-            @Override
-            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-                defaultDays = newVal;
-                System.out.println("Selected: " + defaultDays);
-            }
-        });
-    }
-
     static Fragment newInstance(int layout) {
         Fragment fragment = new PlanDurationFragment();
         Bundle bundle = new Bundle();
@@ -117,4 +168,5 @@ public class PlanDurationFragment extends Fragment {
         fragment.setArguments(bundle);
         return fragment;
     }
+
 }
