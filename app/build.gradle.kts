@@ -70,13 +70,13 @@ dependencies {
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-firestore")
 
-    implementation("androidx.credentials:credentials:1.5.0-alpha05")
+//    implementation("androidx.credentials:credentials:1.5.0-alpha05")
 
     // optional - needed for credentials support from play services, for devices running
     // Android 13 and below.
-    implementation("androidx.credentials:credentials-play-services-auth:1.5.0-alpha05")
+//    implementation("androidx.credentials:credentials-play-services-auth:1.5.0-alpha05")
 
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+//    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 }
 
 secrets {
