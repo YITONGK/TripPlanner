@@ -23,13 +23,24 @@
         <activity
             android:name=".CreateNewPlanActivity"
             android:exported="true" />
+            android:name=".EditProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
 
         <activity
+            android:name=".SignupActivity"
+            android:exported="false" />
+        <activity
             android:name=".LoginActivity"
+            android:exported="true" />
+        <activity
+            android:name=".MemoryFragment"
             android:exported="true" />
         <activity
             android:name=".MainActivity"
@@ -44,6 +55,7 @@
         <activity
             android:name=".PlanDurationActivity"
             android:exported="true"></activity>
+
     </application>
 
 </manifest>
