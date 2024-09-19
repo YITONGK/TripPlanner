@@ -7,11 +7,26 @@
     android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/fragmentContainerView"
-        android:name="com.example.tripplanner.HomeFragment"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/fragmentContainerView"
+            android:name="com.example.tripplanner.HomeFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="51dp"
+            android:layout_height="52dp"
+            android:layout_gravity="end|top"
+            android:layout_marginTop="16dp"
+            android:layout_marginRight="16dp"
+            tools:srcCompat="@tools:sample/avatars" />
+    </FrameLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/nav_view"
