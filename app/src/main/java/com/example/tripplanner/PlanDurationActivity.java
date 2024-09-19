@@ -4,25 +4,39 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.FrameLayout;
 import android.view.View;
 import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import com.example.tripplanner.databinding.PlanDurationBinding;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AutocompletePrediction;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
+import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
 import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.SearchView;
+import android.widget.Toast;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class PlanDurationActivity extends AppCompatActivity {
     private PlanDurationBinding binding;
     private JSONObject planDetails ;
     private JSONArray locationList;
+
+    final String apiKey = BuildConfig.PLACES_API_KEY;
 
     //Object 类型
 //    {
@@ -77,14 +91,16 @@ public class PlanDurationActivity extends AppCompatActivity {
             }
         });
 
+        if (!Places.isInitialized()) {
+            Places.initialize(getApplicationContext(), apiKey);
+        }
+
         //Button Add Location Functions
         //New location will be add into the JSONArray
         Button addLocationButton = findViewById(R.id.button_add_location);
         addLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                System.out.println("test_add_button");
-
                 // Set BottomSheetDialog and get the xml view
                 BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(PlanDurationActivity.this);
                 View bottomSheetView = getLayoutInflater().inflate(R.layout.bottom_sheet_layout, null);
@@ -106,9 +122,54 @@ public class PlanDurationActivity extends AppCompatActivity {
                         }
                     }
                 });
+                PlacesClient placesClient = Places.createClient(PlanDurationActivity.this);
+
+                SearchView searchViewLocation = bottomSheetView.findViewById(R.id.searchViewLocation);
+                ListView listViewAutocomplete = bottomSheetView.findViewById(R.id.listViewAutocomplete);
+
+                AutocompleteAdapter adapter = new AutocompleteAdapter(PlanDurationActivity.this, new ArrayList<>());
+                listViewAutocomplete.setAdapter(adapter);
+
+                searchViewLocation.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                    @Override
+                    public boolean onQueryTextSubmit(String query) {
+                        if (!query.isEmpty()) {
+                            bottomSheetDialog.dismiss();
+                            String selectedPlace = query;
+                        } else {
+                            Toast.makeText(PlanDurationActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
+                        }
+                        return true;
+                    }
+
+                    @Override
+                    public boolean onQueryTextChange(String newText) {
+                        if (newText.length() > 0) {
+                            performAutocomplete(newText, placesClient, adapter);
+                            listViewAutocomplete.setVisibility(View.VISIBLE);
+                        } else {
+                            adapter.clear();
+                            adapter.notifyDataSetChanged();
+                            listViewAutocomplete.setVisibility(View.GONE);
+                        }
+                        return true;
+                    }
+                });
+
+                listViewAutocomplete.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View itemView, int position, long id) {
+                        AutocompletePrediction prediction = adapter.getItem(position);
+                        String fullText = prediction.getFullText(null).toString();
+                        searchViewLocation.setQuery(fullText, false);
+                        bottomSheetDialog.dismiss();
+                        String selectedPlace = prediction.getPrimaryText(null).toString();
+                        locationList.put(selectedPlace);
+                        buttonDecorator.addButtonsFromJson(locationList);
+                    }
+                });
 
 
-                // 显示 BottomSheetDialog
                 bottomSheetDialog.show();
             }
         });
@@ -154,5 +215,23 @@ public class PlanDurationActivity extends AppCompatActivity {
                 .replace(R.id.fragment_container, fragment)
                 .commit();
     }
+
+    private void performAutocomplete(String query, PlacesClient placesClient, AutocompleteAdapter adapter) {
+        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                .setQuery(query)
+                .build();
+
+        placesClient.findAutocompletePredictions(request).addOnSuccessListener(response -> {
+            adapter.clear();
+            adapter.addAll(response.getAutocompletePredictions());
+            adapter.notifyDataSetChanged();
+        }).addOnFailureListener(exception -> {
+            if (exception instanceof ApiException) {
+                ApiException apiException = (ApiException) exception;
+                Toast.makeText(PlanDurationActivity.this, "Error fetching autocomplete predictions: " + apiException.getStatusCode(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
 
 }
