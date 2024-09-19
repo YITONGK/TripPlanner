@@ -6,7 +6,17 @@
     android:padding="16dp">
 
     <SearchView
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content" />
+        android:id="@+id/searchViewLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:iconifiedByDefault="false"
+        android:queryHint="Enter location" />
+
+
+    <ListView
+        android:id="@+id/listViewAutocomplete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
 
 </LinearLayout>

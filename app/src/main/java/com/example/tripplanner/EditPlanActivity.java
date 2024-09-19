@@ -105,6 +105,15 @@ public class EditPlanActivity extends AppCompatActivity {
             }
         });
 
+        ImageButton settingsButton = findViewById(R.id.settingsButton);
+        settingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
+                startActivity(intent);
+            }
+        });
+
         fragmentManager = getSupportFragmentManager();
         TabLayout tabLayout = binding.tabLayout;
 

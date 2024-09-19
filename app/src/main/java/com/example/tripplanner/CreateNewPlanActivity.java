@@ -4,10 +4,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -89,6 +92,24 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
             }
         });
+        editTextMessage.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    String inputText = editTextMessage.getText().toString().trim();
+                    if (!inputText.isEmpty()) {
+                        Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
+                        intent.putExtra("selectedPlace", inputText);
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(CreateNewPlanActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+
     }
 
     private void performAutocomplete(String query) {
