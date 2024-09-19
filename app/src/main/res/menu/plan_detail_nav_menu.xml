@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/overview"
+        android:icon="@drawable/transparent_icon"
+        android:title="Overview" />
+
+    <item
+        android:id="@+id/day"
+        android:icon="@drawable/transparent_icon"
+        android:title="Day" />
+</menu>
