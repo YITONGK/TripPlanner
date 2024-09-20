@@ -35,7 +35,7 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
     private String receivedEndDate;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
-    //Object 类型
+    //Object type
 //    {
 //        "location":[],
 //        "days": int,
@@ -55,6 +55,7 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
 
         //Remove Button (Dynamic add based on the JSON Objects)
         //3. add the button based on the JSONARRAY
+        //4. remove button,
         ButtonDecorator buttonDecorator = new ButtonDecorator( findViewById(R.id.constraint_layout));
         buttonDecorator.addButtonsFromJson(locationList);
 
@@ -145,7 +146,6 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
         });
     }
 
-
     private void loadFragment(Fragment fragment) {
 
         getSupportFragmentManager()
@@ -154,11 +154,8 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                 .commit();
     }
 
-
     @Override
     public void DaysInteraction(String data) {
-
-
         receivedDays =  Integer.parseInt(data);
 
         Calendar calendar = Calendar.getInstance();
@@ -170,9 +167,9 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
 
     @Override
     public void DatesInteraction(String startDate, String endDate){
+
         receivedStartDate = startDate;
         receivedEndDate = endDate;
-
         try {
             Date start = dateFormat.parse(startDate);
             Date end = dateFormat.parse(endDate);
@@ -192,6 +189,10 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
         } catch (ParseException e) {
             e.printStackTrace();
         }
+
+
+
+
     }
 
 }

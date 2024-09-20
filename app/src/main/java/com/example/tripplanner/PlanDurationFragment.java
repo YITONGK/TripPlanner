@@ -147,16 +147,17 @@ public class PlanDurationFragment extends Fragment {
                         }
 
                         rangeDecorator.setDateRange(datesInRange);
-
                         passDatesToActivity(startDate, endDate);
                     }
-                } else {
+                }
+                else {
                     // choose again
                     startDate = date;
                     endDate = null;
                     rangeDecorator.setDateRange(Collections.singletonList(startDate));
                 }
                 widget.invalidateDecorators(); // refresh the date
+
             }
         });
     }
