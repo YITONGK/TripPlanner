@@ -1,7 +1,8 @@
-package com.example.tripplanner;
+package com.example.tripplanner.fragment;
 
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+
+import com.example.tripplanner.helperclass.ActivityItem;
 
 import java.util.ArrayList;
 import java.util.HashMap;

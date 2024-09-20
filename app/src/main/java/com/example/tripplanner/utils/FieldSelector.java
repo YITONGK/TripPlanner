@@ -1,4 +1,4 @@
-package com.example.tripplanner;
+package com.example.tripplanner.utils;
 
 import android.content.Context;
 import android.os.Bundle;

@@ -1,7 +1,9 @@
-package com.example.tripplanner;
+package com.example.tripplanner.db;
 
 import android.util.Log;
 
+import com.example.tripplanner.helperclass.Location;
+import com.example.tripplanner.helperclass.Trip;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package com.example.tripplanner;
+package com.example.tripplanner.adapter;
 
 
 import com.prolificinteractive.materialcalendarview.CalendarDay;

@@ -1,4 +1,4 @@
-package com.example.tripplanner;
+package com.example.tripplanner.helperclass;
 
 public class ActivityItem {
     private String name;

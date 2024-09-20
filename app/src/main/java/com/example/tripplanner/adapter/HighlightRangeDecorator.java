@@ -1,7 +1,9 @@
-package com.example.tripplanner;
+package com.example.tripplanner.adapter;
 
 import android.content.Context;
 import androidx.core.content.ContextCompat;
+
+import com.example.tripplanner.R;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.prolificinteractive.materialcalendarview.DayViewDecorator;
 import com.prolificinteractive.materialcalendarview.DayViewFacade;

@@ -1,4 +1,4 @@
-package com.example.tripplanner;
+package com.example.tripplanner.utils;
 
 import java.util.List;
 import java.util.Map;
