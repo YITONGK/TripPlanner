@@ -42,6 +42,7 @@ public class PlanDurationFragment extends Fragment {
     private CalendarDay endDate = null;
     private int defaultDays = 2;
     private OnFragmentInteractionListener mListener;
+    private int pressCount = 0;
 
     @Override
     public void onAttach(Context context) {
@@ -127,12 +128,14 @@ public class PlanDurationFragment extends Fragment {
             @Override
             public void onDateSelected(@NonNull MaterialCalendarView widget, @NonNull CalendarDay date, boolean selected) {
                 materialCalendarView.clearSelection();
-                if (startDate == null) {
+                if (pressCount == 0) {
                     // choose start date
                     startDate = date;
                     rangeDecorator.setDateRange(Collections.singletonList(startDate));
-                    endDate = null;
-                } else if (endDate == null) {
+                    endDate = date;
+                    pressCount = 1;
+                } else if (pressCount == 1) {
+                    pressCount = 2;
                     // choose end date
                     if (date.isBefore(startDate)) {
                         // if end date earlier than start date, replace start date to end date
@@ -159,6 +162,7 @@ public class PlanDurationFragment extends Fragment {
                     startDate = date;
                     endDate = null;
                     rangeDecorator.setDateRange(Collections.singletonList(startDate));
+                    pressCount = 1;
                 }
                 widget.invalidateDecorators(); // refresh the date
             }
