@@ -1,5 +1,5 @@
 // OnFragmentInteractionListener.java
-package com.example.tripplanner;
+package com.example.tripplanner.utils;
 
 import org.json.JSONException;
 

@@ -7,12 +7,14 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 
 import com.example.tripplanner.databinding.ActivityLoginBinding;
+import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.helperclass.Location;
+import com.example.tripplanner.helperclass.Trip;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -20,7 +22,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.util.Date;
-import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding binding;

@@ -1,4 +1,4 @@
-package com.example.tripplanner;
+package com.example.tripplanner.adapter;
 
 import android.view.View;
 import android.widget.Button;
@@ -6,6 +6,8 @@ import android.widget.Button;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
+
+import com.example.tripplanner.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;

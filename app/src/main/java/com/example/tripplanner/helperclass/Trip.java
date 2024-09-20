@@ -1,4 +1,4 @@
-package com.example.tripplanner;
+package com.example.tripplanner.helperclass;
 
 import java.util.ArrayList;
 import java.util.Date;

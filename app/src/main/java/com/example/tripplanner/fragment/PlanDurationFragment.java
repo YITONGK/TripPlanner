@@ -1,4 +1,4 @@
-package com.example.tripplanner;
+package com.example.tripplanner.fragment;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,6 +14,10 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import com.example.tripplanner.R;
+import com.example.tripplanner.adapter.DisablePastDatesDecorator;
+import com.example.tripplanner.adapter.HighlightRangeDecorator;
+import com.example.tripplanner.utils.OnFragmentInteractionListener;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 import com.prolificinteractive.materialcalendarview.OnDateSelectedListener;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
@@ -26,9 +30,9 @@ import java.util.Locale;
 
 public class PlanDurationFragment extends Fragment {
 
-    static final int DAYS = R.layout.plan_duration_fragment_days;
-    static final int CALENDAR = R.layout.plan_duration_fragment_calendar;
-    static final String LAYOUT_TYPE = "type";
+    public static final int DAYS = R.layout.plan_duration_fragment_days;
+    public static final int CALENDAR = R.layout.plan_duration_fragment_calendar;
+    public static final String LAYOUT_TYPE = "type";
 
     private int layout;
     private MaterialCalendarView materialCalendarView;
@@ -161,7 +165,7 @@ public class PlanDurationFragment extends Fragment {
         });
     }
 
-    static Fragment newInstance(int layout) {
+    public static Fragment newInstance(int layout) {
         Fragment fragment = new PlanDurationFragment();
         Bundle bundle = new Bundle();
         bundle.putInt(LAYOUT_TYPE, layout);

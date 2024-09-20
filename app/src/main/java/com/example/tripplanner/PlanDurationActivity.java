@@ -11,9 +11,11 @@ import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
-import android.util.Log;
-
+import com.example.tripplanner.adapter.AutocompleteAdapter;
+import com.example.tripplanner.adapter.ButtonDecorator;
 import com.example.tripplanner.databinding.PlanDurationBinding;
+import com.example.tripplanner.fragment.PlanDurationFragment;
+import com.example.tripplanner.utils.OnFragmentInteractionListener;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
@@ -25,27 +27,19 @@ import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
-import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.tabs.TabLayout;
-import android.widget.LinearLayout;
+
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.Toast;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONArray;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class PlanDurationActivity extends AppCompatActivity  implements OnFragmentInteractionListener{
+public class PlanDurationActivity extends AppCompatActivity  implements OnFragmentInteractionListener {
     private PlanDurationBinding binding;
     private JSONObject planDetails =  new JSONObject();;
     private JSONArray locationList = new JSONArray();;

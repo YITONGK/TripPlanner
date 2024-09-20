@@ -1,17 +1,14 @@
-package com.example.tripplanner;
+package com.example.tripplanner.fragment;
 
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.text.Editable;
 import android.text.InputType;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -20,6 +17,9 @@ import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
+import com.example.tripplanner.helperclass.ActivityItem;
+import com.example.tripplanner.R;
+import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -27,7 +27,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import java.util.ArrayList;
@@ -67,7 +66,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
-    static PlanFragment newInstance(int layoutType, int dayIndex) {
+    public static PlanFragment newInstance(int layoutType, int dayIndex) {
         PlanFragment fragment = new PlanFragment();
         Bundle bundle = new Bundle();
         bundle.putInt(LAYOUT_TYPE, layoutType);
