@@ -23,8 +23,9 @@
         <activity
             android:name=".CreateNewPlanActivity"
             android:exported="true" />
+        <activity
             android:name=".EditProfileActivity"
-            android:exported="false" />
+            android:exported="true" />
         <activity
             android:name=".ProfileActivity"
             android:exported="false" />
