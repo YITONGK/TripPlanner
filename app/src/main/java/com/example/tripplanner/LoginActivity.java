@@ -10,13 +10,15 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.time.LocalDate;
 
 import com.example.tripplanner.databinding.ActivityLoginBinding;
 import com.example.tripplanner.db.FirestoreDB;
-import com.example.tripplanner.helperclass.Location;
-import com.example.tripplanner.helperclass.Trip;
+import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+//import com.google.android.libraries.places.api.model.LocalDate;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -59,7 +61,7 @@ public class LoginActivity extends AppCompatActivity {
 
 
         FirestoreDB firestoreDB = new FirestoreDB();
-        Trip newTrip = new Trip("Holiday in Paris", new Date(), new Date());
+        Trip newTrip = new Trip("Holiday in Paris", LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 10));
         Location eiffelTower = new Location("Eiffel Tower", 48.8584, 2.2945);
 
         // Assuming you have methods in FirestoreDB to handle these actions:

@@ -1,14 +1,15 @@
-package com.example.tripplanner.helperclass;
+package com.example.tripplanner.entity;
 
 public class ActivityItem {
     private String name;
-    private String time;
+    private String startTime;
+    private String endTime;
     private String location;
     private String notes;
 
     public ActivityItem (String name) {
         this.name = name;
-        this.time = "";
+        this.startTime = "";
         this.location = "";
         this.notes = "";
     }
@@ -18,11 +19,11 @@ public class ActivityItem {
     }
 
     public String getTime() {
-        return time;
+        return startTime;
     }
 
     public void setTime(String time) {
-        this.time = time;
+        this.startTime = time;
     }
 
     public String getLocation() {

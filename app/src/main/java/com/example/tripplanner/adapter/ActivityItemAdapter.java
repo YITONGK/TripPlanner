@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.example.tripplanner.helperclass.ActivityItem;
+import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.R;
 
 import java.util.List;

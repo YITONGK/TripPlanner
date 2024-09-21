@@ -1,4 +1,4 @@
-package com.example.tripplanner.helperclass;
+package com.example.tripplanner.entity;
 
 public class Location {
     private String id;
