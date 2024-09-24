@@ -31,9 +31,9 @@ public class EditProfileActivity extends AppCompatActivity {
         binding = ActivityEditProfileBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        TextView username = (TextView) findViewById(R.id.username);
-        TextView email = (TextView) findViewById(R.id.emailAddress);
-        ImageView profilePicture = (ImageView) findViewById(R.id.profilePicture);
+        TextView username = findViewById(R.id.username);
+        TextView email = findViewById(R.id.emailAddress);
+        ImageView profilePicture = findViewById(R.id.profilePicture);
 
         // display current username and email address
         username.setText(intent.getStringExtra("username"));
@@ -47,6 +47,13 @@ public class EditProfileActivity extends AppCompatActivity {
             public void onClick(View view) {
                 //TODO: change profile picture
                 // allow users to choose from their photo library
+            }
+        });
+
+        binding.changePasswordBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //TODO: change password
             }
         });
 
@@ -67,29 +74,22 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private void updateUserProfile(String uid) {
-        // update username and email address
-        TextView newUsername = (TextView) findViewById(R.id.username);
-        TextView newEmail = (TextView) findViewById(R.id.emailAddress);
+        // update username and profile picture
+        TextView newUsername = findViewById(R.id.username);
+        ImageView newProfilePicture = findViewById(R.id.profilePicture);
 
         // check if new username and email address are valid
         if (newUsername.getText().toString().isEmpty()) {
             Toast.makeText(EditProfileActivity.this, "Please enter a valid username", Toast.LENGTH_SHORT).show();
-        } else if (newEmail.getText().toString().isEmpty()) {
-            Toast.makeText(EditProfileActivity.this, "Please enter a valid email address", Toast.LENGTH_SHORT).show();
         } else {
             DocumentReference user = db.collection("users").document(uid);
             user.update(
-                    "username", newUsername.getText().toString(),
-                    "email", newEmail.getText().toString()
+                    "username", newUsername.getText().toString()
                 )
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
                         Log.d("TAG", "User's details successfully updated!");
-
-                        //TODO: update emailAddress in Firebase Authentication
-
-
                         // Navigate to Profile Activity
                         Intent intent = new Intent(EditProfileActivity.this, ProfileActivity.class);
                         startActivity(intent);

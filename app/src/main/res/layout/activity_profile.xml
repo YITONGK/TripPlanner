@@ -67,6 +67,7 @@
             android:layout_height="wrap_content"
             android:text="Username"
             android:textStyle="bold"
+            android:textSize="15sp"
             android:alpha="0.7" />
 
         <TextView
@@ -74,6 +75,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="extract from database"
+            android:textSize="15sp"
             android:layout_marginTop="7dp"/>
 
         <View
@@ -85,6 +87,7 @@
             android:layout_height="wrap_content"
             android:text="Email Address"
             android:textStyle="bold"
+            android:textSize="15sp"
             android:alpha="0.7" />
 
         <TextView
@@ -92,6 +95,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="extract from database"
+            android:textSize="15sp"
             android:layout_marginTop="7dp"/>
 
 <!--        <View-->
