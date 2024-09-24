@@ -2,23 +2,45 @@ package com.example.tripplanner;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.tripplanner.databinding.ActivityEditProfileBinding;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class EditProfileActivity extends AppCompatActivity {
     private ActivityEditProfileBinding binding;
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private FirebaseUser user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Intent intent = getIntent();
 
         binding = ActivityEditProfileBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        TextView username = (TextView) findViewById(R.id.username);
+        TextView email = (TextView) findViewById(R.id.emailAddress);
         ImageView profilePicture = (ImageView) findViewById(R.id.profilePicture);
+
+        // display current username and email address
+        username.setText(intent.getStringExtra("username"));
+        email.setText(intent.getStringExtra("email"));
+
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        String uid = user.getUid();
 
         profilePicture.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -31,7 +53,7 @@ public class EditProfileActivity extends AppCompatActivity {
         binding.submitBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //TODO: update username and email address
+                updateUserProfile(uid);
             }
         });
 
@@ -40,8 +62,45 @@ public class EditProfileActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(EditProfileActivity.this, ProfileActivity.class);
                 startActivity(intent);
-                //TODO: refresh profile activity after updating profile
             }
         });
+    }
+
+    private void updateUserProfile(String uid) {
+        // update username and email address
+        TextView newUsername = (TextView) findViewById(R.id.username);
+        TextView newEmail = (TextView) findViewById(R.id.emailAddress);
+
+        // check if new username and email address are valid
+        if (newUsername.getText().toString().isEmpty()) {
+            Toast.makeText(EditProfileActivity.this, "Please enter a valid username", Toast.LENGTH_SHORT).show();
+        } else if (newEmail.getText().toString().isEmpty()) {
+            Toast.makeText(EditProfileActivity.this, "Please enter a valid email address", Toast.LENGTH_SHORT).show();
+        } else {
+            DocumentReference user = db.collection("users").document(uid);
+            user.update(
+                    "username", newUsername.getText().toString(),
+                    "email", newEmail.getText().toString()
+                )
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.d("TAG", "User's details successfully updated!");
+
+                        //TODO: update emailAddress in Firebase Authentication
+
+
+                        // Navigate to Profile Activity
+                        Intent intent = new Intent(EditProfileActivity.this, ProfileActivity.class);
+                        startActivity(intent);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d("TAG", "Error updating user's details", e);
+                    }
+                });
+        }
     }
 }

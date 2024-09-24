@@ -92,19 +92,17 @@ public class SignupActivity extends AppCompatActivity {
                                 String uid = user.getUid();
 
                                 // Create a user object to save to Firestore
-                                User newUser = new User(username, email, uid);
-                                Map<String, Object> userData = newUser.getUserData();
+                                User newUser = new User(username, email);
 
                                 // Add the user document with the Firebase User's UID
                                 db.collection("users").document(uid)
-                                        .set(userData)
+                                        .set(newUser)
                                         .addOnSuccessListener(new OnSuccessListener<Void>() {
                                             @Override
                                             public void onSuccess(Void aVoid) {
                                                 Log.d("TAG", "User document added with UID: " + uid);
                                                 Toast.makeText(SignupActivity.this, "Sign up successfully", Toast.LENGTH_SHORT).show();
-
-                                                // Jump to MainActivity
+                                                // Navigate to MainActivity
                                                 Intent intent = new Intent(SignupActivity.this, MainActivity.class);
                                                 startActivity(intent);
                                             }

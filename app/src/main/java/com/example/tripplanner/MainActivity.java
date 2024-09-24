@@ -18,6 +18,7 @@ import androidx.navigation.ui.AppBarConfiguration;
 import com.example.tripplanner.databinding.ActivityMainBinding;
 
 import android.view.MenuItem;
+import android.view.View;
 
 public class MainActivity extends AppCompatActivity{
 
@@ -39,7 +40,17 @@ public class MainActivity extends AppCompatActivity{
                 .replace(R.id.fragmentContainerView, plan_layout)
                 .addToBackStack(null)
                 .commit();
-//        // Setting for Navigation Bar
+
+        // Navigate to profile page
+        binding.profileBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        // Setting for Navigation Bar
         binding.navView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @SuppressLint("NonConstantResourceId")
             @Override
