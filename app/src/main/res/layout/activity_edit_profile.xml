@@ -73,16 +73,16 @@
             android:text="extract from database"
             android:textSize="15sp"/>
 
-        <View
-            android:layout_width="wrap_content"
-            android:layout_height="30dp" />
+<!--        <View-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="30dp" />-->
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/changePasswordBtn"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:text="Change Password"
-            app:backgroundTint="@color/darkblue"/>
+<!--        <com.google.android.material.button.MaterialButton-->
+<!--            android:id="@+id/changePasswordBtn"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="60dp"-->
+<!--            android:text="Change Password"-->
+<!--            app:backgroundTint="@color/darkblue"/>-->
 
         <View
             android:layout_width="wrap_content"

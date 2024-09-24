@@ -47,13 +47,7 @@ public class EditProfileActivity extends AppCompatActivity {
             public void onClick(View view) {
                 //TODO: change profile picture
                 // allow users to choose from their photo library
-            }
-        });
 
-        binding.changePasswordBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //TODO: change password
             }
         });
 

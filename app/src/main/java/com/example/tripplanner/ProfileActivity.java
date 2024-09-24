@@ -34,7 +34,7 @@ public class ProfileActivity extends AppCompatActivity {
         TextView email = findViewById(R.id.emailAddress);
         ImageView profilePicture = findViewById(R.id.profilePicture);
 
-        // get user details from firebase
+        // get user details from database
         user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
             Toast.makeText(ProfileActivity.this, "User's details are not available at the moment", Toast.LENGTH_LONG).show();
@@ -53,6 +53,9 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             });
         }
+
+        //TODO: get trip summary from database
+
 
         binding.editProfileBtn.setOnClickListener(new View.OnClickListener() {
             @Override
