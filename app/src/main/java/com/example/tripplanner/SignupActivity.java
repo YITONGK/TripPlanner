@@ -94,20 +94,8 @@ public class SignupActivity extends AppCompatActivity {
                                 // Create a user object to save to Firestore
                                 User newUser = new User(username, email, uid);
                                 Map<String, Object> userData = newUser.getUserData();
+
                                 // Add the user document with the Firebase User's UID
-//                                UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-//                                        .setDisplayName("Jane Q. User")
-//                                        .setPhotoUri(Uri.parse("https://example.com/jane-q-user/profile.jpg"))
-//                                        .build();
-//                                user.updateProfile(profileUpdates)
-//                                        .addOnCompleteListener(new OnCompleteListener<Void>() {
-//                                            @Override
-//                                            public void onComplete(@NonNull Task<Void> task) {
-//                                                if (task.isSuccessful()) {
-//                                                    Log.d("TAG", "User profile updated.");
-//                                                }
-//                                            }
-//                                        });
                                 db.collection("users").document(uid)
                                         .set(userData)
                                         .addOnSuccessListener(new OnSuccessListener<Void>() {

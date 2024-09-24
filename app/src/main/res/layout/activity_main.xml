@@ -25,7 +25,7 @@
             android:layout_gravity="end|top"
             android:layout_marginTop="16dp"
             android:layout_marginRight="16dp"
-            tools:srcCompat="@tools:sample/avatars" />
+            android:src="@drawable/woman" />
     </FrameLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
