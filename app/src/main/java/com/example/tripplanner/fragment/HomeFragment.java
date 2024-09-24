@@ -54,35 +54,37 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
             }
         }
         else{
-            Log.d("TAG", "enter plan page");
             rootView = inflater.inflate(R.layout.home_fragment_layout_plan, container, false);
-
-            RecyclerView recyclerView = rootView.findViewById(R.id.allPlanRecyclerView);
-
-            //TODO: get trip data from database
-
-            // create some sample trips
-            Trip newTrip = new Trip("Holiday in Paris", LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 10));
-            Location eiffelTower = new Location("Eiffel Tower", 48.8584, 2.2945);
-            newTrip.addLocation(eiffelTower);
-
-            Trip newTrip2 = new Trip("Holiday in Australia", LocalDate.of(2024, 10, 1), LocalDate.of(2024, 10, 5));
-            Location melbourne = new Location("Melbourne", 48.8584, 2.2945);
-            Location sydney = new Location("Sydney", 30, 144);
-            newTrip2.addLocation(melbourne);
-            newTrip2.addLocation(sydney);
-
-            ArrayList<Trip> allPlans = new ArrayList<>();
-            allPlans.add(newTrip);
-            allPlans.add(newTrip2);
-
-            // bind the adapter
-            adapter = new AllPlanAdapter(rootView.getContext(), allPlans);
-            recyclerView.setAdapter(adapter);
-            recyclerView.setLayoutManager(new LinearLayoutManager(rootView.getContext()));
+            displayAllPlans(rootView);
         }
 
         return rootView;
+    }
+
+    private void displayAllPlans(View rootView) {
+        RecyclerView recyclerView = rootView.findViewById(R.id.allPlanRecyclerView);
+
+        //TODO: get trip data from database
+
+        // create some sample trips
+        Trip newTrip = new Trip("Holiday in Paris", LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 10));
+        Location eiffelTower = new Location("Eiffel Tower", 48.8584, 2.2945);
+        newTrip.addLocation(eiffelTower);
+
+        Trip newTrip2 = new Trip("Holiday in Australia", LocalDate.of(2024, 10, 1), LocalDate.of(2024, 10, 5));
+        Location melbourne = new Location("Melbourne", 48.8584, 2.2945);
+        Location sydney = new Location("Sydney", 30, 144);
+        newTrip2.addLocation(melbourne);
+        newTrip2.addLocation(sydney);
+
+        ArrayList<Trip> allPlans = new ArrayList<>();
+        allPlans.add(newTrip);
+        allPlans.add(newTrip2);
+
+        // bind the adapter
+        adapter = new AllPlanAdapter(rootView.getContext(), allPlans);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(rootView.getContext()));
     }
 
     @Override
