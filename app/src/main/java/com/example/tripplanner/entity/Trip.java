@@ -1,5 +1,7 @@
 package com.example.tripplanner.entity;
 
+import com.example.tripplanner.db.DatabaseInterface;
+
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.time.LocalDate;
@@ -12,23 +14,68 @@ public class Trip {
     private String name;
     private LocalDate startDate;
     private LocalDate endDate;
+    private int numDays;
     private List<Location> locations;
     private String note;
     private Map<Integer, List<ActivityItem>> plans;
+    private DatabaseInterface database;
+    private List<String> userIds;
 
-    public Trip(String name, LocalDate startDate, LocalDate endDate) {
+    public Trip(String name, LocalDate startDate, int numDays, List<Location> locations, String userId) {
         this.name = name;
         this.startDate = startDate;
-        this.endDate = endDate;
-        this.locations = new ArrayList<>();
+        this.numDays = numDays;
+        this.locations = locations;
+        this.note = "";
         this.plans = new HashMap<>();
+        for (int i = 0; i < numDays; i++) {
+            plans.put(i, new ArrayList<>());
+        }
+        this.userIds = new ArrayList<>();
+        this.userIds.add(userId);
+        
+    }
+
+    public Trip(String name, LocalDate endDate, LocalDate startDate, List<Location> locations, String userId) {
+        this.name = name;
+        this.endDate = endDate;
+        this.startDate = startDate;
+        this.locations = locations;
+        this.note = "";
+        this.numDays = (int) ChronoUnit.DAYS.between(startDate, endDate);
+        this.plans = new HashMap<>();
+        for (int i = 0; i < numDays; i++) {
+            plans.put(i, new ArrayList<>());
+        }
+        this.userIds = new ArrayList<>();
+        this.userIds.add(userId);
+    }
+
+    public void uploadTrip() {
+        Map<String, Object> tripData = convertTripToMap();
+        database.insert("trips", tripData); 
+        System.out.println("Uploading trip to database...");
+
+    }
+
+    // Convert Trip object to Map for Firestore
+    private Map<String, Object> convertTripToMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", name);
+        map.put("startDate", startDate);
+        map.put("endDate", endDate);
+        map.put("numDays", numDays);
+        map.put("locations", locations);
+        map.put("note", note);
+        map.put("plans", plans);
+        map.put("userIds", userIds);
+        return map;
     }
 
     public void setId(String id) {
         this.id = id;
     }
 
-    // Getters and Setters
     public String getId() {
         return id;
     }
