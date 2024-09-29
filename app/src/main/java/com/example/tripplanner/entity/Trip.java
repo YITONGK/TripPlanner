@@ -59,7 +59,7 @@ public class Trip {
     }
 
     // Convert Trip object to Map for Firestore
-    private Map<String, Object> convertTripToMap() {
+    public Map<String, Object> convertTripToMap() {
         Map<String, Object> map = new HashMap<>();
         map.put("name", name);
         map.put("startDate", startDate);

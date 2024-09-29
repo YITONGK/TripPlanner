@@ -19,6 +19,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
+import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.utils.GptApiClient;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.libraries.places.api.Places;

@@ -14,6 +14,9 @@ import androidx.fragment.app.Fragment;
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.example.tripplanner.adapter.ButtonDecorator;
 import com.example.tripplanner.databinding.PlanDurationBinding;
+import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanDurationFragment;
 import com.example.tripplanner.utils.OnFragmentInteractionListener;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -32,12 +35,14 @@ import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class PlanDurationActivity extends AppCompatActivity  implements OnFragmentInteractionListener {
     private PlanDurationBinding binding;
@@ -201,6 +206,17 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                     planDetails.put("days" ,receivedDays);
                     planDetails.put("startDate", receivedStartDate);
                     planDetails.put("endDate", receivedEndDate);
+                    
+                    // Create a new Trip object and upload it to the database
+                    List<Location> locations = new ArrayList<>();
+                    for (int i = 0; i < locationList.length(); i++) {
+                        locations.add(new Location(locationList.getString(i), 0.0, 0.0));
+                    }
+                    Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate), receivedDays, locations, "userId");
+                    FirestoreDB firestoreDB = new FirestoreDB();
+                    firestoreDB.createTrip("userId", trip.convertTripToMap());
+
+
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }

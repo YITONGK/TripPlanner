@@ -9,6 +9,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class FirestoreDB implements DatabaseInterface {
 
@@ -19,14 +20,17 @@ public class FirestoreDB implements DatabaseInterface {
     }
 
     @Override
-    public void insert(String table, Map<String, Object> values) {
+    public String insert(String table, Map<String, Object> values) {
+        AtomicReference<String> newID = new AtomicReference<>("");
         firestore.collection(table).add(values)
                 .addOnSuccessListener(documentReference -> {
                     Log.d("Debug", "Document added with ID: " + documentReference.getId());
+                    newID.set(documentReference.getId());
                 })
                 .addOnFailureListener(e -> {
                     Log.d("Debug", "Error adding document: " + e.getMessage());
                 });
+        return newID.get();
     }
 
     @Override
@@ -59,10 +63,10 @@ public class FirestoreDB implements DatabaseInterface {
 
 
     // Create Trip in Firestore
-    public void createTrip(String userId, Trip trip) {
-        Map<String, Object> tripData = convertTripToMap(trip);
-        insert("users/" + userId + "/trips", tripData);
-    }
+//    public void createTrip(String userId, Trip trip) {
+//        Map<String, Object> tripData = convertTripToMap(trip);
+//        insert("users/" + userId + "/trips", tripData);
+//    }
 
     // Add Location to an existing Trip in Firestore
     public void addLocationToTrip(String userId, String tripId, Location location) {
