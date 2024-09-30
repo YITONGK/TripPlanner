@@ -26,23 +26,23 @@ public class GptApiClient {
         void onFailure(String error);
     }
 
-    public static void getTripPlan(String prompt, GptApiCallback callback) {
-        Log.d("PLAN", "1");
+    public static void getChatCompletion(String prompt, GptApiCallback callback) {
+        Log.d("PLAN", "[getChatCompletion] START");
         OkHttpClient client = new OkHttpClient();
         JSONObject jsonObject = new JSONObject();
         try {
-            jsonObject.put("model", "gpt-3.5-turbo"); // Ensure the model is correct
+            jsonObject.put("model", "gpt-4o");
             jsonObject.put("messages", new JSONArray().put(new JSONObject()
-                .put("role", "user")
-                .put("content", prompt)));
+                    .put("role", "user")
+                    .put("content", prompt)));
             jsonObject.put("max_tokens", 150);
         } catch (Exception e) {
             callback.onFailure(e.getMessage());
-            Log.d("PLAN", "2");
+            Log.d("PLAN", "[getChatCompletion]"+e.getMessage());
             return;
         }
 
-        Log.d("PLAN", "3");
+        Log.d("PLAN", "[getChatCompletion] Data ready");
 
         RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonObject.toString());
         Request request = new Request.Builder()
@@ -51,26 +51,32 @@ public class GptApiClient {
                 .addHeader("Authorization", "Bearer " + API_KEY)
                 .build();
 
-        Log.d("PLAN", "4");
+        Log.d("PLAN", "[getChatCompletion] Got response");
 
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Request request, IOException e) {
                 callback.onFailure(e.getMessage());
-                Log.d("PLAN", "5");
+                Log.d("PLAN", "[getChatCompletion]"+e.getMessage());
             }
 
             @Override
             public void onResponse(Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    Log.d("PLAN", "success");
+                    Log.d("PLAN", "[getChatCompletion] success");
                     callback.onSuccess(response.body().string());
                 } else {
-                    Log.d("PLAN", "6");
-                    Log.d("PLAN", String.valueOf(response));
+                    Log.d("PLAN", "[getChatCompletion] failed: "+response.message());
                     callback.onFailure(response.message());
                 }
             }
         });
     }
+
+    public static void getTripPlan(GptApiCallback callback) {
+        getChatCompletion(DEFAULT_PROMPT, callback);
+    }
+
+    private void showSuggestedPlan(String plan) {
+       
 }

@@ -1,7 +1,12 @@
 package com.example.tripplanner;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 
 import com.example.tripplanner.fragment.HomeFragment;
@@ -17,15 +22,23 @@ import androidx.navigation.ui.AppBarConfiguration;
 
 import com.example.tripplanner.databinding.ActivityMainBinding;
 
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
 
     private GoogleMap mMap;
+
+    private SensorManager sensorManager;
+    private Sensor temperatureSensor;
+    private Sensor humiditySensor;
+    private float currentTemperature;
+    private float currentHumidity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +103,44 @@ public class MainActivity extends AppCompatActivity{
                 return false;
             }
         });
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        temperatureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
+        humiditySensor = sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
+
+        if (temperatureSensor != null) {
+            sensorManager.registerListener(this, temperatureSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+
+        if (humiditySensor != null) {
+            sensorManager.registerListener(this, humiditySensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
     }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+            currentTemperature = event.values[0];
+        } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
+            currentHumidity = event.values[0];
+        }
+
+        checkConditionsAndNotify();
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // Do something here if sensor accuracy changes.
+    }
+
+    private void checkConditionsAndNotify() {
+        if (currentTemperature > 30 || currentTemperature < 0 || currentHumidity > 80) {
+            // Notify user and request GPT to re-plan the trip
+//            requestGPTReplan();
+            Toast.makeText(this, "Temperature or Humidity is too high!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
 
 }

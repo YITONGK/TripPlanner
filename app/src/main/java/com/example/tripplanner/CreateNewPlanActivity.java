@@ -134,7 +134,7 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             public void onClick(View v) {
                 String userInput = editTextMessage.getText().toString().trim();
                 if (!userInput.isEmpty()) {
-                    GptApiClient.getTripPlan("Plan a trip to " + userInput, new GptApiClient.GptApiCallback() {
+                    GptApiClient.getTripPlan(new GptApiClient.GptApiCallback() {
                         @Override
                         public void onSuccess(String response) {
                             runOnUiThread(() -> {
