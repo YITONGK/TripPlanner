@@ -35,6 +35,7 @@ import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -230,9 +231,26 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                             }
                         }
 
-                        Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate), receivedDays,locations, userId);
+//                        Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate), receivedDays,locations, userId);
+//                        FirestoreDB firestore = new FirestoreDB();
+//                        firestore.createTrip("userId", trip.convertTripToMap());
+
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                        Date parsedDate;
+                        try {
+                            parsedDate = dateFormat.parse(receivedStartDate);
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+                        Timestamp startDate = new Timestamp(parsedDate);
+
+                        // Create Trip object
+                        Trip trip = new Trip("New Trip", startDate, receivedDays, locations, userId);
+
+                        // Create FirestoreDB instance and add trip to Firestore
                         FirestoreDB firestore = new FirestoreDB();
-                        firestore.createTrip("userId", trip.convertTripToMap());
+                        firestore.createTrip(userId, trip.convertTripToMap());
                     } else {
                         Log.d("PLAN", "[PlanDurationActivity] No user is signed in.");
                     }

@@ -21,6 +21,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -63,8 +65,35 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
     private void displayAllPlans(View rootView) {
         RecyclerView recyclerView = rootView.findViewById(R.id.allPlanRecyclerView);
+        ArrayList<Trip> allPlans = new ArrayList<>();
+        // bind the adapter
+        adapter = new AllPlanAdapter(rootView.getContext(), allPlans);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(rootView.getContext()));
 
-        //TODO: get trip data from database
+        // get trip data from database
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+         if (currentUser != null) {
+             String userId = currentUser.getUid();
+            FirestoreDB firestoreDB = new FirestoreDB();
+            firestoreDB.getTripsByUserId(userId, trips -> {
+                // Handle the list of trips
+                allPlans.clear();
+                allPlans.addAll(trips);
+                adapter.notifyDataSetChanged();
+                for (Trip trip : trips) {
+                    Log.d("PLAN", "Trip: " + trip.getName());
+                    // allPlans.add(trip);
+                }
+                // Update the adapter with the fetched trips
+                // adapter.updateTrips(trips);
+            }, e -> {
+                Log.d("PLAN", "Error getting trips: " + e.getMessage());
+            });
+         } else {
+             Log.d("Debug", "No user is signed in.");
+         }
 
         // create some sample trips
 //        Trip newTrip = new Trip("Holiday in Paris", LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 10));
@@ -77,14 +106,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 //        newTrip2.addLocation(melbourne);
 //        newTrip2.addLocation(sydney);
 
-        ArrayList<Trip> allPlans = new ArrayList<>();
+
 //        allPlans.add(newTrip);
 //        allPlans.add(newTrip2);
-
-        // bind the adapter
-        adapter = new AllPlanAdapter(rootView.getContext(), allPlans);
-        recyclerView.setAdapter(adapter);
-        recyclerView.setLayoutManager(new LinearLayoutManager(rootView.getContext()));
     }
 
     @Override

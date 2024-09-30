@@ -1,20 +1,25 @@
 package com.example.tripplanner.entity;
 
 import com.example.tripplanner.db.DatabaseInterface;
+import com.google.firebase.Timestamp;
 
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Trip {
     private String id;
     private String name;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    // private LocalDate startDate;
+    // private LocalDate endDate;
+    private Timestamp startDate;
+    private Timestamp endDate;
     private int numDays;
     private List<Location> locations;
     private String note;
@@ -22,11 +27,19 @@ public class Trip {
     private DatabaseInterface database;
     private List<String> userIds;
 
-    public Trip(String name, LocalDate startDate, int numDays, List<Location> locations, String userId) {
+    // No-argument constructor required for Firestore deserialization
+    public Trip() {
+        // Initialize fields with default values if necessary
+        this.locations = new ArrayList<>();
+        this.plans = new HashMap<>();
+        this.userIds = new ArrayList<>();
+    }
+
+    public Trip(String name, Timestamp startDate, int numDays, List<Location> locations, String userId) {
         this.name = name;
         this.startDate = startDate;
         this.numDays = numDays;
-        this.endDate = startDate.plusDays(numDays - 1);
+        this.endDate = new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(numDays - 1), 0);
         this.locations = locations;
         this.note = "";
         this.plans = new HashMap<>();
@@ -38,13 +51,13 @@ public class Trip {
         
     }
 
-    public Trip(String name, LocalDate endDate, LocalDate startDate, List<Location> locations, String userId) {
+    public Trip(String name, Timestamp endDate, Timestamp startDate, List<Location> locations, String userId) {
         this.name = name;
         this.endDate = endDate;
         this.startDate = startDate;
         this.locations = locations;
         this.note = "";
-        this.numDays = (int) ChronoUnit.DAYS.between(startDate, endDate);
+        this.numDays = (int) TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
         this.plans = new HashMap<>();
         for (int i = 0; i < numDays; i++) {
             plans.put(String.valueOf(i), new ArrayList<>());
@@ -77,18 +90,6 @@ public class Trip {
         return map;
     }
 
-    // public Map<String, Object> convertTripToMap() {
-    //     Map<String, Object> tripMap = new HashMap<>();
-    //     tripMap.put("name", name);
-    //     tripMap.put("startDate", startDate.toString());
-    //     tripMap.put("days", days);
-    //     tripMap.put("locations", locations.stream()
-    //                                       .map(Location::convertLocationToMap)
-    //                                       .collect(Collectors.toList()));
-    //     tripMap.put("userId", userId);
-    //     return tripMap;
-    // }
-
     public void setId(String id) {
         this.id = id;
     }
@@ -99,14 +100,6 @@ public class Trip {
 
     public String getName() {
         return name;
-    }
-
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public LocalDate getEndDate() {
-        return endDate;
     }
 
     public List<Location> getLocations() {
@@ -121,16 +114,16 @@ public class Trip {
         return note;
     }
 
+    public Timestamp getStartDate() {
+        return startDate;
+    }
+
+    public Timestamp getEndDate() {
+        return endDate;
+    }
+
     public void setNote(String note) {
         this.note = note;
-    }
-
-    public void setStartDate(String startDate){
-        this.startDate = LocalDate.parse(startDate);
-    }
-
-    public void setEndDate(String endDate){
-        this.endDate = LocalDate.parse(endDate);
     }
 
     // Method to add a location to the trip
@@ -138,10 +131,22 @@ public class Trip {
         this.locations.add(location);
     }
 
-    public int getLastingDays(){
-        long daysBetween = ChronoUnit.DAYS.between(startDate, endDate);
+     public void setStartDate(Timestamp startDate) {
+        this.startDate = startDate;
+    }
+
+    public void setEndDate(Timestamp endDate) {
+        this.endDate = endDate;
+    }
+
+    public int getLastingDays() {
+        long daysBetween = TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
         System.out.println("Days between: " + daysBetween);
         return (int) daysBetween;
+    }
+
+    public void setPlans(Map<String, List<ActivityItem>> plans) {
+        this.plans = plans;
     }
 }
 
