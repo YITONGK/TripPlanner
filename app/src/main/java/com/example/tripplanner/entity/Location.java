@@ -1,5 +1,8 @@
 package com.example.tripplanner.entity;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Location {
     private String id;
     private String name;
@@ -10,6 +13,14 @@ public class Location {
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    public Map<String, Object> convertLocationToMap() {
+        Map<String, Object> locationMap = new HashMap<>();
+        locationMap.put("name", name);
+        locationMap.put("latitude", latitude);
+        locationMap.put("longitude", longitude);
+        return locationMap;
     }
 
     // Getters and Setters

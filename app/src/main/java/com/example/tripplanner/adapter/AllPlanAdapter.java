@@ -64,7 +64,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         holder.duration.setText(dayAndNight);
 
         // get the number of activities of the trip
-        Map<Integer, List<ActivityItem>> plans = allPlans.get(position).getPlans();
+        Map<String, List<ActivityItem>> plans = allPlans.get(position).getPlans();
         int count = 0;
         for (List<ActivityItem> plan: plans.values()) {
             count += plan.size();

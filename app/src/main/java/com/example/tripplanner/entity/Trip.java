@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Trip {
     private String id;
@@ -17,7 +18,7 @@ public class Trip {
     private int numDays;
     private List<Location> locations;
     private String note;
-    private Map<Integer, List<ActivityItem>> plans;
+    private Map<String, List<ActivityItem>> plans;
     private DatabaseInterface database;
     private List<String> userIds;
 
@@ -25,11 +26,12 @@ public class Trip {
         this.name = name;
         this.startDate = startDate;
         this.numDays = numDays;
+        this.endDate = startDate.plusDays(numDays - 1);
         this.locations = locations;
         this.note = "";
         this.plans = new HashMap<>();
         for (int i = 0; i < numDays; i++) {
-            plans.put(i, new ArrayList<>());
+            plans.put(String.valueOf(i), new ArrayList<>());
         }
         this.userIds = new ArrayList<>();
         this.userIds.add(userId);
@@ -45,7 +47,7 @@ public class Trip {
         this.numDays = (int) ChronoUnit.DAYS.between(startDate, endDate);
         this.plans = new HashMap<>();
         for (int i = 0; i < numDays; i++) {
-            plans.put(i, new ArrayList<>());
+            plans.put(String.valueOf(i), new ArrayList<>());
         }
         this.userIds = new ArrayList<>();
         this.userIds.add(userId);
@@ -65,12 +67,27 @@ public class Trip {
         map.put("startDate", startDate);
         map.put("endDate", endDate);
         map.put("numDays", numDays);
-        map.put("locations", locations);
+        // map.put("locations", locations);
+        map.put("locations", locations.stream()
+                                          .map(Location::convertLocationToMap)
+                                          .collect(Collectors.toList()));
         map.put("note", note);
         map.put("plans", plans);
         map.put("userIds", userIds);
         return map;
     }
+
+    // public Map<String, Object> convertTripToMap() {
+    //     Map<String, Object> tripMap = new HashMap<>();
+    //     tripMap.put("name", name);
+    //     tripMap.put("startDate", startDate.toString());
+    //     tripMap.put("days", days);
+    //     tripMap.put("locations", locations.stream()
+    //                                       .map(Location::convertLocationToMap)
+    //                                       .collect(Collectors.toList()));
+    //     tripMap.put("userId", userId);
+    //     return tripMap;
+    // }
 
     public void setId(String id) {
         this.id = id;
@@ -96,7 +113,7 @@ public class Trip {
         return locations;
     }
 
-    public Map<Integer, List<ActivityItem>> getPlans() {
+    public Map<String, List<ActivityItem>> getPlans() {
         return plans;
     }
 

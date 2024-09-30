@@ -2,8 +2,13 @@ package com.example.tripplanner.db;
 
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
@@ -75,14 +80,19 @@ public class FirestoreDB implements DatabaseInterface {
     }
 
     public void createTrip(String userId, Map<String, Object> tripData) {
-        firestore.collection("users").document(userId)
-                .collection("trips").add(tripData)
-                .addOnSuccessListener(documentReference -> {
-                    Log.d("Debug", "Trip added with ID: " + documentReference.getId());
-                })
-                .addOnFailureListener(e -> {
-                    Log.d("Debug", "Error adding trip: " + e.getMessage());
-                });
+        firestore.collection("trips").add(tripData)
+            .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                @Override
+                public void onSuccess(DocumentReference documentReference) {
+                    Log.d("PLAN", "DocumentSnapshot written with ID: " + documentReference.getId());
+                }
+            })
+            .addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Log.w("PLAN", "Error adding document", e);
+                }
+            });;
     }
 
     public void addLocationToTrip(String userId, String tripId, Map<String, Object> locationData) {

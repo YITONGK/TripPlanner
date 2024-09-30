@@ -3,11 +3,14 @@ package com.example.tripplanner;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.FrameLayout;
 import android.view.View;
 import android.widget.Button;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
@@ -19,6 +22,8 @@ import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanDurationFragment;
 import com.example.tripplanner.utils.OnFragmentInteractionListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
@@ -30,6 +35,10 @@ import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import android.widget.ListView;
 import android.widget.SearchView;
@@ -43,6 +52,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class PlanDurationActivity extends AppCompatActivity  implements OnFragmentInteractionListener {
     private PlanDurationBinding binding;
@@ -206,16 +216,26 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                     planDetails.put("days" ,receivedDays);
                     planDetails.put("startDate", receivedStartDate);
                     planDetails.put("endDate", receivedEndDate);
-                    
-                    // Create a new Trip object and upload it to the database
-                    List<Location> locations = new ArrayList<>();
-                    for (int i = 0; i < locationList.length(); i++) {
-                        locations.add(new Location(locationList.getString(i), 0.0, 0.0));
-                    }
-                    Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate), receivedDays, locations, "userId");
-                    FirestoreDB firestoreDB = new FirestoreDB();
-                    firestoreDB.createTrip("userId", trip.convertTripToMap());
 
+                    FirebaseAuth mAuth = FirebaseAuth.getInstance();
+                    FirebaseUser currentUser = mAuth.getCurrentUser();
+                    if (currentUser != null) {
+                        String userId = currentUser.getUid();
+                        // Create a new Trip object and upload it to the database
+                        List<Location> locations = new ArrayList<>();
+                        for (int i = 0; i < locationList.length(); i++) {
+                            String loc = locationList.optString(i, null);
+                            if (loc != null) {
+                                locations.add(new Location(loc, 0.0, 0.0));
+                            }
+                        }
+
+                        Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate), receivedDays,locations, userId);
+                        FirestoreDB firestore = new FirestoreDB();
+                        firestore.createTrip("userId", trip.convertTripToMap());
+                    } else {
+                        Log.d("PLAN", "[PlanDurationActivity] No user is signed in.");
+                    }
 
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
@@ -225,6 +245,7 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                 startActivity(intent);
             }
         });
+
     }
 
 
