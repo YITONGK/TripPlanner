@@ -201,6 +201,8 @@ public class CreateNewPlanActivity extends AppCompatActivity {
         });
     }
 
+
+
     private void handlePlaceSelection(Place place) {
         editTextMessage.setText(place.getName());
 

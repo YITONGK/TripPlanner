@@ -12,13 +12,26 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 
+import com.example.tripplanner.BuildConfig;
+import com.example.tripplanner.CreateNewPlanActivity;
 import com.example.tripplanner.PlanConfirmationActivity;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class WeatherTripPlanner implements SensorEventListener {
 
@@ -31,7 +44,11 @@ public class WeatherTripPlanner implements SensorEventListener {
     private float ambientTemperature;
     private float relativeHumidity;
 
-    private String weatherApiKey = "YOUR_WEATHER_API_KEY";
+    // Initialize ExecutorService and Handler
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    private static final String WEATHER_API_KEY = "eacef29cbb687c3d27f59dd48cdbd5fb";
 
     public WeatherTripPlanner(Activity activity) {
         this.activity = activity;
@@ -64,7 +81,7 @@ public class WeatherTripPlanner implements SensorEventListener {
             Log.d("SENSOR", "Sensors unavailable. Fetching data from Weather API.");
             Location location = getCurrentLocation();
             if (location != null) {
-//                fetchWeatherData(location);
+                fetchWeatherData(location);
                 Log.d("SENSOR", "fallback to weather api");
             } else {
                 Log.d("SENSOR", "Unable to retrieve current location.");
@@ -103,29 +120,29 @@ public class WeatherTripPlanner implements SensorEventListener {
         return location;
     }
 
-//    private void fetchWeatherData(Location location) {
-//        double latitude = location.getLatitude();
-//        double longitude = location.getLongitude();
-//
-//        new AsyncTask<Double, Void, JSONObject>() {
-//            @Override
-//            protected JSONObject doInBackground(Double... params) {
-//                String apiUrl = String.format(
-//                        "https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&appid=%s&units=metric",
-//                        params[0], params[1], weatherApiKey);
-//                return makeNetworkCall(apiUrl);
-//            }
-//
-//            @Override
-//            protected void onPostExecute(JSONObject weatherResponse) {
-//                if (weatherResponse != null) {
+    private void fetchWeatherData(Location location) {
+        double latitude = location.getLatitude();
+        double longitude = location.getLongitude();
+
+        executorService.execute(() -> {
+            String apiUrl = String.format(Locale.US,
+                 "https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&appid=%s&units=metric",
+                 latitude, longitude, WEATHER_API_KEY);
+
+
+            JSONObject weatherResponse = makeNetworkCall(apiUrl);
+
+            mainHandler.post(() -> {
+                if (weatherResponse != null) {
 //                    decideNotification(weatherResponse);
-//                } else {
+                    Log.d("SENSOR", "Weather data: " + weatherResponse);
+                } else {
 //                    notifyUser("Failed to retrieve weather data.");
-//                }
-//            }
-//        }.execute(latitude, longitude);
-//    }
+                    Log.d("SENSOR", "Failed to retrieve weather data.");
+                }
+            });
+        });
+    }
 
     private void decideNotification(JSONObject weatherData) {
         try {
@@ -164,23 +181,27 @@ public class WeatherTripPlanner implements SensorEventListener {
         unregisterSensorListeners();
     }
 
-//    private void requestGptReplan(String condition, double temp, double humidity) {
-//        String prompt = String.format(
-//                "Given that the weather is %s with a temperature of %.1f°C and humidity of %.1f%%, suggest a new travel plan.",
-//                condition, temp, humidity);
-//
-//        new AsyncTask<String, Void, String>() {
-//            @Override
-//            protected String doInBackground(String... prompts) {
-//                return makeGptApiCall(prompts[0]);
-//            }
-//
-//            @Override
-//            protected void onPostExecute(String gptResponse) {
-//                showSuggestedPlan(gptResponse);
-//            }
-//        }.execute(prompt);
-//    }
+    private void requestGptReplan(String condition, double temp, double humidity) {
+        String prompt = String.format(Locale.US,
+                "Given that the weather is %s with a temperature of %.1f°C and humidity of %.1f%%, suggest a new travel plan.",
+                condition, temp, humidity);
+
+        executorService.execute(() -> {
+            // Perform the GPT API call in the background thread
+            GptApiClient.rePlanTrip(prompt, new GptApiClient.GptApiCallback() {
+                @Override
+                public void onSuccess(String response) {
+                    Log.d("PLAN", "GPT Response: " + response);
+                    showSuggestedPlan(response);
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    Log.d("PLAN", "Failed to retrieve a new plan from GPT: " + error);
+                }
+            });
+        });
+    }
 
     private void showSuggestedPlan(String plan) {
         Intent intent = new Intent(activity, PlanConfirmationActivity.class);
@@ -194,13 +215,34 @@ public class WeatherTripPlanner implements SensorEventListener {
 
     // Placeholder methods for network calls (implement with proper network code)
     private JSONObject makeNetworkCall(String apiUrl) {
-        // Implement actual network call and JSON parsing
-        return new JSONObject();
-    }
+        OkHttpClient client = new OkHttpClient();
 
-    private String makeGptApiCall(String prompt) {
-        // Implement actual GPT API call
-        return "Sample GPT suggested plan based on the current conditions.";
+        Request request = new Request.Builder()
+                .url(apiUrl)
+                .build();
+
+        try {
+            // Synchronous network call
+            Response response = client.newCall(request).execute();
+
+            if (response.isSuccessful() && response.body() != null) {
+                String responseBody = response.body().string();
+                // Parse the response body to JSON
+                return new JSONObject(responseBody);
+            } else {
+                // Handle unsuccessful response
+                Log.e("NetworkCall", "Request failed: " + response.code() + " - " + response.message());
+                return null;
+            }
+        } catch (IOException e) {
+            // Handle network I/O exceptions
+            Log.e("NetworkCall", "IOException: " + e.getMessage());
+            return null;
+        } catch (JSONException e) {
+            // Handle JSON parsing exceptions
+            Log.e("NetworkCall", "JSONException: " + e.getMessage());
+            return null;
+        }
     }
 
     // SensorEventListener methods
@@ -221,6 +263,10 @@ public class WeatherTripPlanner implements SensorEventListener {
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // Handle sensor accuracy changes if needed
+    }
+
+    protected void onDestroy() {
+        executorService.shutdown();
     }
 
 

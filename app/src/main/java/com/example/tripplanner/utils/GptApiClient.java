@@ -82,6 +82,10 @@ public class GptApiClient {
         getChatCompletion(DEFAULT_PROMPT, tripData, callback);
     }
 
+    public static void rePlanTrip(String tripData, GptApiCallback callback) {
+        getChatCompletion(REPLAN_PROMPT, tripData, callback);
+    }
+
    
        
 }
