@@ -37,11 +37,11 @@ public class ActivityItemAdapter extends ArrayAdapter<ActivityItem> {
         activityName.setText(activityItem.getName());
 
         String details = "";
-        if (!activityItem.getTime().isEmpty()) {
-            details += "Start Time: " + activityItem.getTime() + "\n";
+        if (activityItem.getStartTime() != null) {
+            details += "Start Time: " + activityItem.getStartTime().toString() + "\n";
         }
-        if (!activityItem.getLocation().isEmpty()) {
-            details += "Location: " + activityItem.getLocation() + "\n";
+        if (activityItem.getLocation() != null) {
+            details += "Location: " + activityItem.getLocation().getName() + "\n";
         }
         if (!activityItem.getNotes().isEmpty()) {
             details += "Note: " + activityItem.getNotes();

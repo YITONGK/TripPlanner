@@ -156,8 +156,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         EditText inputLocation = dialogView.findViewById(R.id.inputLocation);
         EditText inputNotes = dialogView.findViewById(R.id.inputNotes);
 
-        inputTime.setText(activityItem.getTime());
-        inputLocation.setText(activityItem.getLocation());
+        inputTime.setText(activityItem.getStartTime().toString());
+        inputLocation.setText(activityItem.getLocation().getName());
         inputNotes.setText(activityItem.getNotes());
 
         inputTime.setOnClickListener(new View.OnClickListener() {
@@ -182,7 +182,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int which) {
-                activityItem.setTime(inputTime.getText().toString());
+                activityItem.setStartTime(inputTime.getText().toString());
                 activityItem.setLocation(inputLocation.getText().toString());
                 activityItem.setNotes(inputNotes.getText().toString());
                 adapter.notifyDataSetChanged();

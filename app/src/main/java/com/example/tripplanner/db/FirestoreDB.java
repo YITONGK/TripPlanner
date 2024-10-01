@@ -144,17 +144,76 @@ public class FirestoreDB implements DatabaseInterface {
             });;
     }
 
-    // public void addLocationToTrip(String userId, String tripId, Map<String, Object> locationData) {
-    //     firestore.collection("users").document(userId)
-    //             .collection("trips").document(tripId)
-    //             .collection("locations").add(locationData)
-    //             .addOnSuccessListener(documentReference -> {
-    //                 Log.d("Debug", "Location added with ID: " + documentReference.getId());
-    //             })
-    //             .addOnFailureListener(e -> {
-    //                 Log.d("Debug", "Error adding location: " + e.getMessage());
-    //             });
-    // }
+    public void getTripByTripId(String tripId, OnSuccessListener<Trip> onSuccessListener, OnFailureListener onFailureListener) {
+        firestore.collection("trips")
+                .document(tripId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        try {
+                            // Parse the fields from the document
+                            String name = documentSnapshot.getString("name");
+                            Timestamp startDate = documentSnapshot.getTimestamp("startDate");
+                            Timestamp endDate = documentSnapshot.getTimestamp("endDate");
+                            int numDays = documentSnapshot.contains("numDays") ? documentSnapshot.getLong("numDays").intValue() : 0;
+                            String note = documentSnapshot.getString("note");
+                            List<String> userIds = (List<String>) documentSnapshot.get("userIds");
+
+                            // Parse locations
+                            List<Location> locations = new ArrayList<>();
+                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) documentSnapshot.get("locations");
+                            if (locationsMap != null) {
+                                for (Map<String, Object> locMap : locationsMap) {
+                                    Location location = new Location(
+                                            (String) locMap.get("name"),
+                                            ((Number) locMap.get("latitude")).doubleValue(),
+                                            ((Number) locMap.get("longitude")).doubleValue()
+                                    );
+                                    locations.add(location);
+                                }
+                            }
+
+                            // Parse plans
+                            Map<String, Object> plansMap = (Map<String, Object>) documentSnapshot.get("plans");
+                            Map<String, List<ActivityItem>> plans = new HashMap<>();
+                            if (plansMap != null) {
+                                for (Map.Entry<String, Object> entry : plansMap.entrySet()) {
+                                    String day = entry.getKey();
+                                    List<Map<String, Object>> activityItemsMap = (List<Map<String, Object>>) entry.getValue();
+                                    List<ActivityItem> activityItems = new ArrayList<>();
+                                    for (Map<String, Object> itemMap : activityItemsMap) {
+                                        ActivityItem item = new ActivityItem(
+                                                (String) itemMap.get("name"),
+                                                (Timestamp) itemMap.get("startTime"),
+                                                (Timestamp) itemMap.get("endTime"),
+                                                (String) itemMap.get("notes")
+                                        );
+                                        activityItems.add(item);
+                                    }
+                                    plans.put(day, activityItems);
+                                }
+                            }
+
+                            // Create the Trip object
+                            Trip trip = new Trip(name, startDate, endDate, locations, userIds != null && !userIds.isEmpty() ? userIds.get(0) : null);
+                            trip.setId(documentSnapshot.getId());
+                            trip.setNote(note);
+                            trip.setPlans(plans);
+                            trip.setNumDays(numDays);
+                            trip.setUserIds(userIds);
+
+                            onSuccessListener.onSuccess(trip);
+                        } catch (Exception e) {
+                            Log.e("PLAN", "Error parsing trip document", e);
+                            onFailureListener.onFailure(e);
+                        }
+                    } else {
+                        onFailureListener.onFailure(new Exception("Trip not found with ID: " + tripId));
+                    }
+                })
+                .addOnFailureListener(onFailureListener);
+    }
+
 
 
     // Convert Location object to Map for Firestore

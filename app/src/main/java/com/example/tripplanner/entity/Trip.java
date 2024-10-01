@@ -139,6 +139,22 @@ public class Trip {
         this.endDate = endDate;
     }
 
+    public void setUserIds(List<String> userIds) {
+        this.userIds = userIds;
+    }
+
+    public void setLocations(List<Location> locations) {
+        this.locations = locations;
+    }
+
+    public void setNumDays(int numDays) {
+        this.numDays = numDays;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public int getLastingDays() {
         long daysBetween = TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
         System.out.println("Days between: " + daysBetween);
