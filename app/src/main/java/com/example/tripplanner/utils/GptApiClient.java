@@ -20,21 +20,26 @@ public class GptApiClient {
     private static final String GPT_API_URL = "https://api.openai.com/v1/chat/completions";
     private static final String API_KEY = BuildConfig.GPT_API_KEY;
     private static final String DEFAULT_PROMPT = "Please plan the trip to ";
+    private static final String REPLAN_PROMPT = "Re-plan the trip due to bad weather conditions. ";
 
     public interface GptApiCallback {
         void onSuccess(String response);
         void onFailure(String error);
     }
 
-    public static void getChatCompletion(String prompt, GptApiCallback callback) {
+    public static void getChatCompletion(String prompt, String userMessage, GptApiCallback callback) {
         Log.d("PLAN", "[getChatCompletion] START");
         OkHttpClient client = new OkHttpClient();
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("model", "gpt-4o");
-            jsonObject.put("messages", new JSONArray().put(new JSONObject()
+            jsonObject.put("messages", new JSONArray()
+                .put(new JSONObject()
+                    .put("role", "system")
+                    .put("content", prompt))
+                .put(new JSONObject()
                     .put("role", "user")
-                    .put("content", prompt)));
+                    .put("content", userMessage)));
             jsonObject.put("max_tokens", 150);
         } catch (Exception e) {
             callback.onFailure(e.getMessage());
@@ -73,10 +78,10 @@ public class GptApiClient {
         });
     }
 
-    public static void getTripPlan(GptApiCallback callback) {
-        getChatCompletion(DEFAULT_PROMPT, callback);
+    public static void getTripPlan(String tripData, GptApiCallback callback) {
+        getChatCompletion(DEFAULT_PROMPT, tripData, callback);
     }
 
-    private void showSuggestedPlan(String plan) {
+   
        
 }

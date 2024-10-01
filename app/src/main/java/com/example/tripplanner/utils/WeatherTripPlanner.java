@@ -47,6 +47,8 @@ public class WeatherTripPlanner implements SensorEventListener {
 
             isTemperatureSensorAvailable = temperatureSensor != null;
             isHumiditySensorAvailable = humiditySensor != null;
+
+            Log.d("SENSOR", "Sensors available: " + isTemperatureSensorAvailable + ", " + isHumiditySensorAvailable);
         } else {
             isTemperatureSensorAvailable = false;
             isHumiditySensorAvailable = false;
@@ -59,18 +61,19 @@ public class WeatherTripPlanner implements SensorEventListener {
             registerSensorListeners();
         } else {
             // Fallback to weather API
-            notifyUser("Sensors unavailable. Fetching data from Weather API.");
+            Log.d("SENSOR", "Sensors unavailable. Fetching data from Weather API.");
             Location location = getCurrentLocation();
             if (location != null) {
 //                fetchWeatherData(location);
-                Log.d("WeatherTripPlanner", "fallback to weather api");
+                Log.d("SENSOR", "fallback to weather api");
             } else {
-                notifyUser("Unable to retrieve current location.");
+                Log.d("SENSOR", "Unable to retrieve current location.");
             }
         }
     }
 
-    private void registerSensorListeners() {
+    public void registerSensorListeners() {
+        Log.d("SENSOR", "Registering sensor listeners.");
         if (isTemperatureSensorAvailable) {
             sensorManager.registerListener(this, temperatureSensor, SensorManager.SENSOR_DELAY_NORMAL);
         }
@@ -79,8 +82,9 @@ public class WeatherTripPlanner implements SensorEventListener {
         }
     }
 
-    private void unregisterSensorListeners() {
+    public void unregisterSensorListeners() {
         sensorManager.unregisterListener(this);
+        Log.d("SENSOR", "Unregistering sensor listeners.");
     }
 
     private Location getCurrentLocation() {
@@ -90,7 +94,13 @@ public class WeatherTripPlanner implements SensorEventListener {
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             return null;
         }
-        return locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+//        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//        if (location != null) {
+//            return location;
+//        }
+        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        Log.d("SENSOR", "location: " + location);
+        return location;
     }
 
 //    private void fetchWeatherData(Location location) {
@@ -130,9 +140,9 @@ public class WeatherTripPlanner implements SensorEventListener {
 
             if (needReplan) {
 //                requestGptReplan(weatherCondition, temperature, humidity);
-                Log.d("WeatherTripPlanner", "needReplan");
+                Log.d("SENSOR", "needReplan");
             } else {
-                notifyUser("Weather is good for your trip!");
+                Log.d("SENSOR", "Weather is good for your trip!");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -141,13 +151,13 @@ public class WeatherTripPlanner implements SensorEventListener {
     }
 
     private void decideNotificationWithSensorData(float temperature, float humidity) {
-        boolean needReplan = temperature > 35 || temperature < 5;
+        boolean needReplan = temperature > 35 || humidity < 5;
 
         if (needReplan) {
 //            requestGptReplan("Current conditions", temperature, humidity);
-            Log.d("WeatherTripPlanner", "needReplan");
+            Log.d("SENSOR", "Need to re-plan");
         } else {
-            notifyUser("Real-time environment is good for your trip!");
+            Log.d("SENSOR", "Real-time environment is good for your trip!");
         }
 
         // Unregister sensors after use
@@ -201,6 +211,7 @@ public class WeatherTripPlanner implements SensorEventListener {
         } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
             relativeHumidity = event.values[0];
         }
+
 
         if (isTemperatureSensorAvailable && isHumiditySensorAvailable) {
             decideNotificationWithSensorData(ambientTemperature, relativeHumidity);
