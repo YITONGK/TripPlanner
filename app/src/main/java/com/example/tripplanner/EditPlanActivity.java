@@ -9,6 +9,10 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -32,6 +36,7 @@ public class EditPlanActivity extends AppCompatActivity {
 
     private String selectedPlace;
     private int days;
+    private String tripName;
     private ActivityEditPlanBinding binding;
     private ArrayList<Fragment> fragments = new ArrayList<>();
     private FragmentManager fragmentManager;
@@ -39,6 +44,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private JSONObject tripPlan;
     private JSONArray placeArray;
     ArrayList<String> placeList = new ArrayList<>();
+    private ActivityResultLauncher<Intent> planSettingsLauncher;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -88,7 +94,8 @@ public class EditPlanActivity extends AppCompatActivity {
             dayAndNight = days + " days" + " and " + (days - 1) + " nights";
         }
         String day = days > 1 ? " days" : " day";
-        tripTo.setText(days + day + " trip to " + selectedPlace);
+        tripName = days + day + " trip to " + selectedPlace;
+        tripTo.setText(tripName);
 
         TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);
         daysAndNight.setText(dayAndNight);
@@ -103,12 +110,32 @@ public class EditPlanActivity extends AppCompatActivity {
             }
         });
 
+        planSettingsLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == RESULT_OK) {
+                            Intent data = result.getData();
+                            if (data != null && data.hasExtra("tripName")) {
+                                String newTripName = data.getStringExtra("tripName");
+
+                                TextView tripTo = findViewById(R.id.textViewSelectedPlace);
+                                tripTo.setText(newTripName);
+                            }
+                        }
+                    }
+                }
+        );
+
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         settingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
-                startActivity(intent);
+                intent.putExtra("tripName", tripName);
+                intent.putExtra("days", days);
+                planSettingsLauncher.launch(intent);
             }
         });
 

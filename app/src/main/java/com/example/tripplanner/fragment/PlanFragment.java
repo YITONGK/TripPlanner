@@ -152,15 +152,17 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_activity, null);
         builder.setView(dialogView);
 
-        EditText inputTime = dialogView.findViewById(R.id.inputTime);
+        EditText startTime = dialogView.findViewById(R.id.startTime);
+        EditText endTime = dialogView.findViewById(R.id.endTime);
         EditText inputLocation = dialogView.findViewById(R.id.inputLocation);
         EditText inputNotes = dialogView.findViewById(R.id.inputNotes);
 
-        inputTime.setText(activityItem.getTime());
+        startTime.setText(activityItem.getStartTime());
+        endTime.setText(activityItem.getEndTime());
         inputLocation.setText(activityItem.getLocation());
         inputNotes.setText(activityItem.getNotes());
 
-        inputTime.setOnClickListener(new View.OnClickListener() {
+        startTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -171,7 +173,26 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                        inputTime.setText(String.format("%02d:%02d", hourOfDay, minute));
+                        startTime.setText(String.format("%02d:%02d", hourOfDay, minute));
+                    }
+                }, hour, minute, true);
+
+                timePickerDialog.show();
+            }
+        });
+
+        endTime.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Calendar calendar = Calendar.getInstance();
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+
+                TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                        endTime.setText(String.format("%02d:%02d", hourOfDay, minute));
                     }
                 }, hour, minute, true);
 
@@ -182,7 +203,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int which) {
-                activityItem.setTime(inputTime.getText().toString());
+                activityItem.setStartTime(startTime.getText().toString());
+                activityItem.setEndTime(endTime.getText().toString());
                 activityItem.setLocation(inputLocation.getText().toString());
                 activityItem.setNotes(inputNotes.getText().toString());
                 adapter.notifyDataSetChanged();

@@ -37,8 +37,11 @@ public class ActivityItemAdapter extends ArrayAdapter<ActivityItem> {
         activityName.setText(activityItem.getName());
 
         String details = "";
-        if (!activityItem.getTime().isEmpty()) {
-            details += "Start Time: " + activityItem.getTime() + "\n";
+        if (!activityItem.getStartTime().isEmpty()) {
+            details += "Start Time: " + activityItem.getStartTime() + "\n";
+        }
+        if (!activityItem.getEndTime().isEmpty()) {
+            details += "Start Time: " + activityItem.getEndTime() + "\n";
         }
         if (!activityItem.getLocation().isEmpty()) {
             details += "Location: " + activityItem.getLocation() + "\n";
