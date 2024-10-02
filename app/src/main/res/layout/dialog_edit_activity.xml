@@ -28,12 +28,20 @@
             android:hint="Location"
             android:layout_marginTop="8dp" />
 
+        <ListView
+            android:id="@+id/autocompleteListView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
         <EditText
             android:id="@+id/inputNotes"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Note"
             android:layout_marginTop="8dp" />
+
+
 
     </LinearLayout>
 </ScrollView>
