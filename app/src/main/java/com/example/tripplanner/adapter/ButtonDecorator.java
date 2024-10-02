@@ -2,6 +2,7 @@ package com.example.tripplanner.adapter;
 
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
@@ -13,57 +14,69 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 public class ButtonDecorator {
-    private ConstraintLayout constraintLayout;
-    private int lastButtonId = 0;
 
-    public ButtonDecorator(ConstraintLayout layout) {
-        this.constraintLayout = layout;
+    public interface OnButtonClickListener {
+        void onButtonClicked(int index, Button button);
+    }
+
+    private LinearLayout linearLayout;
+    private OnButtonClickListener listener;
+
+    public ButtonDecorator(LinearLayout layout, OnButtonClickListener listener) {
+        this.linearLayout = layout;
+        this.listener = listener;
     }
 
     public void addButtonsFromJson(JSONArray locations) {
         try {
             for (int i = 0; i < locations.length(); i++) {
                 String location = locations.getString(i);
-                Button button = createButton(location);
-                constraintLayout.addView(button);
-                setConstraints(button, i);
+                addSingleButton(location, i);
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    private Button createButton(String location) {
-        Button button = new Button(constraintLayout.getContext());
+    public void clearAllButtons() {
+        linearLayout.removeAllViews();
+    }
+
+    public void addSingleButton(String location, int index) {
+        Button button = createButton(location, index);
+        linearLayout.addView(button);
+    }
+
+    private Button createButton(String location, int index) {
+        Button button = new Button(linearLayout.getContext());
         button.setId(View.generateViewId());
+        button.setTag(index);
 
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                120
+        );
+        layoutParams.setMargins(8, 8, 8, 8);
+        button.setLayoutParams(layoutParams);
 
-        button.setLayoutParams(new ConstraintLayout.LayoutParams( ConstraintLayout.LayoutParams.WRAP_CONTENT, 120));
-//        button.setBackground(ContextCompat.getDrawable(constraintLayout.getContext(), R.drawable.baseline_close_24));
-        button.setBackgroundTintList(ContextCompat.getColorStateList(constraintLayout.getContext(), android.R.color.white));
-        button.setTextColor(ContextCompat.getColor(constraintLayout.getContext(), android.R.color.black));
+        button.setBackgroundTintList(ContextCompat.getColorStateList(linearLayout.getContext(), android.R.color.white));
+        button.setTextColor(ContextCompat.getColor(linearLayout.getContext(), android.R.color.black));
         button.setPadding(16, 16, 16, 16);
         button.setTextSize(14);
         button.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.location_close_24, 0);
         button.setCompoundDrawablePadding(8);
         button.setText(location);
 
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int position = (int) button.getTag();
+                if (listener != null) {
+                    listener.onButtonClicked(position, button);
+                }
+            }
+        });
+
         return button;
-    }
-
-    private void setConstraints(Button button, int index) {
-        ConstraintSet constraintSet = new ConstraintSet();
-        constraintSet.clone(constraintLayout);
-
-        if (index == 0) {
-            constraintSet.connect(button.getId(), ConstraintSet.START, R.id.button_add_location, ConstraintSet.END, 8);
-            constraintSet.connect(button.getId(), ConstraintSet.TOP, R.id.button_back, ConstraintSet.BOTTOM, 30);
-        } else {
-            constraintSet.connect(button.getId(), ConstraintSet.START, lastButtonId, ConstraintSet.END, 8);
-            constraintSet.connect(button.getId(), ConstraintSet.TOP, R.id.button_back, ConstraintSet.BOTTOM, 30);
-        }
-
-        constraintSet.applyTo(constraintLayout);
-        lastButtonId = button.getId();
     }
 }

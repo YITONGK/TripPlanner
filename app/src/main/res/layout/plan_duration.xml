@@ -39,6 +39,24 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/button_back" />
 
+    <!-- HorizontalScrollView containing LinearLayout for buttons -->
+    <HorizontalScrollView
+        android:id="@+id/horizontal_scroll_view"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toEndOf="@id/button_add_location"
+        app:layout_constraintTop_toBottomOf="@id/button_back"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp">
+
+        <LinearLayout
+            android:id="@+id/linear_layout_buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"/>
+
+    </HorizontalScrollView>
+
 <!--    <Button-->
 <!--        android:id="@+id/button_2"-->
 <!--        android:layout_width="110dp"-->
