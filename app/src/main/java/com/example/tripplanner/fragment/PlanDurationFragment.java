@@ -66,7 +66,15 @@ public class PlanDurationFragment extends Fragment {
         }
     }
 
-    public void passDatesToActivity(CalendarDay startDate, CalendarDay endDate) {
+    public void passDatesToActivity(CalendarDay startDate, CalendarDay endDate)  {
+        if (startDate == null || endDate == null) {
+            try {
+                mListener.DatesInteraction(null, null);
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
+            return;
+        }
         if (mListener != null) {
             try {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
@@ -130,16 +138,18 @@ public class PlanDurationFragment extends Fragment {
                 materialCalendarView.clearSelection();
                 if (pressCount == 0) {
                     // choose start date
+//                    Log.d("presscount0", "Current press count0: " + pressCount);
                     startDate = date;
                     rangeDecorator.setDateRange(Collections.singletonList(startDate));
                     endDate = date;
-                    pressCount = 1;
+                    pressCount += 1;
                 } else if (pressCount == 1) {
-                    pressCount = 2;
+//                    Log.d("presscount1", "Current press count1: " + pressCount);
                     // choose end date
                     if (date.isBefore(startDate)) {
                         // if end date earlier than start date, replace start date to end date
                         startDate = date;
+                        endDate = null;
                         rangeDecorator.setDateRange(Collections.singletonList(startDate));
                     } else {
                         endDate = date;
@@ -152,17 +162,18 @@ public class PlanDurationFragment extends Fragment {
                             datesInRange.add(CalendarDay.from(current));
                             current.add(Calendar.DAY_OF_MONTH, 1); // add one day from start date
                         }
-
+                        pressCount+=1;
                         rangeDecorator.setDateRange(datesInRange);
-
                         passDatesToActivity(startDate, endDate);
                     }
-                } else {
+                } else if (pressCount == 2) {
                     // choose again
+//                    Log.d("presscount2", "Current press count2: " + pressCount);
                     startDate = date;
                     endDate = null;
                     rangeDecorator.setDateRange(Collections.singletonList(startDate));
                     pressCount = 1;
+                    passDatesToActivity(null, null);
                 }
                 widget.invalidateDecorators(); // refresh the date
             }

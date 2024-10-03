@@ -246,8 +246,6 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
 
     @Override
     public void DaysInteraction(String data) {
-
-
         receivedDays =  Integer.parseInt(data);
 
         Calendar calendar = Calendar.getInstance();
@@ -259,6 +257,13 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
 
     @Override
     public void DatesInteraction(String startDate, String endDate){
+        if (startDate == null || endDate == null){
+            receivedCalenderStartDate = null;
+            receivedCalenderEndDate = null;
+            revivedCalendarDays = 0;
+            return;
+        }
+
         receivedCalenderStartDate = startDate;
         receivedCalenderEndDate = endDate;
 
