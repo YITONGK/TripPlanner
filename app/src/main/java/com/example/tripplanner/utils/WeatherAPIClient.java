@@ -1,6 +1,5 @@
 package com.example.tripplanner.utils;
 
-import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.entity.Weather;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -10,12 +9,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class WeatherAPIClient {
-    private static final String API_KEY = BuildConfig.WEATHER_API_KEY;
+    private static final String API_KEY = "5ca81bc91f299a36d82575c6b9b1445e";
     //TODO: need a data structure to store extracted weather data
-    private Map<Integer, Weather> res;
+    private HashMap<Integer, Weather> res = new HashMap<Integer, Weather>();
 
     public Map<Integer, Weather> getWeatherForecast(double lat, double lon, int startDateIndex, int endDateIndex) {
         // make get request
