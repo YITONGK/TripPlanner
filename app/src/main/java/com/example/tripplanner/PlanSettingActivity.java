@@ -78,6 +78,7 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
 
             Intent resultIntent = new Intent();
             resultIntent.putExtra("tripName", newTripName);
+            resultIntent.putExtra("days", days);
             setResult(RESULT_OK, resultIntent);
 
             finish();
