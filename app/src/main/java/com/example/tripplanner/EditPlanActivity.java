@@ -9,6 +9,10 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -32,6 +36,7 @@ public class EditPlanActivity extends AppCompatActivity {
 
     private String selectedPlace;
     private int days;
+    private String tripName;
     private ActivityEditPlanBinding binding;
     private ArrayList<Fragment> fragments = new ArrayList<>();
     private FragmentManager fragmentManager;
@@ -39,6 +44,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private JSONObject tripPlan;
     private JSONArray placeArray;
     ArrayList<String> placeList = new ArrayList<>();
+    private ActivityResultLauncher<Intent> planSettingsLauncher;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -52,7 +58,8 @@ public class EditPlanActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-//        selectedPlace = getIntent().getStringExtra("selectedPlace");
+
+        // Initialize variables from intent
         String jsonString = getIntent().getStringExtra("planDetails");
         if (jsonString != null) {
             try {
@@ -75,92 +82,150 @@ public class EditPlanActivity extends AppCompatActivity {
             }
         }
 
-
-        // You can now use the selected place string as needed
+        // Set trip name and days
         TextView tripTo = findViewById(R.id.textViewSelectedPlace);
-        String dayAndNight;
-        if (days == 1) {
-            dayAndNight = "1 day";
-        }
-        else if (days == 2) {
-            dayAndNight = "2 days and 1 night";
-        } else {
-            dayAndNight = days + " days" + " and " + (days - 1) + " nights";
-        }
-        String day = days > 1 ? " days" : " day";
-        tripTo.setText(days + day + " trip to " + selectedPlace);
-
-        TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);
-        daysAndNight.setText(dayAndNight);
+        tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
+        tripTo.setText(tripName);
+        updateDayAndNightText();
 
         ImageButton closeButton = findViewById(R.id.closeButton);
-        closeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(EditPlanActivity.this, MainActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(intent);
-            }
+        closeButton.setOnClickListener(view -> {
+            Intent intent = new Intent(EditPlanActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
         });
 
+        planSettingsLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK) {
+                        Intent data = result.getData();
+                        if (data != null && data.hasExtra("tripName")) {
+                            String newTripName = data.getStringExtra("tripName");
+                            TextView tripTo1 = findViewById(R.id.textViewSelectedPlace);
+                            tripTo1.setText(newTripName);
+                            int newDays = data.getIntExtra("days", 0);
+                            if (days != newDays) {
+                                if (days < newDays) {
+                                    addTabsAndFragments(days, newDays);
+                                } else if (days > newDays) {
+                                    removeTabsAndFragments(days, newDays);
+                                }
+                                days = newDays;
+                                updateDayAndNightText();
+                                refreshTabsAndFragments();
+                                loadFragment(fragments.get(0));
+                            }
+                        }
+                    }
+                }
+        );
+
         ImageButton settingsButton = findViewById(R.id.settingsButton);
-        settingsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
-                startActivity(intent);
-            }
+        settingsButton.setOnClickListener(view -> {
+            Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
+            intent.putExtra("tripName", tripName);
+            intent.putExtra("days", days);
+            planSettingsLauncher.launch(intent);
         });
 
         fragmentManager = getSupportFragmentManager();
-        TabLayout tabLayout = binding.tabLayout;
+        // Initialize fragments and tabs
+        initializeFragmentsAndTabs();
 
-        // Create FragmentTransaction
+        // Set up TabSelectedListener
+        TabLayout tabLayout = binding.tabLayout;
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                Fragment selectedFragment = fragments.get(tab.getPosition());
+                loadFragment(selectedFragment);
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                // Handle unselected tab
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                // Handle reselected tab
+            }
+        });
+    }
+
+    private void initializeFragmentsAndTabs() {
+        TabLayout tabLayout = binding.tabLayout;
+        fragments.clear();
         FragmentTransaction transaction = fragmentManager.beginTransaction();
 
         // Add Overview Fragment
         tabLayout.addTab(tabLayout.newTab().setText("Overview"));
-        Fragment overviewFragment = fragmentManager.findFragmentByTag("fragment_overview");
-        overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
+        Fragment overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
         transaction.add(R.id.fragmentContainerView, overviewFragment, "fragment_overview");
         fragments.add(overviewFragment);
 
-        // Add Specific Day Fragments
+        // Add Day Fragments
         for (int i = 0; i < days; i++) {
             tabLayout.addTab(tabLayout.newTab().setText("Day " + (i + 1)));
-            Fragment dayFragment = fragmentManager.findFragmentByTag("fragment_day_" + i);
-            if (dayFragment == null) {
-                dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
-                transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
-                transaction.hide(dayFragment);
-            }
+            Fragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
+            transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
+            transaction.hide(dayFragment);
             fragments.add(dayFragment);
         }
 
         transaction.commitNow();
         loadFragment(fragments.get(0));
+    }
 
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                // Handle tab selection
-                Fragment selectedFragment;
-                int position = tab.getPosition();
-                Log.d("TabSelected", "Selected tab position: " + position);
-//                showFragment(position);
-                selectedFragment = fragments.get(position);
-                loadFragment(selectedFragment);
-            }
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-                // Handle tab unselection
-            }
+    private void addTabsAndFragments(int oldDays, int newDays) {
+        TabLayout tabLayout = binding.tabLayout;
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        for (int i = oldDays; i < newDays; i++) {
+            tabLayout.addTab(tabLayout.newTab().setText("Day " + (i + 1)));
+            Fragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
+            transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
+            transaction.hide(dayFragment);
+            fragments.add(dayFragment);
+        }
+        transaction.commitNow();
+    }
 
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-                // Handle tab reselection
+    private void removeTabsAndFragments(int oldDays, int newDays) {
+        TabLayout tabLayout = binding.tabLayout;
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        for (int i = oldDays - 1; i >= newDays; i--) {
+            tabLayout.removeTabAt(i + 1);
+            Fragment fragment = fragments.get(i + 1);
+            transaction.remove(fragment);
+            fragments.remove(i + 1);
+        }
+        transaction.commitNow();
+    }
+
+    private void refreshTabsAndFragments() {
+        TabLayout tabLayout = binding.tabLayout;
+        tabLayout.removeAllTabs();
+        for (int i = 0; i < fragments.size(); i++) {
+            if (i == 0) {
+                tabLayout.addTab(tabLayout.newTab().setText("Overview"));
+            } else {
+                tabLayout.addTab(tabLayout.newTab().setText("Day " + i));
             }
-        });
+        }
+    }
+
+    private void updateDayAndNightText() {
+        String dayAndNight;
+        if (days == 1) {
+            dayAndNight = "1 day";
+        } else if (days == 2) {
+            dayAndNight = "2 days and 1 night";
+        } else {
+            dayAndNight = days + " days and " + (days - 1) + " nights";
+        }
+        TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);
+        daysAndNight.setText(dayAndNight);
     }
 
     private void loadFragment(Fragment fragment) {
@@ -169,17 +234,4 @@ public class EditPlanActivity extends AppCompatActivity {
                 .replace(R.id.fragmentContainerView, fragment)
                 .commit();
     }
-
-//    private void showFragment(int index) {
-//        FragmentTransaction transaction = fragmentManager.beginTransaction();
-//        for (int i = 0; i < fragments.size(); i++) {
-//            Fragment fragment = fragments.get(i);
-//            if (i == index) {
-//                transaction.show(fragment);
-//            } else {
-//                transaction.hide(fragment);
-//            }
-//        }
-//        transaction.commitNow();
-//    }
 }

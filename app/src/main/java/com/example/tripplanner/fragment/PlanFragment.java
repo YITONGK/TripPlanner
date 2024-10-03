@@ -4,7 +4,9 @@ import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,9 +19,11 @@ import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
+import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.helperclass.ActivityItem;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -30,7 +34,17 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import androidx.lifecycle.ViewModelProvider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.List;
+
+import com.example.tripplanner.adapter.AutocompleteAdapter;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AutocompletePrediction;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.FetchPlaceRequest;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
+import com.google.android.libraries.places.api.net.PlacesClient;
 
 
 public class PlanFragment extends Fragment implements OnMapReadyCallback {
@@ -42,6 +56,9 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private int dayIndex = -1; // To identify the day
     private GoogleMap mMap;
 
+    private PlacesClient placesClient;
+    private AutocompleteAdapter autocompleteAdapter;
+    final String apiKey = BuildConfig.PLACES_API_KEY;
 
     private PlanViewModel viewModel;
 
@@ -54,6 +71,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (!Places.isInitialized()) {
+            Places.initialize(requireContext().getApplicationContext(), apiKey);
+        }
+        placesClient = Places.createClient(requireContext());
 
         // Get ViewModel instance
         viewModel = new ViewModelProvider(requireActivity()).get(PlanViewModel.class);
@@ -152,15 +174,21 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_activity, null);
         builder.setView(dialogView);
 
-        EditText inputTime = dialogView.findViewById(R.id.inputTime);
+        EditText startTime = dialogView.findViewById(R.id.startTime);
+        EditText endTime = dialogView.findViewById(R.id.endTime);
         EditText inputLocation = dialogView.findViewById(R.id.inputLocation);
         EditText inputNotes = dialogView.findViewById(R.id.inputNotes);
+        ListView autocompleteListView = dialogView.findViewById(R.id.autocompleteListView);
 
-        inputTime.setText(activityItem.getTime());
+        autocompleteAdapter = new AutocompleteAdapter(getContext(), new ArrayList<>());
+        autocompleteListView.setAdapter(autocompleteAdapter);
+
+        startTime.setText(activityItem.getStartTime());
+        endTime.setText(activityItem.getEndTime());
         inputLocation.setText(activityItem.getLocation());
         inputNotes.setText(activityItem.getNotes());
 
-        inputTime.setOnClickListener(new View.OnClickListener() {
+        startTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -171,7 +199,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                        inputTime.setText(String.format("%02d:%02d", hourOfDay, minute));
+                        startTime.setText(String.format("%02d:%02d", hourOfDay, minute));
                     }
                 }, hour, minute, true);
 
@@ -179,10 +207,56 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             }
         });
 
+        endTime.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Calendar calendar = Calendar.getInstance();
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+
+                TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                        endTime.setText(String.format("%02d:%02d", hourOfDay, minute));
+                    }
+                }, hour, minute, true);
+
+                timePickerDialog.show();
+            }
+        });
+        inputLocation.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!s.toString().isEmpty()) {
+                    performAutocomplete(s.toString());
+                    autocompleteListView.setVisibility(View.VISIBLE);
+                } else {
+                    autocompleteAdapter.clear();
+                    autocompleteAdapter.notifyDataSetChanged();
+                    autocompleteListView.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) { }
+        });
+
+        autocompleteListView.setOnItemClickListener((parent, view, pos, id) -> {
+            AutocompletePrediction item = autocompleteAdapter.getItem(pos);
+            String placeId = item.getPlaceId();
+            fetchPlaceFromPlaceId(placeId, inputLocation, autocompleteListView);
+        });
+
+
         builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int which) {
-                activityItem.setTime(inputTime.getText().toString());
+                activityItem.setStartTime(startTime.getText().toString());
+                activityItem.setEndTime(endTime.getText().toString());
                 activityItem.setLocation(inputLocation.getText().toString());
                 activityItem.setNotes(inputNotes.getText().toString());
                 adapter.notifyDataSetChanged();
@@ -191,6 +265,47 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         builder.setNegativeButton("Cancel", null);
 
         builder.show();
+    }
+
+    private void performAutocomplete(String query) {
+        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
+                .setQuery(query)
+                .build();
+
+        placesClient.findAutocompletePredictions(request).addOnSuccessListener(response -> {
+            autocompleteAdapter.clear();
+            autocompleteAdapter.addAll(response.getAutocompletePredictions());
+            autocompleteAdapter.notifyDataSetChanged();
+        }).addOnFailureListener(exception -> {
+            if (exception instanceof ApiException) {
+                ApiException apiException = (ApiException) exception;
+                Toast.makeText(getContext(), "Error fetching autocomplete predictions: " + apiException.getStatusCode(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void fetchPlaceFromPlaceId(String placeId, EditText inputLocation, ListView autocompleteListView) {
+        List<Place.Field> placeFields = Arrays.asList(
+                Place.Field.ID,
+                Place.Field.NAME,
+                Place.Field.ADDRESS,
+                Place.Field.LAT_LNG
+        );
+
+        FetchPlaceRequest request = FetchPlaceRequest.builder(placeId, placeFields)
+                .build();
+
+        placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
+            Place place = response.getPlace();
+            inputLocation.setText(place.getName());
+            autocompleteListView.setVisibility(View.GONE);
+        }).addOnFailureListener((exception) -> {
+            if (exception instanceof ApiException) {
+                ApiException apiException = (ApiException) exception;
+                int statusCode = apiException.getStatusCode();
+                Toast.makeText(getContext(), "Place not found: " + exception.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     @Override
