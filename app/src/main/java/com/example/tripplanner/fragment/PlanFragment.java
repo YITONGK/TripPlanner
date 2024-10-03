@@ -264,6 +264,27 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         });
         builder.setNegativeButton("Cancel", null);
 
+        builder.setNeutralButton("Delete", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int which) {
+                // Show a confirmation dialog
+                new AlertDialog.Builder(getContext())
+                        .setTitle("Delete Activity")
+                        .setMessage("Are you sure you want to delete this activity?")
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface confirmDialog, int whichButton) {
+                                // Remove the activity item and notify the adapter
+                                activityItemArray.remove(position);
+                                adapter.notifyDataSetChanged();
+                                confirmDialog.dismiss();
+                                dialogInterface.dismiss();
+                            }
+                        })
+                        .setNegativeButton("No", null)
+                        .show();
+            }
+        });
+
         builder.show();
     }
 
