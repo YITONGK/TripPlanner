@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import com.example.tripplanner.helperclass.ActivityItem;
+import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.R;
 
 import java.util.List;
@@ -37,14 +37,14 @@ public class ActivityItemAdapter extends ArrayAdapter<ActivityItem> {
         activityName.setText(activityItem.getName());
 
         String details = "";
-        if (!activityItem.getStartTime().isEmpty()) {
-            details += "Start Time: " + activityItem.getStartTime() + "\n";
+        if (activityItem.getStartTime() != null) {
+            details += "Start Time: " + activityItem.getStartTimeString() + "\n";
         }
-        if (!activityItem.getEndTime().isEmpty()) {
-            details += "Start Time: " + activityItem.getEndTime() + "\n";
+        if (activityItem.getEndTime() != null) {
+            details += "End Time: " + activityItem.getEndTimeString() + "\n";
         }
-        if (!activityItem.getLocation().isEmpty()) {
-            details += "Location: " + activityItem.getLocation() + "\n";
+        if (activityItem.getLocation() != null) {
+            details += "Location: " + activityItem.getLocation().getName() + "\n";
         }
         if (!activityItem.getNotes().isEmpty()) {
             details += "Note: " + activityItem.getNotes();

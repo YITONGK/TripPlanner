@@ -82,6 +82,18 @@ dependencies {
 //    implementation("androidx.credentials:credentials-play-services-auth:1.5.0-alpha05")
 
 //    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
+    // QR code generation using ZXing
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+
+    // Barcode scanning using ML Kit
+    implementation("com.google.mlkit:barcode-scanning:17.0.2")
+
+    // CameraX dependencies
+    implementation("androidx.camera:camera-core:1.1.0")
+    implementation("androidx.camera:camera-camera2:1.1.0")
+    implementation("androidx.camera:camera-lifecycle:1.1.0")
+    implementation("androidx.camera:camera-view:1.1.0")
 }
 
 secrets {

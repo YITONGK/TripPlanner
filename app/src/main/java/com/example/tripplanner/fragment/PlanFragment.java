@@ -19,8 +19,9 @@ import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
+import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
-import com.example.tripplanner.helperclass.ActivityItem;
+import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.google.android.gms.common.api.ApiException;
@@ -183,9 +184,9 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         autocompleteAdapter = new AutocompleteAdapter(getContext(), new ArrayList<>());
         autocompleteListView.setAdapter(autocompleteAdapter);
 
-        startTime.setText(activityItem.getStartTime());
-        endTime.setText(activityItem.getEndTime());
-        inputLocation.setText(activityItem.getLocation());
+        startTime.setText(activityItem.getStartTimeString());
+        endTime.setText(activityItem.getEndTimeString());
+//        inputLocation.setText(activityItem.getLocation().toString());
         inputNotes.setText(activityItem.getNotes());
 
         startTime.setOnClickListener(new View.OnClickListener() {

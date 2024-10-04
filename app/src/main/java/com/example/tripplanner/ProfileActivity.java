@@ -2,17 +2,25 @@ package com.example.tripplanner;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.tripplanner.databinding.ActivityProfileBinding;
+import com.example.tripplanner.entity.User;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class ProfileActivity extends AppCompatActivity {
     private ActivityProfileBinding binding;
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseUser user;
 
     @Override
@@ -22,27 +30,46 @@ public class ProfileActivity extends AppCompatActivity {
         binding = ActivityProfileBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        TextView username = (TextView) findViewById(R.id.username);
-        TextView email = (TextView) findViewById(R.id.emailAddress);
-        ImageView profilePicture = (ImageView) findViewById(R.id.profilePicture);
+        TextView username = findViewById(R.id.username);
+        TextView email = findViewById(R.id.emailAddress);
+        ImageView profilePicture = findViewById(R.id.profilePicture);
 
-        // get user profile from firebase
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            // get username and email address from firebase
-//            username.setText(user.getDisplayName());
-            email.setText(user.getEmail());
-//            user.getPhotoUrl();
-            // The user's ID, unique to the Firebase project.
+        // get user details from database
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(ProfileActivity.this, "User's details are not available at the moment", Toast.LENGTH_LONG).show();
+        } else {
             String uid = user.getUid();
+
+            DocumentReference docRef = db.collection("users").document(uid);
+            docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                @Override
+                public void onSuccess(DocumentSnapshot documentSnapshot) {
+                    Log.d("TAG", "successfully read the user data");
+                    User userData = documentSnapshot.toObject(User.class);
+                    Log.d("TAG", userData.getUsername());
+                    username.setText(userData.getUsername());
+                    email.setText(userData.getEmail());
+                }
+            });
         }
+
+        //TODO: get trip summary from database
 
 
         binding.editProfileBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(ProfileActivity.this, EditProfileActivity.class);
-                startActivity(intent);
+                if (user == null) {
+                    Toast.makeText(ProfileActivity.this, "Error", Toast.LENGTH_LONG).show();
+                } else {
+                    // Pass username and email to Edit Profile Activity
+                    String uid = user.getUid();
+                    Intent intent = new Intent(ProfileActivity.this, EditProfileActivity.class);
+                    intent.putExtra("username", username.getText().toString());
+                    intent.putExtra("email", email.getText().toString());
+                    startActivity(intent);
+                }
             }
         });
 
@@ -63,6 +90,5 @@ public class ProfileActivity extends AppCompatActivity {
             }
         });
     }
-
 
 }

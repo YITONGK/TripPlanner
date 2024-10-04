@@ -41,15 +41,18 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Username"
+            android:text="Email Address"
+            android:textSize="15sp"
             android:textStyle="bold"
             android:alpha="0.7" />
 
-        <EditText
-            android:id="@+id/username"
+        <TextView
+            android:id="@+id/emailAddress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="extract from database" />
+            android:text="extract from database"
+            android:textSize="15sp"
+            android:layout_marginTop="7dp"/>
 
         <View
             android:layout_width="wrap_content"
@@ -58,15 +61,28 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Email Address"
+            android:text="Username"
             android:textStyle="bold"
+            android:textSize="15sp"
             android:alpha="0.7" />
 
         <EditText
-            android:id="@+id/emailAddress"
+            android:id="@+id/username"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="extract from database"/>
+            android:text="extract from database"
+            android:textSize="15sp"/>
+
+<!--        <View-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="30dp" />-->
+
+<!--        <com.google.android.material.button.MaterialButton-->
+<!--            android:id="@+id/changePasswordBtn"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="60dp"-->
+<!--            android:text="Change Password"-->
+<!--            app:backgroundTint="@color/darkblue"/>-->
 
         <View
             android:layout_width="wrap_content"

@@ -3,19 +3,27 @@ package com.example.tripplanner;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.FrameLayout;
 import android.view.View;
 import android.widget.Button;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.example.tripplanner.adapter.ButtonDecorator;
 import com.example.tripplanner.databinding.PlanDurationBinding;
+import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanDurationFragment;
 import com.example.tripplanner.utils.OnFragmentInteractionListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
@@ -27,18 +35,26 @@ import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class PlanDurationActivity extends AppCompatActivity  implements OnFragmentInteractionListener, ButtonDecorator.OnButtonClickListener {
     private PlanDurationBinding binding;
@@ -225,6 +241,46 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                         }
                     }
 
+                    FirebaseAuth mAuth = FirebaseAuth.getInstance();
+                    FirebaseUser currentUser = mAuth.getCurrentUser();
+                    if (currentUser != null) {
+                        String userId = currentUser.getUid();
+                        // Create a new Trip object and upload it to the database
+                        List<Location> locations = new ArrayList<>();
+                        for (int i = 0; i < locationList.length(); i++) {
+                            String loc = locationList.optString(i, null);
+                            if (loc != null) {
+                                locations.add(new Location(loc, 0.0, 0.0));
+                            }
+                        }
+
+//                        Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate), receivedDays,locations, userId);
+//                        FirestoreDB firestore = new FirestoreDB();
+//                        firestore.createTrip("userId", trip.convertTripToMap());
+
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                        Date parsedDate;
+                        try {
+                            parsedDate = dateFormat.parse(receivedStartDate);
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+                        Timestamp startDate = new Timestamp(parsedDate);
+
+                        // Create Trip object
+                        Trip trip = new Trip("New Trip", startDate, receivedDays, locations, userId);
+
+                        // Create FirestoreDB instance and add trip to Firestore
+                        FirestoreDB firestore = new FirestoreDB();
+                        firestore.createTrip(userId, trip.convertTripToMap());
+                    } else {
+                        Log.d("PLAN", "[PlanDurationActivity] No user is signed in.");
+                    }
+
+
+
+
                     Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
                     intent.putExtra("planDetails", planDetails.toString());
                     startActivity(intent);
@@ -234,6 +290,7 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                 }
             }
         });
+
     }
 
     private void loadFragment(Fragment fragment) {

@@ -10,13 +10,15 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.time.LocalDate;
 
 import com.example.tripplanner.databinding.ActivityLoginBinding;
 import com.example.tripplanner.db.FirestoreDB;
-import com.example.tripplanner.helperclass.Location;
-import com.example.tripplanner.helperclass.Trip;
+import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+//import com.google.android.libraries.places.api.model.LocalDate;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -56,17 +58,6 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
-
-        FirestoreDB firestoreDB = new FirestoreDB();
-        Trip newTrip = new Trip("Holiday in Paris", new Date(), new Date());
-        Location eiffelTower = new Location("Eiffel Tower", 48.8584, 2.2945);
-
-        // Assuming you have methods in FirestoreDB to handle these actions:
-        firestoreDB.createTrip("userId123", newTrip);
-        newTrip.addLocation(eiffelTower);
-        firestoreDB.addLocationToTrip("userId123", "tripId123", eiffelTower);
-
     }
 
     private void signIn(String email, String password) {
@@ -80,10 +71,8 @@ public class LoginActivity extends AppCompatActivity {
                             Log.d("TAG", "signInWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
 
-                            // Jump to MainActivity
-                            //TODO: test profile activity, change to main activity later
-//                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                            Intent intent = new Intent(LoginActivity.this, ProfileActivity.class);
+                            // Navigate to MainActivity
+                            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                             startActivity(intent);
 //                            updateUI(user);
                         } else {

@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.tripplanner.databinding.ActivitySignupBinding;
+import com.example.tripplanner.entity.User;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -91,19 +92,17 @@ public class SignupActivity extends AppCompatActivity {
                                 String uid = user.getUid();
 
                                 // Create a user object to save to Firestore
-                                Map<String, Object> userData = new HashMap<>();
-                                userData.put("name", username);
-                                userData.put("email", email);
+                                User newUser = new User(username, email);
+
                                 // Add the user document with the Firebase User's UID
                                 db.collection("users").document(uid)
-                                        .set(userData)
+                                        .set(newUser)
                                         .addOnSuccessListener(new OnSuccessListener<Void>() {
                                             @Override
                                             public void onSuccess(Void aVoid) {
                                                 Log.d("TAG", "User document added with UID: " + uid);
                                                 Toast.makeText(SignupActivity.this, "Sign up successfully", Toast.LENGTH_SHORT).show();
-
-                                                // Jump to MainActivity
+                                                // Navigate to MainActivity
                                                 Intent intent = new Intent(SignupActivity.this, MainActivity.class);
                                                 startActivity(intent);
                                             }

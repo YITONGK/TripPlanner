@@ -2,7 +2,7 @@ package com.example.tripplanner.fragment;
 
 import androidx.lifecycle.ViewModel;
 
-import com.example.tripplanner.helperclass.ActivityItem;
+import com.example.tripplanner.entity.ActivityItem;
 
 import java.util.ArrayList;
 import java.util.HashMap;

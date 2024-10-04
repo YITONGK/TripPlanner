@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -18,6 +19,8 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
+import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.utils.GptApiClient;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
@@ -125,6 +128,34 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             }
         });
 
+        Button gptPlanButton = findViewById(R.id.gptPlanButton);
+        gptPlanButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String userInput = editTextMessage.getText().toString().trim();
+                if (!userInput.isEmpty()) {
+                    GptApiClient.getTripPlan("Melbourne", new GptApiClient.GptApiCallback() {
+                        @Override
+                        public void onSuccess(String response) {
+                            runOnUiThread(() -> {
+                                // Parse and display the response
+                                Toast.makeText(CreateNewPlanActivity.this, "GPT Response: " + response, Toast.LENGTH_LONG).show();
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            runOnUiThread(() -> {
+                                Toast.makeText(CreateNewPlanActivity.this, "Error: " + error, Toast.LENGTH_LONG).show();
+                            });
+                        }
+                    });
+                } else {
+                    Toast.makeText(CreateNewPlanActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
     }
 
     private void performAutocomplete(String query) {
@@ -169,6 +200,8 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
     private void handlePlaceSelection(Place place) {
         editTextMessage.setText(place.getName());
