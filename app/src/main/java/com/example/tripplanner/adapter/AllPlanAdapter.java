@@ -1,9 +1,11 @@
 package com.example.tripplanner.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -11,7 +13,9 @@ import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.tripplanner.MainActivity;
 import com.example.tripplanner.R;
+import com.example.tripplanner.SignupActivity;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
@@ -23,10 +27,12 @@ import java.util.Map;
 public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHolder> {
     private Context context;
     private ArrayList<Trip> allPlans;
+    private final AllPlanInterface allPlanInterface;
 
-    public AllPlanAdapter(Context context, ArrayList<Trip> allPlans) {
+    public AllPlanAdapter(Context context, ArrayList<Trip> allPlans, AllPlanInterface allPlanInterface) {
         this.context = context;
         this.allPlans = allPlans;
+        this.allPlanInterface = allPlanInterface;
     }
 
     @NonNull
@@ -34,7 +40,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
     public AllPlanAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(context);
         View view = inflater.inflate(R.layout.all_plan_row, parent, false);
-        return new AllPlanAdapter.ViewHolder(view);
+        return new AllPlanAdapter.ViewHolder(view, allPlanInterface);
     }
 
     @Override
@@ -75,13 +81,6 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         //TODO: get the cover image of the trip
 //        holder.img.setImageResource(allPlans.get(position).getImage());
 
-        //TODO: Navigate to specific trip plan by clicking the card
-        holder.plan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-            }
-        });
     }
 
     @Override
@@ -94,13 +93,25 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         private TextView locations, duration, numActivity;
         private CardView plan;
 
-        public ViewHolder(@NonNull View itemView) {
+        public ViewHolder(@NonNull View itemView, AllPlanInterface allPlanInterface) {
             super(itemView);
             img = itemView.findViewById(R.id.image);
             locations = itemView.findViewById(R.id.locations);
             duration = itemView.findViewById(R.id.duration);
             numActivity = itemView.findViewById(R.id.numActivity);
             plan = itemView.findViewById(R.id.plan);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (allPlanInterface != null) {
+                        int pos = getAdapterPosition();
+                        if (pos != RecyclerView.NO_POSITION) {
+                            allPlanInterface.onItemClick(pos);
+                        }
+                    }
+                }
+            });
         }
     }
 }

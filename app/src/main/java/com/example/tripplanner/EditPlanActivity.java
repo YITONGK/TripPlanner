@@ -4,13 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,15 +19,18 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.tripplanner.databinding.ActivityEditPlanBinding;
+import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanFragment;
 import com.google.android.material.tabs.TabLayout;
 
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class EditPlanActivity extends AppCompatActivity {
 
@@ -60,27 +60,41 @@ public class EditPlanActivity extends AppCompatActivity {
         });
 
         // Initialize variables from intent
-        String jsonString = getIntent().getStringExtra("planDetails");
-        if (jsonString != null) {
-            try {
-                tripPlan = new JSONObject(jsonString);
-                placeArray = tripPlan.getJSONArray("location");
-                for (int i = 0; i < placeArray.length(); i++) {
-                    placeList.add(placeArray.getString(i));
-                }
-                StringBuilder sb = new StringBuilder();
-                for (String place : placeList) {
-                    sb.append(place).append(", ");
-                }
-                if (sb.length() > 0) {
-                    sb.setLength(sb.length() - 2);
-                }
-                selectedPlace = sb.toString();
-                days = tripPlan.getInt("days");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
+        // String jsonString = getIntent().getStringExtra("planDetails");
+
+        // Get plan details from database
+        String tripId = getIntent().getStringExtra("tripId");
+        Log.d("TAG", tripId);
+        FirestoreDB firestoreDB = new FirestoreDB();
+        firestoreDB.getTripByTripId(tripId, trip -> {
+            Log.d("DDDD", trip.toString());
+            extractDetails(trip);
+            this.days = trip.getNumDays();
+        }, e -> {
+            Log.d("PLAN", "Error getting trip by trip id: " + e.getMessage());
+        });
+
+
+//        if (jsonString != null) {
+//            try {
+//                tripPlan = new JSONObject(jsonString);
+//                placeArray = tripPlan.getJSONArray("location");
+//                for (int i = 0; i < placeArray.length(); i++) {
+//                    placeList.add(placeArray.getString(i));
+//                }
+//                StringBuilder sb = new StringBuilder();
+//                for (String place : placeList) {
+//                    sb.append(place).append(", ");
+//                }
+//                if (sb.length() > 0) {
+//                    sb.setLength(sb.length() - 2);
+//                }
+//                selectedPlace = sb.toString();
+//                days = tripPlan.getInt("days");
+//            } catch (JSONException e) {
+//                e.printStackTrace();
+//            }
+//        }
 
         // Set trip name and days
         TextView tripTo = findViewById(R.id.textViewSelectedPlace);
@@ -152,6 +166,23 @@ public class EditPlanActivity extends AppCompatActivity {
                 // Handle reselected tab
             }
         });
+    }
+
+    private void extractDetails(Trip trip) {
+        // Get locations and duration of the plan
+        List<Location> locations = trip.getLocations();
+
+        StringBuilder sb = new StringBuilder();
+        for (Location location : locations) {
+            sb.append(location.getName()).append(", ");
+        }
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 2);
+        }
+        this.selectedPlace = sb.toString();
+        this.days = trip.getNumDays();
+
+        //TODO: get activities of the plan
     }
 
     private void initializeFragmentsAndTabs() {

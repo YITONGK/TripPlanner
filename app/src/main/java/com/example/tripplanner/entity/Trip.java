@@ -165,6 +165,10 @@ public class Trip {
         this.plans = plans;
     }
 
+    public int getNumDays() {
+        return numDays;
+    }
+
     @Override
     public String toString() {
         return "Trip{" +
