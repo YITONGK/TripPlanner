@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.entity.UserTripStatistics;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
@@ -16,58 +17,18 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class FirestoreDB implements DatabaseInterface {
+public class FirestoreDB {
 
     private FirebaseFirestore firestore;
 
     public FirestoreDB() {
         this.firestore = FirebaseFirestore.getInstance();
-    }
-
-    @Override
-    public String insert(String table, Map<String, Object> values) {
-        AtomicReference<String> newID = new AtomicReference<>("");
-        firestore.collection(table).add(values)
-                .addOnSuccessListener(documentReference -> {
-                    Log.d("Debug", "Document added with ID: " + documentReference.getId());
-                    newID.set(documentReference.getId());
-                })
-                .addOnFailureListener(e -> {
-                    Log.d("Debug", "Error adding document: " + e.getMessage());
-                });
-        return newID.get();
-    }
-
-    @Override
-    public void update(String table, Map<String, Object> values, String whereClause) {
-        firestore.collection(table).document(whereClause).set(values)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("Debug", "Document updated");
-                })
-                .addOnFailureListener(e -> {
-                    Log.d("Debug", "Error updating document: " + e.getMessage());
-                });
-    }
-
-    @Override
-    public void delete(String table, String whereClause) {
-        firestore.collection(table).document(whereClause).delete()
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("Debug", "Document deleted");
-                })
-                .addOnFailureListener(e -> {
-                    Log.d("Debug", "Error deleting document: " + e.getMessage());
-                });
-    }
-
-    @Override
-    public List<Map<String, Object>> query(String table, String[] columns, String selection, String[] selectionArgs, String groupBy, String having, String orderBy) {
-        // Implement query logic if needed
-        return null;
     }
 
      public void getTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener, OnFailureListener onFailureListener) {
@@ -114,19 +75,6 @@ public class FirestoreDB implements DatabaseInterface {
                 })
                 .addOnFailureListener(onFailureListener);
     }
-
-
-    // Create Trip in Firestore
-//    public void createTrip(String userId, Trip trip) {
-//        Map<String, Object> tripData = convertTripToMap(trip);
-//        insert("users/" + userId + "/trips", tripData);
-//    }
-
-    // Add Location to an existing Trip in Firestore
-    // public void addLocationToTrip(String userId, String tripId, Location location) {
-    //     Map<String, Object> locationData = convertLocationToMap(location);
-    //     insert("users/" + userId + "/trips/" + tripId + "/locations", locationData);
-    // }
 
     public void createTrip(String userId, Map<String, Object> tripData) {
         firestore.collection("trips").add(tripData)
@@ -214,15 +162,53 @@ public class FirestoreDB implements DatabaseInterface {
                 .addOnFailureListener(onFailureListener);
     }
 
+    public void getUserTripStatistics(String userId, OnSuccessListener<UserTripStatistics> onSuccessListener, OnFailureListener onFailureListener) {
+        firestore.collection("trips")
+                .whereArrayContains("userIds", userId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    int totalTrips = 0;
+                    int totalDays = 0;
+                    Set<String> uniqueLocations = new HashSet<>();
 
+                    List<DocumentSnapshot> documents = queryDocumentSnapshots.getDocuments();
+                    totalTrips = documents.size();
 
-    // Convert Location object to Map for Firestore
-    private Map<String, Object> convertLocationToMap(Location location) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("name", location.getName());
-        map.put("latitude", location.getLatitude());
-        map.put("longitude", location.getLongitude());
-        return map;
+                    for (DocumentSnapshot document : documents) {
+                        try {
+                            // Parse numDays
+                            int numDays = document.contains("numDays") ? document.getLong("numDays").intValue() : 0;
+                            totalDays += numDays;
+
+                            // Parse locations
+                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) document.get("locations");
+                            if (locationsMap != null) {
+                                for (Map<String, Object> locMap : locationsMap) {
+                                    String locationName = (String) locMap.get("name");
+                                    double latitude = ((Number) locMap.get("latitude")).doubleValue();
+                                    double longitude = ((Number) locMap.get("longitude")).doubleValue();
+                                    String locationId = locationName + "_" + latitude + "_" + longitude;
+
+                                    uniqueLocations.add(locationId);
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e("PLAN", "Error parsing trip document", e);
+                            // Continue to next trip
+                        }
+                    }
+
+                    int totalUniqueLocations = uniqueLocations.size();
+
+                    UserTripStatistics statistics = new UserTripStatistics(totalTrips, totalUniqueLocations, totalDays);
+                    onSuccessListener.onSuccess(statistics);
+
+                })
+                .addOnFailureListener(onFailureListener);
     }
+
+
+
+
 
 }
