@@ -9,6 +9,8 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 
+import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.WeatherTripPlanner;
 import com.google.android.gms.maps.GoogleMap;
@@ -106,6 +108,18 @@ public class MainActivity extends AppCompatActivity {
 
         // Detect weather and plan trip
         weatherTripPlanner.detectWeatherAndPlanTrip();
+
+
+
+        FirestoreDB firestoreDB = new FirestoreDB();
+        firestoreDB.getTripByTripId("F5jTca4WBQiNeFGalV9i", trip -> {
+            // Handle the list of trips
+            Log.d("PLAN", trip.toString());
+            // Update the adapter with the fetched trips
+            // adapter.updateTrips(trips);
+        }, e -> {
+            Log.d("PLAN", "Error getting trips: " + e.getMessage());
+        });
     }
 
 //     @Override

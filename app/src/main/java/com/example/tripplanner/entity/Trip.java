@@ -164,5 +164,21 @@ public class Trip {
     public void setPlans(Map<String, List<ActivityItem>> plans) {
         this.plans = plans;
     }
+
+    @Override
+    public String toString() {
+        return "Trip{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                ", numDays=" + numDays +
+                ", locations=" + locations +
+                ", note='" + note + '\'' +
+                ", plans=" + plans +
+                ", database=" + database +
+                ", userIds=" + userIds +
+                '}';
+    }
 }
 

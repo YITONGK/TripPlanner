@@ -1,10 +1,12 @@
 package com.example.tripplanner.fragment;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -19,7 +21,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.AdvancedMarkerOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -114,10 +118,26 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
+//
         LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
+//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        TextView textView = new TextView(this.getContext());
+        textView.setText("Hello!!");
+        textView.setBackgroundColor(Color.BLACK);
+        textView.setTextColor(Color.YELLOW);
+
+        Marker marker = mMap.addMarker(
+                new AdvancedMarkerOptions()
+                        .position(sydney)
+                        .iconView(textView));
+        marker.setTag(0);
+
+        LatLng PERTH = new LatLng(-31.952854, 115.857342);
+        Marker markerPerth = mMap.addMarker(new MarkerOptions()
+                .position(PERTH)
+                .title("Perth"));
+        markerPerth.setTag(0);
     }
 
 
