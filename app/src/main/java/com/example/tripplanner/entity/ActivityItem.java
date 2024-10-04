@@ -18,9 +18,9 @@ public class ActivityItem {
 
     public ActivityItem (String name) {
         this.name = name;
-        this.startTime = Timestamp.now();
-        this.endTime = Timestamp.now();
-        this.location = new Location("", 0, 0);
+//        this.startTime = Timestamp.now();
+//        this.endTime = Timestamp.now();
+//        this.location = new Location("", 0, 0);
         this.notes = "";
     }
 
@@ -64,11 +64,17 @@ public class ActivityItem {
     }
 
     public String getStartTimeString() {
-        return startTime.toDate().toString();
+        if (startTime != null) {
+            return startTime.toDate().toString();
+        }
+        return "";
     }
 
     public String getEndTimeString() {
-        return endTime.toDate().toString();
+        if (endTime != null) {
+            return endTime.toDate().toString();
+        }
+        return "";
     }
 
     public static Timestamp convertStringToTimestamp(String time){
@@ -92,7 +98,10 @@ public class ActivityItem {
     }
 
     public Location getLocation() {
-        return location;
+        if (location != null) {
+            return location;
+        }
+        return null;
     }
 
     public void setLocation(Location location) {

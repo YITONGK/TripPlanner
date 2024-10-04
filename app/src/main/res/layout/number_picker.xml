@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <com.shawnlin.numberpicker.NumberPicker
+        android:id="@+id/numberPicker"
+        android:layout_width="match_parent"
+        android:layout_height="350dp"
+        android:dividerPadding="10dp"
+        app:np_dividerColor="@color/black"
+        app:np_dividerDistance="40dp"
+        app:np_dividerThickness="2dp"
+        app:np_dividerType="underline"
+        app:np_itemSpacing="-10dp"
+        app:np_selectedTextColor="@color/black"
+        app:np_selectedTextSize="40dp"
+        app:np_textColor="#808080"
+        app:np_textSize="30dp"
+        app:np_wheelItemCount="8"
+        app:np_wrapSelectorWheel="false" />
+
+    <Button
+        android:id="@+id/button_done"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Done"
+        android:layout_marginTop="16dp"
+        android:padding="12dp"
+        android:backgroundTint="@color/black"
+        android:textColor="@color/white" />
+
+</LinearLayout>

@@ -41,6 +41,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.Toast;
@@ -55,14 +56,20 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class PlanDurationActivity extends AppCompatActivity  implements OnFragmentInteractionListener {
+public class PlanDurationActivity extends AppCompatActivity  implements OnFragmentInteractionListener, ButtonDecorator.OnButtonClickListener {
     private PlanDurationBinding binding;
     private JSONObject planDetails =  new JSONObject();;
     private JSONArray locationList = new JSONArray();;
+    private ButtonDecorator buttonDecorator;
     private int receivedDays;
     private String receivedStartDate;
     private String receivedEndDate;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+    private String receivedCalenderStartDate;
+    private String receivedCalenderEndDate;
+    private int revivedCalendarDays;
+    private int currentTabPosition = 0;
 
     final String apiKey = BuildConfig.PLACES_API_KEY;
 
@@ -86,8 +93,10 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
 
         //Remove Button (Dynamic add based on the JSON Objects)
         //3. add the button based on the JSONARRAY
-        ButtonDecorator buttonDecorator = new ButtonDecorator( findViewById(R.id.constraint_layout));
+        LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);
+        buttonDecorator = new ButtonDecorator(linearLayout, this);
         buttonDecorator.addButtonsFromJson(locationList);
+
 
         //Back Button Functions
         Button backButton = findViewById(R.id.button_back);
@@ -173,7 +182,7 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                         bottomSheetDialog.dismiss();
                         String selectedPlace = prediction.getPrimaryText(null).toString();
                         locationList.put(selectedPlace);
-                        buttonDecorator.addButtonsFromJson(locationList);
+                        buttonDecorator.addSingleButton(selectedPlace,locationList.length() - 1);
                     }
                 });
 
@@ -192,6 +201,7 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
+                currentTabPosition = tab.getPosition();
                 Fragment selectedFragment;
                 if (tab.getPosition() == 0) {
                     selectedFragment = PlanDurationFragment.newInstance(PlanDurationFragment.DAYS);
@@ -213,10 +223,23 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
             @Override
             public void onClick(View v) {
                 try {
+
                     planDetails.put("location", locationList);
-                    planDetails.put("days" ,receivedDays);
-                    planDetails.put("startDate", receivedStartDate);
-                    planDetails.put("endDate", receivedEndDate);
+                    if (currentTabPosition == 0) { // Days
+                        planDetails.put("days", receivedDays);
+                        planDetails.put("startDate", receivedStartDate);
+                        planDetails.put("endDate", receivedEndDate);
+                    } else if (currentTabPosition == 1) { // Calendar
+                        if (receivedCalenderStartDate == null || receivedCalenderEndDate == null ||
+                                receivedCalenderStartDate.isEmpty() || receivedCalenderEndDate.isEmpty()) {
+                            Toast.makeText(PlanDurationActivity.this, "Please select Start date and End date", Toast.LENGTH_SHORT).show();
+                            return;
+                        } else {
+                            planDetails.put("days", revivedCalendarDays);
+                            planDetails.put("startDate", receivedCalenderStartDate);
+                            planDetails.put("endDate", receivedCalenderEndDate);
+                        }
+                    }
 
                     FirebaseAuth mAuth = FirebaseAuth.getInstance();
                     FirebaseUser currentUser = mAuth.getCurrentUser();
@@ -255,17 +278,20 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                         Log.d("PLAN", "[PlanDurationActivity] No user is signed in.");
                     }
 
+
+
+
+                    Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
+                    intent.putExtra("planDetails", planDetails.toString());
+                    startActivity(intent);
+
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
-                Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
-                intent.putExtra("planDetails", planDetails.toString());
-                startActivity(intent);
             }
         });
 
     }
-
 
     private void loadFragment(Fragment fragment) {
 
@@ -275,11 +301,8 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                 .commit();
     }
 
-
     @Override
     public void DaysInteraction(String data) {
-
-
         receivedDays =  Integer.parseInt(data);
 
         Calendar calendar = Calendar.getInstance();
@@ -291,8 +314,15 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
 
     @Override
     public void DatesInteraction(String startDate, String endDate){
-        receivedStartDate = startDate;
-        receivedEndDate = endDate;
+        if (startDate == null || endDate == null){
+            receivedCalenderStartDate = null;
+            receivedCalenderEndDate = null;
+            revivedCalendarDays = 0;
+            return;
+        }
+
+        receivedCalenderStartDate = startDate;
+        receivedCalenderEndDate = endDate;
 
         try {
             Date start = dateFormat.parse(startDate);
@@ -308,7 +338,7 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                 startCal.add(Calendar.DAY_OF_MONTH, 1);
                 daysDifference++;
             }
-            receivedDays = daysDifference;
+            revivedCalendarDays = daysDifference;
 
         } catch (ParseException e) {
             e.printStackTrace();
@@ -332,4 +362,41 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
         });
     }
 
+    @Override
+    public void onButtonClicked(int index, Button button) {
+        if (locationList.length() <= 1) {
+            Toast.makeText(this, "At least one location being selected!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        locationList = removeLocationFromJsonArray(locationList, index);
+
+        LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);
+        linearLayout.removeView(button);
+
+        updateButtonTags();
+    }
+
+    private JSONArray removeLocationFromJsonArray(JSONArray array, int index) {
+        JSONArray updatedArray = new JSONArray();
+        for (int i = 0; i < array.length(); i++) {
+            if (i != index) {
+                try {
+                    updatedArray.put(array.get(i));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return updatedArray;
+    }
+
+    private void updateButtonTags() {
+        LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);
+        for (int i = 0; i < linearLayout.getChildCount(); i++) {
+            View view = linearLayout.getChildAt(i);
+            if (view instanceof Button) {
+                view.setTag(i);
+            }
+        }
+    }
 }
