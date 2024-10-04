@@ -1,5 +1,6 @@
 package com.example.tripplanner.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -10,8 +11,10 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.AllPlanAdapter;
+import com.example.tripplanner.adapter.AllPlanInterface;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
@@ -27,7 +30,7 @@ import com.google.firebase.auth.FirebaseUser;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
-public class HomeFragment extends Fragment implements OnMapReadyCallback {
+public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPlanInterface {
 
     public static int PLAN = R.layout.home_fragment_layout_plan;
     public static int LOCATION = R.layout.home_fragment_layout_location;
@@ -36,7 +39,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
     private int layout = R.layout.home_fragment_layout_plan;
     private GoogleMap mMap;
 
-    private ArrayList<Trip> allPlans;
+    private ArrayList<Trip> allPlans = new ArrayList<>();;
     private AllPlanAdapter adapter;
 
     @Override
@@ -65,9 +68,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
 
     private void displayAllPlans(View rootView) {
         RecyclerView recyclerView = rootView.findViewById(R.id.allPlanRecyclerView);
-        ArrayList<Trip> allPlans = new ArrayList<>();
+//        ArrayList<Trip> allPlans = new ArrayList<>();
         // bind the adapter
-        adapter = new AllPlanAdapter(rootView.getContext(), allPlans);
+        adapter = new AllPlanAdapter(rootView.getContext(), allPlans, this);
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(rootView.getContext()));
 
@@ -76,39 +79,21 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         FirebaseUser currentUser = mAuth.getCurrentUser();
          if (currentUser != null) {
              String userId = currentUser.getUid();
-            FirestoreDB firestoreDB = new FirestoreDB();
-            firestoreDB.getTripsByUserId(userId, trips -> {
-                // Handle the list of trips
-                allPlans.clear();
-                allPlans.addAll(trips);
-                adapter.notifyDataSetChanged();
-                for (Trip trip : trips) {
-                    Log.d("PLAN", "Trip: " + trip.getName());
-                    // allPlans.add(trip);
-                }
-                // Update the adapter with the fetched trips
-                // adapter.updateTrips(trips);
-            }, e -> {
-                Log.d("PLAN", "Error getting trips: " + e.getMessage());
-            });
+             FirestoreDB firestoreDB = new FirestoreDB();
+             firestoreDB.getTripsByUserId(userId, trips -> {
+                 // Handle the list of trips
+                 allPlans.clear();
+                 allPlans.addAll(trips);
+                 adapter.notifyDataSetChanged();
+                 for (Trip trip : trips) {
+                     Log.d("PLAN", "Trip: " + trip.getName());
+                 }
+             }, e -> {
+                 Log.d("PLAN", "Error getting trips: " + e.getMessage());
+             });
          } else {
              Log.d("Debug", "No user is signed in.");
          }
-
-        // create some sample trips
-//        Trip newTrip = new Trip("Holiday in Paris", LocalDate.of(2020, 1, 1), LocalDate.of(2020, 1, 10));
-//        Location eiffelTower = new Location("Eiffel Tower", 48.8584, 2.2945);
-//        newTrip.addLocation(eiffelTower);
-//
-//        Trip newTrip2 = new Trip("Holiday in Australia", LocalDate.of(2024, 10, 1), LocalDate.of(2024, 10, 5));
-//        Location melbourne = new Location("Melbourne", 48.8584, 2.2945);
-//        Location sydney = new Location("Sydney", 30, 144);
-//        newTrip2.addLocation(melbourne);
-//        newTrip2.addLocation(sydney);
-
-
-//        allPlans.add(newTrip);
-//        allPlans.add(newTrip2);
     }
 
     @Override
@@ -129,5 +114,15 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback {
         bundle.putInt(LAYOUT_TYPE, layout);
         fragment.setArguments(bundle);
         return fragment;
+    }
+
+    @Override
+    public void onItemClick(int position) {
+        // Navigate to specific plan detail page
+        Log.d("TAG", "click on card");
+        Log.d("TAG", getActivity().toString());
+        Intent i = new Intent(getActivity(), EditPlanActivity.class);
+        i.putExtra("tripId", allPlans.get(position).getId());
+        startActivity(i);
     }
 }

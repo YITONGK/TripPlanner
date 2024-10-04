@@ -164,5 +164,9 @@ public class Trip {
     public void setPlans(Map<String, List<ActivityItem>> plans) {
         this.plans = plans;
     }
+
+    public int getNumDays() {
+        return numDays;
+    }
 }
 
