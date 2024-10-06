@@ -25,6 +25,10 @@ import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanFragment;
 import com.google.android.material.tabs.TabLayout;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,10 +52,30 @@ public class EditPlanActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
         applyWindowInsets();
 
+        // Get intent extras
         String tripId = getIntent().getStringExtra("tripId");
-        Log.d("TAG", "Trip ID: " + tripId);
+        String jsonString = getIntent().getStringExtra("planDetails");
 
-        fetchTripData(tripId);
+        if (tripId != null && !tripId.isEmpty()) {
+            Log.d("TAG", "Trip ID: " + tripId);
+            fetchTripData(tripId);
+        } else if (jsonString != null && !jsonString.isEmpty()) {
+            Log.d("TAG", "Plan Details JSON: " + jsonString);
+            parsePlanDetails(jsonString);
+
+            // Update the UI
+            runOnUiThread(() -> {
+                setupTripInfo();
+                initializeFragmentsAndTabs();
+                setupTabSelectedListener();
+                loadFragment(fragments.get(0));
+            });
+        } else {
+            // Handle the case where neither tripId nor planDetails are provided
+            Log.d("TAG", "No trip ID or plan details provided.");
+            // Optionally, finish the activity or show an error message
+            finish();
+        }
 
         setupCloseButton();
         setupPlanSettingsLauncher();
@@ -77,7 +101,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private void onTripDataFetched(Trip trip) {
         Log.d("PLAN", "Trip data fetched: " + trip.toString());
         this.trip = trip;
-        extractDetails(trip);
+        extractDetailsFromTrip(trip);
 
         runOnUiThread(() -> {
             setupTripInfo();
@@ -86,6 +110,59 @@ public class EditPlanActivity extends AppCompatActivity {
             loadFragment(fragments.get(0));
         });
     }
+
+    private void parsePlanDetails(String jsonString) {
+        try {
+            JSONObject tripPlan = new JSONObject(jsonString);
+            extractDetailsFromPlan(tripPlan);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            // Handle JSON parsing error
+            Log.d("TAG", "Error parsing plan details: " + e.getMessage());
+        }
+    }
+
+    private void extractDetailsFromTrip(Trip trip) {
+        // Get locations and duration of the plan
+        List<Location> locations = trip.getLocations();
+
+        StringBuilder sb = new StringBuilder();
+        for (Location location : locations) {
+            sb.append(location.getName()).append(", ");
+        }
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 2);
+        }
+        selectedPlace = sb.toString();
+        days = trip.getNumDays();
+
+        // TODO: get activities of the plan
+    }
+
+    private void extractDetailsFromPlan(JSONObject tripPlan) {
+        try {
+            JSONArray placeArray = tripPlan.getJSONArray("location");
+            ArrayList<String> placeList = new ArrayList<>();
+            for (int i = 0; i < placeArray.length(); i++) {
+                placeList.add(placeArray.getString(i));
+            }
+            StringBuilder sb = new StringBuilder();
+            for (String place : placeList) {
+                sb.append(place).append(", ");
+            }
+            if (sb.length() > 0) {
+                sb.setLength(sb.length() - 2);
+            }
+            selectedPlace = sb.toString();
+            days = tripPlan.getInt("days");
+
+            // TODO: get activities of the plan
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Log.d("TAG", "Error extracting details from plan: " + e.getMessage());
+        }
+    }
+
 
     private void setupTripInfo() {
         tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
@@ -147,23 +224,6 @@ public class EditPlanActivity extends AppCompatActivity {
             intent.putExtra("days", days);
             planSettingsLauncher.launch(intent);
         });
-    }
-
-    private void extractDetails(Trip trip) {
-        // Get locations and duration of the plan
-        List<Location> locations = trip.getLocations();
-
-        StringBuilder sb = new StringBuilder();
-        for (Location location : locations) {
-            sb.append(location.getName()).append(", ");
-        }
-        if (sb.length() > 0) {
-            sb.setLength(sb.length() - 2);
-        }
-        selectedPlace = sb.toString();
-        days = trip.getNumDays();
-
-        // TODO: get activities of the plan
     }
 
     private void initializeFragmentsAndTabs() {
