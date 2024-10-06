@@ -15,6 +15,8 @@ import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.WeatherTripPlanner;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -109,17 +111,23 @@ public class MainActivity extends AppCompatActivity {
         // Detect weather and plan trip
         weatherTripPlanner.detectWeatherAndPlanTrip();
 
-
-
-        FirestoreDB firestoreDB = new FirestoreDB();
-        firestoreDB.getTripByTripId("F5jTca4WBQiNeFGalV9i", trip -> {
-            // Handle the list of trips
-            Log.d("PLAN", trip.toString());
-            // Update the adapter with the fetched trips
-            // adapter.updateTrips(trips);
-        }, e -> {
-            Log.d("PLAN", "Error getting trips: " + e.getMessage());
-        });
+//        FirestoreDB firestoreDB = new FirestoreDB();
+//        String tripId = "F5jTca4WBQiNeFGalV9i";
+//
+//        firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
+//            @Override
+//            public void onSuccess(Void aVoid) {
+//                // Handle successful deletion
+//                Log.d("PLAN", "Trip successfully deleted.");
+//                // Update UI or navigate back
+//            }
+//        }, new OnFailureListener() {
+//            @Override
+//            public void onFailure(@NonNull Exception e) {
+//                // Handle deletion failure
+//                Log.e("PLAN", "Error deleting trip", e);
+//            }
+//        });
     }
 
 //     @Override

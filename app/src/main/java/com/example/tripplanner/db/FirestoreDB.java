@@ -208,7 +208,23 @@ public class FirestoreDB {
     }
 
 
-
+    public void deleteTripById(String tripId, OnSuccessListener<Void> onSuccessListener, OnFailureListener onFailureListener) {
+        firestore.collection("trips")
+                .document(tripId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("PLAN", "Trip with ID: " + tripId + " has been successfully deleted.");
+                    if (onSuccessListener != null) {
+                        onSuccessListener.onSuccess(aVoid);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("PLAN", "Error deleting trip with ID: " + tripId, e);
+                    if (onFailureListener != null) {
+                        onFailureListener.onFailure(e);
+                    }
+                });
+    }
 
 
 }
