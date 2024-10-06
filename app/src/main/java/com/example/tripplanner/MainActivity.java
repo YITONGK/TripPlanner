@@ -48,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        handleIntent(getIntent());
+
         Fragment plan_layout = HomeFragment.newInstance(HomeFragment.PLAN);
         getSupportFragmentManager()
                 .beginTransaction()
@@ -169,6 +171,25 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         // Unregister sensor listeners when the activity is paused
         weatherTripPlanner.unregisterSensorListeners();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent); // Update the intent
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && intent.getBooleanExtra("select_navigation_plan", false)) {
+            binding.navView.setSelectedItemId(R.id.navigation_plan);
+
+            Fragment planFragment = HomeFragment.newInstance(HomeFragment.PLAN);
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainerView, planFragment)
+                    .commit();
+        }
     }
 
 
