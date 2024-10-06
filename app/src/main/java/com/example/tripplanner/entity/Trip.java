@@ -39,7 +39,7 @@ public class Trip {
         this.name = name;
         this.startDate = startDate;
         this.numDays = numDays;
-        this.endDate = new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(numDays - 1), 0);
+        this.endDate = new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(numDays), 0);
         this.locations = locations;
         this.note = "";
         this.plans = new HashMap<>();
@@ -156,7 +156,7 @@ public class Trip {
     }
 
     public int getLastingDays() {
-        long daysBetween = TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
+        long daysBetween = TimeUnit.SECONDS.toDays(startDate.getSeconds() - endDate.getSeconds());
         System.out.println("Days between: " + daysBetween);
         return (int) daysBetween;
     }

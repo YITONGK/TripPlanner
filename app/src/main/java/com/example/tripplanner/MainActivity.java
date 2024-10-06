@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
         weatherTripPlanner.detectWeatherAndPlanTrip();
 
 //        FirestoreDB firestoreDB = new FirestoreDB();
-//        String tripId = "F5jTca4WBQiNeFGalV9i";
+//        String tripId = "3Rt1mDAOhYzwLY4ouR7K";
 //
 //        firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
 //            @Override
