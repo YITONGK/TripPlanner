@@ -102,9 +102,8 @@ public class EditPlanActivity extends AppCompatActivity {
                         Intent data = result.getData();
                         if (data != null && data.hasExtra("tripName")) {
                             String newTripName = data.getStringExtra("tripName");
-                            TextView tripNameView = findViewById(R.id.textViewSelectedPlace);
-                            tripName = newTripName;
-                            tripNameView.setText(newTripName);
+                            TextView tripTo1 = findViewById(R.id.textViewSelectedPlace);
+                            tripTo1.setText(newTripName);
                             int newDays = data.getIntExtra("days", 0);
                             if (days != newDays) {
                                 if (days < newDays) {

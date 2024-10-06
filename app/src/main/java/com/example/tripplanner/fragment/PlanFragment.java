@@ -21,6 +21,7 @@ import androidx.fragment.app.Fragment;
 
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
+import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.google.android.gms.common.api.ApiException;
@@ -185,7 +186,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
         startTime.setText(activityItem.getStartTimeString());
         endTime.setText(activityItem.getEndTimeString());
-        inputLocation.setText(activityItem.getLocationString());
+//        inputLocation.setText(activityItem.getLocation().toString());
         inputNotes.setText(activityItem.getNotes());
 
         startTime.setOnClickListener(new View.OnClickListener() {

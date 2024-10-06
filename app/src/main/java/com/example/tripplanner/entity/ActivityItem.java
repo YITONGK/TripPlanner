@@ -77,13 +77,6 @@ public class ActivityItem {
         return "";
     }
 
-    public String getLocationString() {
-        if (location != null) {
-            return location.getName();
-        }
-        return "";
-    }
-
     public static Timestamp convertStringToTimestamp(String time){
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
         try {
