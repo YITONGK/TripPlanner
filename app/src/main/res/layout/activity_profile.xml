@@ -63,30 +63,6 @@
             android:orientation="horizontal"
             android:layout_marginTop="15dp">
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:layout_weight="1"
-                android:gravity="center">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/numCity"
-                    android:text="NaN"
-                    android:textSize="15sp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Cities"
-                    android:textStyle="bold"
-                    android:alpha="0.7"
-                    android:textSize="15sp"
-                    android:layout_marginTop="10dp"/>
-
-            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -110,6 +86,31 @@
                     android:alpha="0.7"
                     android:textSize="15sp"
                     android:layout_marginTop="10dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:layout_weight="1"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/numLocation"
+                    android:text="NaN"
+                    android:textSize="15sp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Locations"
+                    android:textStyle="bold"
+                    android:alpha="0.7"
+                    android:textSize="15sp"
+                    android:layout_marginTop="10dp"/>
+
             </LinearLayout>
 
             <LinearLayout

@@ -60,9 +60,6 @@ public class ProfileActivity extends AppCompatActivity {
             fetchUserTripStatistics(uid);
         }
 
-        //TODO: get trip summary from database
-
-
         binding.editProfileBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -108,9 +105,13 @@ public class ProfileActivity extends AppCompatActivity {
                 int totalDays = statistics.getTotalDays();
 
                 // Display the statistics
-//                totalTripsTextView.setText("Total Trips: " + totalTrips);
-//                totalLocationsTextView.setText("Total Unique Locations: " + totalUniqueLocations);
-//                totalDaysTextView.setText("Total Days: " + totalDays);
+                TextView numTrip = findViewById(R.id.numTrip);
+                TextView numLocation = findViewById(R.id.numLocation);
+                TextView numDay = findViewById(R.id.numDay);
+
+                numTrip.setText(String.valueOf(totalTrips));
+                numLocation.setText(String.valueOf(totalUniqueLocations));
+                numDay.setText(String.valueOf(totalDays));
 
                 Log.d("STATISTICS", "Total Trips: " + totalTrips);
                 Log.d("STATISTICS", "Total Unique Locations: " + totalUniqueLocations);
