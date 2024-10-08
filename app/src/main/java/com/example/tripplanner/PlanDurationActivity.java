@@ -73,14 +73,6 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
 
     final String apiKey = BuildConfig.PLACES_API_KEY;
 
-    //Object 类型
-//    {
-//        "location":[],
-//        "days": int,
-//        "startdate": Date,
-//        "enddate": Date;
-//    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,8 +80,9 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
         setContentView(binding.getRoot());
 
         //2. add data into the JSONArray
-        String location = getIntent().getStringExtra("selectedPlace");
-        locationList.put(location);
+        Location location = (Location) getIntent().getSerializableExtra("selectedPlace");
+        Log.d("passed location", location.toString());
+        locationList.put(location.getName());
 
         //Remove Button (Dynamic add based on the JSON Objects)
         //3. add the button based on the JSONARRAY
@@ -250,7 +243,7 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                         for (int i = 0; i < locationList.length(); i++) {
                             String loc = locationList.optString(i, null);
                             if (loc != null) {
-                                locations.add(new Location(loc, 0.0, 0.0));
+                                locations.add(new Location("", loc, "", 0.0, 0.0));
                             }
                         }
 

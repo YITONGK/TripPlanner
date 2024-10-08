@@ -19,6 +19,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
+import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.utils.GptApiClient;
 import com.google.android.gms.common.api.ApiException;
@@ -179,7 +180,7 @@ public class CreateNewPlanActivity extends AppCompatActivity {
         List<Place.Field> placeFields = Arrays.asList(
                 Place.Field.ID,
                 Place.Field.NAME,
-                Place.Field.ADDRESS,
+//                Place.Field.ADDRESS,
                 Place.Field.TYPES,
                 Place.Field.LAT_LNG
         );
@@ -208,8 +209,13 @@ public class CreateNewPlanActivity extends AppCompatActivity {
 
         Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
 
+        Location loc = new Location(place.getId(), place.getName(), place.getPlaceTypes().get(0), place.getLatLng().latitude, place.getLatLng().longitude);
+        Log.d("new loc", loc.toString());
         Log.d("Place details", place.getName() + place.getAddress() + place.getLatLng().latitude + place.getLatLng().longitude);
-        intent.putExtra("selectedPlace", place.getName());
+        intent.putExtra("selectedPlace", loc);
+
+//        intent.putExtra("selectedPlace", place.getName());
+
 //        intent.putExtra("selectedPlaceAddress", place.getAddress());
 //        intent.putExtra("selectedPlaceLat", place.getLatLng().latitude);
 //        intent.putExtra("selectedPlaceLng", place.getLatLng().longitude);
