@@ -28,6 +28,7 @@ import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
+import com.example.tripplanner.entity.Location;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -72,6 +73,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private int layout = OVERVIEW;
     private int dayIndex = -1; // To identify the day
     private GoogleMap mMap;
+
+    private List<Location> locationList;
+    private String startDate;
+    private int lastingDays;
 
     private PlacesClient placesClient;
     private AutocompleteAdapter autocompleteAdapter;
@@ -434,6 +439,18 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+    }
+
+    public void setLastingDays(int lastingDays) {
+        this.lastingDays = lastingDays;
+    }
+
+    public void setLocationList(List<Location> locationList) {
+        this.locationList = locationList;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
     }
 
 }

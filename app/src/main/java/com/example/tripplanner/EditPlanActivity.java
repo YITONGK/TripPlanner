@@ -252,7 +252,10 @@ public class EditPlanActivity extends AppCompatActivity {
 
     private void addOverviewFragment(TabLayout tabLayout, FragmentTransaction transaction) {
         tabLayout.addTab(tabLayout.newTab().setText("Overview"));
-        Fragment overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
+        PlanFragment overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
+        overviewFragment.setLocationList(trip.getLocations());
+        overviewFragment.setStartDate(trip.getStartDate().toString());
+        overviewFragment.setLastingDays(days);
         transaction.add(R.id.fragmentContainerView, overviewFragment, "fragment_overview");
         fragments.add(overviewFragment);
     }
@@ -261,7 +264,7 @@ public class EditPlanActivity extends AppCompatActivity {
         for (int i = 0; i < days; i++) {
             String tabTitle = "Day " + (i + 1);
             tabLayout.addTab(tabLayout.newTab().setText(tabTitle));
-            Fragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
+            PlanFragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
             transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
             transaction.hide(dayFragment);
             fragments.add(dayFragment);
