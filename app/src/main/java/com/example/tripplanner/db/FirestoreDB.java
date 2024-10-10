@@ -32,8 +32,57 @@ public class FirestoreDB {
     }
 
      public void getTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener, OnFailureListener onFailureListener) {
+        Timestamp now = Timestamp.now();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
+                .whereGreaterThan("startDate", now)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    
+                    List<Trip> trips = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
+                        Log.d("PLAN", String.valueOf(document));
+                        // Trip trip = document.toObject(Trip.class);
+                        // trips.add(trip);
+                        try {
+                            // Manually parse the fields
+                            String name = document.getString("name");
+                            Timestamp startDate = document.getTimestamp("startDate");
+                            Timestamp endDate = document.getTimestamp("endDate");
+                            int numDays = document.getLong("numDays").intValue();
+                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) document.get("locations");
+                            List<Location> locations = new ArrayList<>();
+                            for (Map<String, Object> locMap : locationsMap) {
+                                Location location = new Location(
+                                        (String) locMap.get("name"),
+                                        ((Number) locMap.get("latitude")).doubleValue(),
+                                        ((Number) locMap.get("longitude")).doubleValue()
+                                );
+                                locations.add(location);
+                            }
+                            String note = document.getString("note");
+                            Map<String, List<ActivityItem>> plans = (Map<String, List<ActivityItem>>) document.get("plans");
+                            List<String> userIds = (List<String>) document.get("userIds");
+
+                            Trip trip = new Trip(name, startDate, endDate, locations, userIds.get(0));
+                            trip.setId(document.getId());
+                            trip.setNote(note);
+                            trip.setPlans(plans);
+                            trips.add(trip);
+                        } catch (Exception e) {
+                            Log.e("PLAN", "Error parsing trip document", e);
+                        }
+                    }
+                    onSuccessListener.onSuccess(trips);
+                })
+                .addOnFailureListener(onFailureListener);
+    }
+
+    public void getPastTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener, OnFailureListener onFailureListener) {
+        Timestamp now = Timestamp.now();
+        firestore.collection("trips")
+                .whereArrayContains("userIds", userId)
+                .whereLessThan("startDate", now)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     
@@ -163,8 +212,10 @@ public class FirestoreDB {
     }
 
     public void getUserTripStatistics(String userId, OnSuccessListener<UserTripStatistics> onSuccessListener, OnFailureListener onFailureListener) {
+        Timestamp now = Timestamp.now();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
+                .whereLessThan("startDate", now)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     int totalTrips = 0;

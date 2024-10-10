@@ -130,33 +130,6 @@ public class MainActivity extends AppCompatActivity {
 //        });
     }
 
-//     @Override
-//     public void onSensorChanged(SensorEvent event) {
-//         if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
-//             currentTemperature = event.values[0];
-//             Log.d("SENSOR", "Current temperature: " + currentTemperature);
-//         } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
-//             currentHumidity = event.values[0];
-//             Log.d("SENSOR", "Current humidity: " + currentHumidity);
-//         }
-
-//         checkConditionsAndNotify();
-//     }
-
-//     @Override
-//     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-//         // Do something here if sensor accuracy changes.
-//     }
-
-//     private void checkConditionsAndNotify() {
-//         if (currentTemperature > 30 || currentTemperature < 0 || currentHumidity > 80) {
-//             // Notify user and request GPT to re-plan the trip
-// //            requestGPTReplan();
-// //            Toast.makeText(this, "Temperature or Humidity is too high!", Toast.LENGTH_SHORT).show();
-//             Log.d("SENSOR", "Temperature or Humidity is too high!");
-//         }
-//     }
-
     @Override
     protected void onResume() {
         super.onResume();

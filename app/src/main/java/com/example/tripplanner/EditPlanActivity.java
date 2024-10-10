@@ -164,7 +164,6 @@ public class EditPlanActivity extends AppCompatActivity {
         }
     }
 
-
     private void setupTripInfo() {
         tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
         TextView tripTo = findViewById(R.id.textViewSelectedPlace);
@@ -188,8 +187,7 @@ public class EditPlanActivity extends AppCompatActivity {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         handlePlanSettingsResult(result.getData());
                     }
-                }
-        );
+                });
     }
 
     private void handlePlanSettingsResult(Intent data) {
@@ -332,7 +330,7 @@ public class EditPlanActivity extends AppCompatActivity {
         ImageButton shareButton = findViewById(R.id.shareButton);
         shareButton.setOnClickListener(view -> {
             Intent intent = new Intent(EditPlanActivity.this, ShareTripActivity.class);
-            intent.putExtra("tripId", trip.getId()); // Assuming trip has a method getId()
+            intent.putExtra("tripId", trip.getId());
             startActivity(intent);
         });
     }

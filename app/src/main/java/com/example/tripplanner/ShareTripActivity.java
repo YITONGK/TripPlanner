@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -47,6 +48,15 @@ public class ShareTripActivity  extends AppCompatActivity {
             clipboard.setPrimaryClip(clip);
 
             Toast.makeText(this, "Trip ID copied to clipboard", Toast.LENGTH_SHORT).show();
+        });
+
+        // Set up go-back button
+        ImageButton backButton = findViewById(R.id.button_back);
+        backButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
         });
 
     }
