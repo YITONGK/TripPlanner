@@ -244,6 +244,7 @@ public class PlanDurationActivity extends AppCompatActivity
                 try {
 
                     JSONArray locationArray = new JSONArray();
+                    planDetails.put("tripId", tripId);
                     for (Location loc : locationList) {
                         JSONObject locJson = new JSONObject();
                         locJson.put("id", loc.getId());
@@ -312,6 +313,15 @@ public class PlanDurationActivity extends AppCompatActivity
                                 // Update the original trip with the returned one
                                 trip.setId(updatedTrip.getId());
                                 tripId = updatedTrip.getId();
+                                try {
+                                    planDetails.put("tripId", tripId);
+                                } catch (JSONException e) {
+                                    Log.d("PLAN", "Error in putting tripId into planDetails");
+                                }
+                                Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
+                                intent.putExtra("planDetails", planDetails.toString());
+                                intent.putExtra("tripId", tripId);
+                                startActivity(intent);
                                 // You can perform additional actions with the updated trip if needed
                                 Log.d("PLAN", "Trip created with ID: " + trip.getId());
                             }
@@ -325,10 +335,7 @@ public class PlanDurationActivity extends AppCompatActivity
                         Log.d("PLAN", "[PlanDurationActivity] No user is signed in.");
                     }
 
-                    Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
-                    intent.putExtra("planDetails", planDetails.toString());
-                    intent.putExtra("tripId", tripId);
-                    startActivity(intent);
+
 
                 } catch (JSONException e) {
                     throw new RuntimeException(e);

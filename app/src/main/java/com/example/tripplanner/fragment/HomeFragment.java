@@ -89,11 +89,13 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
              FirestoreDB firestoreDB = new FirestoreDB();
              firestoreDB.getTripsByUserId(userId, trips -> {
                  // Handle the list of trips
+                 Log.d("PLAN", "getting trips: " + trips.size());
                  allPlans.clear();
                  allPlans.addAll(trips);
                  adapter.notifyDataSetChanged();
                  for (Trip trip : trips) {
-                     Log.d("PLAN", "Trip: " + trip.getName());
+                     Log.d("PLAN", "Trip: " + trip.toString());
+
 //                     String tripId = trip.getId();
 //
 //                     firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {

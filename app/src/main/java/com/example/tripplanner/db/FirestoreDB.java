@@ -15,12 +15,18 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class FirestoreDB {
@@ -31,12 +37,32 @@ public class FirestoreDB {
         this.firestore = FirebaseFirestore.getInstance();
     }
 
+    private Timestamp getCurrentDate() {
+        // Define the timezone
+        ZoneId zoneId = ZoneId.of("UTC+11");
+
+        // Get the current date and time in the specified timezone
+        LocalDateTime localDateTime = LocalDateTime.now(zoneId);
+
+        // Set the time to the start of the day
+        LocalDateTime startOfDay = localDateTime.toLocalDate().atStartOfDay();
+
+        // Convert to ZonedDateTime
+        ZonedDateTime zonedStartOfDay = startOfDay.atZone(zoneId);
+
+        // Convert to Date
+        Date date = Date.from(zonedStartOfDay.toInstant());
+
+        // Return as Timestamp
+        return new Timestamp(date);
+    }
+
     public void getTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener,
             OnFailureListener onFailureListener) {
-        Timestamp now = Timestamp.now();
+        Timestamp now = getCurrentDate();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
-                .whereGreaterThan("startDate", now)
+                .whereGreaterThanOrEqualTo("startDate", now)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
 
@@ -84,7 +110,7 @@ public class FirestoreDB {
 
     public void getPastTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener,
             OnFailureListener onFailureListener) {
-        Timestamp now = Timestamp.now();
+        Timestamp now = getCurrentDate();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
                 .whereLessThan("startDate", now)

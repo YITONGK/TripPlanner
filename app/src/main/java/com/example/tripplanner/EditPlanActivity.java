@@ -41,6 +41,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private final ArrayList<Fragment> fragments = new ArrayList<>();
     private FragmentManager fragmentManager;
     private Trip trip;
+    private String tripId;
 
     private ActivityResultLauncher<Intent> planSettingsLauncher;
 
@@ -58,6 +59,7 @@ public class EditPlanActivity extends AppCompatActivity {
 
         if (tripId != null && !tripId.isEmpty()) {
             Log.d("TAG", "Trip ID: " + tripId);
+            this.tripId = tripId;
             fetchTripData(tripId);
         } else if (jsonString != null && !jsonString.isEmpty()) {
             Log.d("TAG", "Plan Details JSON: " + jsonString);
@@ -166,6 +168,7 @@ public class EditPlanActivity extends AppCompatActivity {
             }
             selectedPlace = sb.toString();
             days = tripPlan.getInt("days");
+            tripId = tripPlan.getString("tripId");
 
             // TODO: get activities of the plan
         } catch (JSONException e) {
@@ -232,7 +235,7 @@ public class EditPlanActivity extends AppCompatActivity {
             Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
             intent.putExtra("tripName", tripName);
             intent.putExtra("days", days);
-            intent.putExtra("tripId", trip.getId());
+            intent.putExtra("tripId", tripId);
             planSettingsLauncher.launch(intent);
         });
     }
@@ -342,7 +345,7 @@ public class EditPlanActivity extends AppCompatActivity {
         ImageButton shareButton = findViewById(R.id.shareButton);
         shareButton.setOnClickListener(view -> {
             Intent intent = new Intent(EditPlanActivity.this, ShareTripActivity.class);
-            intent.putExtra("tripId", trip.getId());
+            intent.putExtra("tripId", tripId);
             startActivity(intent);
         });
     }
