@@ -4,9 +4,12 @@ import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +22,7 @@ import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
@@ -46,6 +50,18 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
+import android.os.AsyncTask;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import com.example.tripplanner.entity.Weather;
+import com.example.tripplanner.utils.WeatherAPIClient;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
@@ -67,6 +83,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private ListView activityLocationList;
     private ArrayList<ActivityItem> activityItemArray;
     private ActivityItemAdapter adapter;
+
+    private LinearLayout weatherForecastContainer;
+    private WeatherAPIClient weatherAPIClient;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -128,6 +148,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
+            weatherAPIClient = new WeatherAPIClient();
+            weatherForecastContainer = rootView.findViewById(R.id.weatherForecastContainer);
+//            Log.d("Getting weather", "");
+
+//            fetchAndDisplayWeatherData();
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -328,6 +353,71 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             }
         });
     }
+
+    private void fetchAndDisplayWeatherData() {
+        Log.d("Getting weather", "start");
+        double latitude = 40.7128;
+        double longitude = -74.0060;
+        int startDateIndex = 1;
+        int endDateIndex = 5;
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(latitude, longitude, startDateIndex, endDateIndex);
+            Log.d("Getting weather", weatherData.toString());
+            handler.post(() -> {
+                if (weatherData != null && !weatherData.isEmpty()) {
+                    displayWeatherData(weatherData);
+                } else {
+                    Toast.makeText(getContext(), "Failed to fetch weather data", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+    }
+
+    private void displayWeatherData(Map<Integer, Weather> weatherData) {
+        weatherForecastContainer.removeAllViews();
+
+        for (int i = 0; i < weatherData.size(); i++) {
+            Weather weather = weatherData.get(i);
+
+            View weatherItemView = LayoutInflater.from(getContext()).inflate(R.layout.weather_forecast_item, weatherForecastContainer, false);
+
+            // Find views
+            TextView weatherDate = weatherItemView.findViewById(R.id.weatherDate);
+            ImageView weatherIcon = weatherItemView.findViewById(R.id.weatherIcon);
+            TextView weatherDescription = weatherItemView.findViewById(R.id.weatherDescription);
+            TextView weatherTemperature = weatherItemView.findViewById(R.id.weatherTemperature);
+
+            String dateString = getDateForIndex(i);
+            weatherDate.setText(dateString);
+
+            weatherDescription.setText(weather.getDescription());
+            weatherTemperature.setText(String.format(Locale.getDefault(), "%.1f°C - %.1f°C", weather.getMinTemp(), weather.getMaxTemp()));
+
+            String iconUrl = "https://openweathermap.org/img/wn/" + weather.getIcon() + "@2x.png";
+            loadImageIntoImageView(weatherIcon, iconUrl);
+
+            weatherForecastContainer.addView(weatherItemView);
+        }
+    }
+
+    private void loadImageIntoImageView(ImageView imageView, String url) {
+        Glide.with(this)
+                .load(url)
+//                .placeholder(R.drawable.placeholder_image)
+//                .error(R.drawable.error_image)
+                .into(imageView);
+    }
+
+    private String getDateForIndex(int index) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, index);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
+        return dateFormat.format(calendar.getTime());
+    }
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {

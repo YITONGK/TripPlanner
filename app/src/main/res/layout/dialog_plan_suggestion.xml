@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/messageTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Reason for re-plan"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:id="@+id/planTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Suggested Plan Details"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+</LinearLayout>

@@ -116,7 +116,7 @@ public class ActivityItem {
     }
 
     public void setLocation(String location) {
-        this.location = new Location(location, 0, 0);
+        this.location = new Location("", location, "", 0, 0);
         Log.d("PLAN", "[ActivityItem] setLocation by String");
     }
 }

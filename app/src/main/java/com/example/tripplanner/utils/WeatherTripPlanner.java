@@ -16,11 +16,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.CreateNewPlanActivity;
 import com.example.tripplanner.PlanConfirmationActivity;
+import com.example.tripplanner.PlanSuggestionDialogFragment;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -76,6 +79,7 @@ public class WeatherTripPlanner implements SensorEventListener {
         if (isTemperatureSensorAvailable && isHumiditySensorAvailable) {
             // Use sensor data
             registerSensorListeners();
+//            showSuggestedPlan("Here is testing");
         } else {
             // Fallback to weather API
             Log.d("SENSOR", "Sensors unavailable. Fetching data from Weather API.");
@@ -171,6 +175,7 @@ public class WeatherTripPlanner implements SensorEventListener {
         boolean needReplan = temperature > 35 || humidity < 5;
 
         if (needReplan) {
+            showSuggestedPlan("Here is testing");
 //            requestGptReplan("Current conditions", temperature, humidity);
             Log.d("SENSOR", "Need to re-plan");
         } else {
@@ -203,10 +208,17 @@ public class WeatherTripPlanner implements SensorEventListener {
         });
     }
 
+//    private void showSuggestedPlan(String plan) {
+//        Intent intent = new Intent(activity, PlanConfirmationActivity.class);
+//        intent.putExtra("suggestedPlan", plan);
+//        activity.startActivityForResult(intent, 2);
+//    }
+
     private void showSuggestedPlan(String plan) {
-        Intent intent = new Intent(activity, PlanConfirmationActivity.class);
-        intent.putExtra("suggestedPlan", plan);
-        activity.startActivityForResult(intent, 2);
+        String message = "Due to adverse weather conditions, we suggest the following plan:";
+        Log.d("REPLAN", message);
+        PlanSuggestionDialogFragment dialogFragment = PlanSuggestionDialogFragment.newInstance(message, plan);
+        dialogFragment.show(((AppCompatActivity) activity).getSupportFragmentManager(), "PlanSuggestionDialog");
     }
 
     private void notifyUser(String message) {

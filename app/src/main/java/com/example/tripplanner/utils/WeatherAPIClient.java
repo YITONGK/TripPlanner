@@ -1,5 +1,7 @@
 package com.example.tripplanner.utils;
 
+import android.util.Log;
+
 import com.example.tripplanner.entity.Weather;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -19,7 +21,7 @@ public class WeatherAPIClient {
 
     public Map<Integer, Weather> getWeatherForecast(double lat, double lon, int startDateIndex, int endDateIndex) {
         // make get request
-        String urlString = "https://api.openweathermap.org/data/2.5/forecast/climate?lat=" + lat + "&lon=" +
+        String urlString = "https://api.openweathermap.org/data/2.5/forecast/daily?lat=" + lat + "&lon=" +
             lon + "&cnt=" + endDateIndex + "&appid=" + API_KEY + "&units=metric";
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
@@ -27,8 +29,11 @@ public class WeatherAPIClient {
             .build();
 
         try {
+            Log.d("Getting weather", "requesting data");
             Response response = client.newCall(request).execute();
+            Log.d("Getting weather", response.body().toString());
             String jsonData = response.body().string();
+//            Log.d("Getting weather", jsonData);
             JSONObject data = new JSONObject(jsonData);
             JSONArray forecasts = data.getJSONArray("list");
             //TODO: get the forecasts for specific days
@@ -42,11 +47,13 @@ public class WeatherAPIClient {
                 String icon = weatherData.getString("icon");
 
                 Weather weather = new Weather(minTemp, maxTemp, description, icon);
+                Log.d("Getting weather", weather.toString());
                 res.put(i, weather);
             }
             return res;
 
         } catch (IOException | JSONException e) {
+            Log.d("Getting weather", "run time error");
             throw new RuntimeException(e);
         }
 
