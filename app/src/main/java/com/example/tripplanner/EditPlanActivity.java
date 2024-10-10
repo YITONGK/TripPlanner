@@ -207,9 +207,9 @@ public class EditPlanActivity extends AppCompatActivity {
     private void handlePlanSettingsResult(Intent data) {
         if (data.hasExtra("tripName")) {
             String newTripName = data.getStringExtra("tripName");
-            TextView tripTo = findViewById(R.id.textViewSelectedPlace);
-            tripTo.setText(newTripName != null ? newTripName : tripName);
-
+            TextView tripNameView = findViewById(R.id.textViewSelectedPlace);
+            tripName = newTripName;
+            tripNameView.setText(newTripName);
             int newDays = data.getIntExtra("days", days);
             if (days != newDays) {
                 adjustFragmentsForNewDays(newDays);
