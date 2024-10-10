@@ -142,14 +142,24 @@ public class EditPlanActivity extends AppCompatActivity {
 
     private void extractDetailsFromPlan(JSONObject tripPlan) {
         try {
-            JSONArray placeArray = tripPlan.getJSONArray("location");
-            ArrayList<String> placeList = new ArrayList<>();
-            for (int i = 0; i < placeArray.length(); i++) {
-                placeList.add(placeArray.getString(i));
+            JSONArray locationArray = tripPlan.getJSONArray("location");
+            List<Location> locationList = new ArrayList<>();
+
+            for (int i = 0; i < locationArray.length(); i++) {
+                JSONObject locJson = locationArray.getJSONObject(i);
+                String id = locJson.getString("id");
+                String name = locJson.getString("name");
+                String type = locJson.getString("type");
+                double latitude = locJson.getDouble("latitude");
+                double longitude = locJson.getDouble("longitude");
+
+                Location loc = new Location(id, name, type, latitude, longitude);
+                locationList.add(loc);
             }
+
             StringBuilder sb = new StringBuilder();
-            for (String place : placeList) {
-                sb.append(place).append(", ");
+            for (Location loc : locationList) {
+                sb.append(loc.getName()).append(", ");
             }
             if (sb.length() > 0) {
                 sb.setLength(sb.length() - 2);
@@ -176,6 +186,7 @@ public class EditPlanActivity extends AppCompatActivity {
         closeButton.setOnClickListener(view -> {
             Intent intent = new Intent(EditPlanActivity.this, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.putExtra("select_navigation_plan", true);
             startActivity(intent);
         });
     }
@@ -221,6 +232,7 @@ public class EditPlanActivity extends AppCompatActivity {
             Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
             intent.putExtra("tripName", tripName);
             intent.putExtra("days", days);
+            intent.putExtra("tripId", trip.getId());
             planSettingsLauncher.launch(intent);
         });
     }

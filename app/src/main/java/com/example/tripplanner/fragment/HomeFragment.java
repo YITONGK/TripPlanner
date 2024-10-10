@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -28,6 +29,8 @@ import com.google.android.gms.maps.model.AdvancedMarkerOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -91,6 +94,22 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                  adapter.notifyDataSetChanged();
                  for (Trip trip : trips) {
                      Log.d("PLAN", "Trip: " + trip.getName());
+//                     String tripId = trip.getId();
+//
+//                     firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
+//                         @Override
+//                         public void onSuccess(Void aVoid) {
+//                             // Handle successful deletion
+//                             Log.d("PLAN", "Trip successfully deleted.");
+//                             // Update UI or navigate back
+//                         }
+//                     }, new OnFailureListener() {
+//                         @Override
+//                         public void onFailure(@NonNull Exception e) {
+//                             // Handle deletion failure
+//                             Log.e("PLAN", "Error deleting trip", e);
+//                         }
+//                     });
                  }
              }, e -> {
                  Log.d("PLAN", "Error getting trips: " + e.getMessage());
