@@ -115,6 +115,7 @@ public class FirestoreDB {
                             if (locationsMap != null) {
                                 for (Map<String, Object> locMap : locationsMap) {
                                     Location location = new Location(
+                                            (String) locMap.get("id"),
                                             (String) locMap.get("name"),
                                             (String) locMap.get("type"),
                                             ((Number) locMap.get("latitude")).doubleValue(),

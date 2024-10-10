@@ -9,9 +9,12 @@ import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 
 import com.example.tripplanner.R;
+import com.example.tripplanner.entity.Location;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+
+import java.util.List;
 
 public class ButtonDecorator {
 
@@ -27,13 +30,13 @@ public class ButtonDecorator {
         this.listener = listener;
     }
 
-    public void addButtonsFromJson(JSONArray locations) {
+    public void addButtonsFromList(List<Location> locations) {
         try {
-            for (int i = 0; i < locations.length(); i++) {
-                String location = locations.getString(i);
+            for (int i = 0; i < locations.size(); i++) {
+                String location = locations.get(i).getName();
                 addSingleButton(location, i);
             }
-        } catch (JSONException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
