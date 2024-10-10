@@ -27,6 +27,7 @@ import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
+import com.example.tripplanner.entity.Location;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -71,6 +72,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private int layout = OVERVIEW;
     private int dayIndex = -1; // To identify the day
     private GoogleMap mMap;
+
+    private List<Location> locationList;
+    private String startDate;
+    private int lastingDays;
 
     private PlacesClient placesClient;
     private AutocompleteAdapter autocompleteAdapter;
@@ -152,7 +157,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             weatherForecastContainer = rootView.findViewById(R.id.weatherForecastContainer);
 //            Log.d("Getting weather", "");
 
-//            fetchAndDisplayWeatherData();
+            fetchAndDisplayWeatherData();
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -367,22 +372,28 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(latitude, longitude, startDateIndex, endDateIndex);
             Log.d("Getting weather", weatherData.toString());
             handler.post(() -> {
+                if (!isAdded()) {
+                    // Fragment is not attached to the activity anymore, so we can't proceed.
+                    return;
+                }
                 if (weatherData != null && !weatherData.isEmpty()) {
                     displayWeatherData(weatherData);
                 } else {
                     Toast.makeText(getContext(), "Failed to fetch weather data", Toast.LENGTH_SHORT).show();
                 }
+                executor.shutdown(); // Shut down the executor
             });
         });
     }
 
+
     private void displayWeatherData(Map<Integer, Weather> weatherData) {
         weatherForecastContainer.removeAllViews();
 
-        for (int i = 0; i < weatherData.size(); i++) {
+        for (int i = 1; i <= weatherData.size(); i++) {
             Weather weather = weatherData.get(i);
 
-            View weatherItemView = LayoutInflater.from(getContext()).inflate(R.layout.weather_forecast_item, weatherForecastContainer, false);
+            View weatherItemView = LayoutInflater.from(requireContext()).inflate(R.layout.weather_forecast_item, weatherForecastContainer, false);
 
             // Find views
             TextView weatherDate = weatherItemView.findViewById(R.id.weatherDate);
@@ -402,6 +413,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             weatherForecastContainer.addView(weatherItemView);
         }
     }
+
 
     private void loadImageIntoImageView(ImageView imageView, String url) {
         Glide.with(this)
@@ -426,6 +438,18 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+    }
+
+    public void setLastingDays(int lastingDays) {
+        this.lastingDays = lastingDays;
+    }
+
+    public void setLocationList(List<Location> locationList) {
+        this.locationList = locationList;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
     }
 
 }
