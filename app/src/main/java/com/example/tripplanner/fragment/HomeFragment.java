@@ -160,6 +160,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         // .position(PERTH)
         // .title("Perth"));
         // markerPerth.setTag(0);
+
+        // Show the bottom sheet when the map is ready
+        showPastTripsBottomSheet();
     }
 
     // Recommended method to generate new LayoutDemoFragment
@@ -199,5 +202,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         Log.d("SENSOR", "location: " + location);
         return location;
+    }
+
+    private void showPastTripsBottomSheet() {
+        PastTripsBottomSheet bottomSheet = new PastTripsBottomSheet();
+        bottomSheet.show(getChildFragmentManager(), bottomSheet.getTag());
     }
 }
