@@ -153,7 +153,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             weatherForecastContainer = rootView.findViewById(R.id.weatherForecastContainer);
 //            Log.d("Getting weather", "");
 
-//            fetchAndDisplayWeatherData();
+            fetchAndDisplayWeatherData();
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -368,22 +368,28 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(latitude, longitude, startDateIndex, endDateIndex);
             Log.d("Getting weather", weatherData.toString());
             handler.post(() -> {
+                if (!isAdded()) {
+                    // Fragment is not attached to the activity anymore, so we can't proceed.
+                    return;
+                }
                 if (weatherData != null && !weatherData.isEmpty()) {
                     displayWeatherData(weatherData);
                 } else {
                     Toast.makeText(getContext(), "Failed to fetch weather data", Toast.LENGTH_SHORT).show();
                 }
+                executor.shutdown(); // Shut down the executor
             });
         });
     }
 
+
     private void displayWeatherData(Map<Integer, Weather> weatherData) {
         weatherForecastContainer.removeAllViews();
 
-        for (int i = 0; i < weatherData.size(); i++) {
+        for (int i = 1; i <= weatherData.size(); i++) {
             Weather weather = weatherData.get(i);
 
-            View weatherItemView = LayoutInflater.from(getContext()).inflate(R.layout.weather_forecast_item, weatherForecastContainer, false);
+            View weatherItemView = LayoutInflater.from(requireContext()).inflate(R.layout.weather_forecast_item, weatherForecastContainer, false);
 
             // Find views
             TextView weatherDate = weatherItemView.findViewById(R.id.weatherDate);
@@ -403,6 +409,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             weatherForecastContainer.addView(weatherItemView);
         }
     }
+
 
     private void loadImageIntoImageView(ImageView imageView, String url) {
         Glide.with(this)

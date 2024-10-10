@@ -31,23 +31,32 @@ public class WeatherAPIClient {
         try {
             Log.d("Getting weather", "requesting data");
             Response response = client.newCall(request).execute();
-            Log.d("Getting weather", response.body().toString());
+
+            if (!response.isSuccessful()) {
+                Log.e("WeatherAPIClient", "Unexpected response code: " + response.code());
+                return null;
+            }
+
             String jsonData = response.body().string();
-//            Log.d("Getting weather", jsonData);
             JSONObject data = new JSONObject(jsonData);
             JSONArray forecasts = data.getJSONArray("list");
-            //TODO: get the forecasts for specific days
-            for (int i=startDateIndex; i<=endDateIndex; i++) {
+
+            HashMap<Integer, Weather> res = new HashMap<>();
+            int forecastCount = Math.min(endDateIndex, forecasts.length() - 1);
+
+            for (int i = startDateIndex; i <= forecastCount; i++) {
                 JSONObject forecast = forecasts.getJSONObject(i);
                 JSONObject temp = forecast.getJSONObject("temp");
                 double maxTemp = temp.getDouble("max");
                 double minTemp = temp.getDouble("min");
-                JSONObject weatherData = forecast.getJSONObject("weather");
+
+                JSONArray weatherArray = forecast.getJSONArray("weather");
+                JSONObject weatherData = weatherArray.getJSONObject(0);
                 String description = weatherData.getString("description");
                 String icon = weatherData.getString("icon");
 
                 Weather weather = new Weather(minTemp, maxTemp, description, icon);
-                Log.d("Getting weather", weather.toString());
+                Log.d("WeatherAPIClient", weather.toString());
                 res.put(i, weather);
             }
             return res;
