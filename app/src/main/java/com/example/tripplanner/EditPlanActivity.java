@@ -80,6 +80,7 @@ public class EditPlanActivity extends AppCompatActivity {
         setupCloseButton();
         setupPlanSettingsLauncher();
         setupSettingsButton();
+        setupShareButton();
     }
 
     private void applyWindowInsets() {
@@ -325,5 +326,14 @@ public class EditPlanActivity extends AppCompatActivity {
         fragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainerView, fragment)
                 .commit();
+    }
+
+    private void setupShareButton() {
+        ImageButton shareButton = findViewById(R.id.shareButton);
+        shareButton.setOnClickListener(view -> {
+            Intent intent = new Intent(EditPlanActivity.this, ShareTripActivity.class);
+            intent.putExtra("tripId", trip.getId()); // Assuming trip has a method getId()
+            startActivity(intent);
+        });
     }
 }

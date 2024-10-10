@@ -1,9 +1,17 @@
 package com.example.tripplanner;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -25,18 +33,25 @@ public class ShareTripActivity  extends AppCompatActivity {
         // Retrieve the Trip ID from the Intent extras
         tripId = getIntent().getStringExtra("tripId");
 
-        if (tripId != null && !tripId.isEmpty()) {
-            // Generate and display the QR code
-            shareTrip(tripId);
-        } else {
-            // Handle the case where Trip ID is not available
-            Log.d("PLAN", "Trip ID is missing.");
-//            finish(); // Close the activity if no Trip ID is provided
-        }
+        // Display the trip ID
+        TextView tripIdTextView = findViewById(R.id.textViewTripId);
+        tripIdTextView.setText(tripId);
+
+        shareTrip(tripId);
+
+        // Set up the copy button
+        Button copyButton = findViewById(R.id.buttonCopyTripId);
+        copyButton.setOnClickListener(v -> {
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            ClipData clip = ClipData.newPlainText("Trip ID", tripId);
+            clipboard.setPrimaryClip(clip);
+
+            Toast.makeText(this, "Trip ID copied to clipboard", Toast.LENGTH_SHORT).show();
+        });
+
     }
 
     public void shareTrip(String tripId) {
-        ImageView qrCodeImageView = findViewById(R.id.qrCodeImageView);
         Bitmap qrCodeBitmap = generateQRCode(tripId);
         if (qrCodeBitmap != null) {
             qrCodeImageView.setImageBitmap(qrCodeBitmap);
@@ -53,4 +68,5 @@ public class ShareTripActivity  extends AppCompatActivity {
             return null;
         }
     }
+
 }
