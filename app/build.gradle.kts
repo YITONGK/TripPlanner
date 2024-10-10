@@ -54,6 +54,7 @@ dependencies {
 
     // Maps SDK for Android
     implementation("com.google.android.gms:play-services-maps:19.0.0")
+//    implementation("com.google.android.libraries.maps:maps:4.0.0-beta")
     implementation("com.prolificinteractive:material-calendarview:1.4.3")
     implementation("io.github.ShawnLin013:number-picker:2.4.13")
 
@@ -94,6 +95,9 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.1.0")
     implementation("androidx.camera:camera-lifecycle:1.1.0")
     implementation("androidx.camera:camera-view:1.1.0")
+    implementation("com.github.bumptech.glide:glide:4.15.1")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.15.1")
+
 }
 
 secrets {

@@ -1,14 +1,18 @@
 package com.example.tripplanner.fragment;
 
+import android.graphics.Color;
 import android.os.Bundle;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.tripplanner.R;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.AdvancedMarkerOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -35,21 +39,34 @@ public class MemoryFragment extends AppCompatActivity implements GoogleMap.OnMar
     /** Called when the map is ready. */
     @Override
     public void onMapReady(GoogleMap map) {
-        // Add some markers to the map, and add a data object to each marker.
-        markerPerth = map.addMarker(new MarkerOptions()
-                .position(PERTH)
-                .title("Perth"));
-        markerPerth.setTag(0);
+        // Create a TextView to use as the marker.
+        TextView textView = new TextView(this);
+        textView.setText("Hello!!");
+        textView.setBackgroundColor(Color.BLACK);
+        textView.setTextColor(Color.YELLOW);
 
-        markerSydney = map.addMarker(new MarkerOptions()
-                .position(SYDNEY)
-                .title("Sydney"));
+        markerSydney = map.addMarker(
+                new AdvancedMarkerOptions()
+                        .position(SYDNEY)
+                        .iconView(textView));
         markerSydney.setTag(0);
+        map.moveCamera(CameraUpdateFactory.newLatLng(SYDNEY));
 
-        markerBrisbane = map.addMarker(new MarkerOptions()
-                .position(BRISBANE)
-                .title("Brisbane"));
-        markerBrisbane.setTag(0);
+        // Add some markers to the map, and add a data object to each marker.
+//        markerPerth = map.addMarker(new MarkerOptions()
+//                .position(PERTH)
+//                .title("Perth"));
+//        markerPerth.setTag(0);
+
+//        markerSydney = map.addMarker(new MarkerOptions()
+//                .position(SYDNEY)
+//                .title("Sydney"));
+//        markerSydney.setTag(0);
+
+//        markerBrisbane = map.addMarker(new MarkerOptions()
+//                .position(BRISBANE)
+//                .title("Brisbane"));
+//        markerBrisbane.setTag(0);
 
         // Set a listener for marker click.
         map.setOnMarkerClickListener(this);

@@ -24,6 +24,8 @@ import com.example.tripplanner.fragment.PlanDurationFragment;
 import com.example.tripplanner.utils.OnFragmentInteractionListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
@@ -51,35 +53,30 @@ import java.util.ArrayList;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-public class PlanDurationActivity extends AppCompatActivity  implements OnFragmentInteractionListener, ButtonDecorator.OnButtonClickListener {
+public class PlanDurationActivity extends AppCompatActivity
+        implements OnFragmentInteractionListener, ButtonDecorator.OnButtonClickListener {
     private PlanDurationBinding binding;
-    private JSONObject planDetails =  new JSONObject();;
-    private JSONArray locationList = new JSONArray();;
+    private JSONObject planDetails =  new JSONObject();
+    private List<Location> locationList = new ArrayList<>();
     private ButtonDecorator buttonDecorator;
     private int receivedDays;
     private String receivedStartDate;
     private String receivedEndDate;
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
+    private PlacesClient placesClient;
     private String receivedCalenderStartDate;
     private String receivedCalenderEndDate;
     private int revivedCalendarDays;
     private int currentTabPosition = 0;
+    private String tripId;
 
     final String apiKey = BuildConfig.PLACES_API_KEY;
-
-    //Object 类型
-//    {
-//        "location":[],
-//        "days": int,
-//        "startdate": Date,
-//        "enddate": Date;
-//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,22 +85,22 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
         setContentView(binding.getRoot());
 
         //2. add data into the JSONArray
-        String location = getIntent().getStringExtra("selectedPlace");
-        locationList.put(location);
+        Location location = (Location) getIntent().getSerializableExtra("selectedPlace");
+        Log.d("passed location", location.toString());
+        locationList.add(location);
 
-        //Remove Button (Dynamic add based on the JSON Objects)
-        //3. add the button based on the JSONARRAY
+        // Remove Button (Dynamic add based on the JSON Objects)
+        // 3. add the button based on the JSONARRAY
         LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);
         buttonDecorator = new ButtonDecorator(linearLayout, this);
-        buttonDecorator.addButtonsFromJson(locationList);
+        buttonDecorator.addButtonsFromList(locationList);
 
-
-        //Back Button Functions
+        // Back Button Functions
         Button backButton = findViewById(R.id.button_back);
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //finish PlanDuration Activity
+                // finish PlanDuration Activity
                 finish();
             }
         });
@@ -112,8 +109,8 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
             Places.initialize(getApplicationContext(), apiKey);
         }
 
-        //Button Add Location Functions
-        //New location will be add into the JSONArray
+        // Button Add Location Functions
+        // New location will be add into the JSONArray
         Button addLocationButton = findViewById(R.id.button_add_location);
         addLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -126,7 +123,8 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                 bottomSheetDialog.setOnShowListener(new DialogInterface.OnShowListener() {
                     @Override
                     public void onShow(DialogInterface dialogInterface) {
-                        FrameLayout bottomSheet = bottomSheetDialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+                        FrameLayout bottomSheet = bottomSheetDialog
+                                .findViewById(com.google.android.material.R.id.design_bottom_sheet);
                         if (bottomSheet != null) {
                             // Set BottomSheet Height as 90%
                             ViewGroup.LayoutParams layoutParams = bottomSheet.getLayoutParams();
@@ -139,7 +137,7 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                         }
                     }
                 });
-                PlacesClient placesClient = Places.createClient(PlanDurationActivity.this);
+                placesClient = Places.createClient(PlanDurationActivity.this);
 
                 SearchView searchViewLocation = bottomSheetView.findViewById(R.id.searchViewLocation);
                 ListView listViewAutocomplete = bottomSheetView.findViewById(R.id.listViewAutocomplete);
@@ -154,7 +152,8 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                             bottomSheetDialog.dismiss();
                             String selectedPlace = query;
                         } else {
-                            Toast.makeText(PlanDurationActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(PlanDurationActivity.this, "Please enter a location", Toast.LENGTH_SHORT)
+                                    .show();
                         }
                         return true;
                     }
@@ -180,20 +179,37 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                         String fullText = prediction.getFullText(null).toString();
                         searchViewLocation.setQuery(fullText, false);
                         bottomSheetDialog.dismiss();
-                        String selectedPlace = prediction.getPrimaryText(null).toString();
-                        locationList.put(selectedPlace);
-                        buttonDecorator.addSingleButton(selectedPlace,locationList.length() - 1);
+                        String placeId = prediction.getPlaceId();
+                        List<Place.Field> placeFields = Arrays.asList(
+                                Place.Field.ID,
+                                Place.Field.NAME,
+//                              Place.Field.ADDRESS,
+                                Place.Field.TYPES,
+                                Place.Field.LAT_LNG
+                        );
+
+                        FetchPlaceRequest request = FetchPlaceRequest.builder(placeId, placeFields)
+                                .build();
+
+                        placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
+                            Place place = response.getPlace();
+                            Location loc = new Location(place.getId(), place.getName(), place.getPlaceTypes().get(0), place.getLatLng().latitude, place.getLatLng().longitude);
+                            locationList.add(loc);
+                            buttonDecorator.addSingleButton(loc.getName(),locationList.size() - 1);
+                        }).addOnFailureListener((exception) -> {
+                            if (exception instanceof ApiException) {
+                                ApiException apiException = (ApiException) exception;
+                            }
+                        });
                     }
                 });
-
-
 
                 // Display BottomSheetDialog
                 bottomSheetDialog.show();
             }
         });
 
-        //TabLayout Functions
+        // TabLayout Functions
         TabLayout tabLayout = binding.tabLayout;
         tabLayout.addTab(tabLayout.newTab().setText("Days"));
         tabLayout.addTab(tabLayout.newTab().setText("Calendar"));
@@ -210,21 +226,36 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                 }
                 loadFragment(selectedFragment);
             }
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {}
 
             @Override
-            public void onTabReselected(TabLayout.Tab tab) {}
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+            }
         });
 
-        //Button Done
+        // Button Done
         Button doneButton = findViewById(R.id.button_done);
         doneButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
 
-                    planDetails.put("location", locationList);
+                    JSONArray locationArray = new JSONArray();
+                    planDetails.put("tripId", tripId);
+                    for (Location loc : locationList) {
+                        JSONObject locJson = new JSONObject();
+                        locJson.put("id", loc.getId());
+                        locJson.put("name", loc.getName());
+                        locJson.put("type", loc.getType());
+                        locJson.put("latitude", loc.getLatitude());
+                        locJson.put("longitude", loc.getLongitude());
+                        locationArray.put(locJson);
+                    }
+                    planDetails.put("location", locationArray);
+
                     if (currentTabPosition == 0) { // Days
                         planDetails.put("days", receivedDays);
                         planDetails.put("startDate", receivedStartDate);
@@ -232,7 +263,8 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                     } else if (currentTabPosition == 1) { // Calendar
                         if (receivedCalenderStartDate == null || receivedCalenderEndDate == null ||
                                 receivedCalenderStartDate.isEmpty() || receivedCalenderEndDate.isEmpty()) {
-                            Toast.makeText(PlanDurationActivity.this, "Please select Start date and End date", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(PlanDurationActivity.this, "Please select Start date and End date",
+                                    Toast.LENGTH_SHORT).show();
                             return;
                         } else {
                             planDetails.put("days", revivedCalendarDays);
@@ -246,17 +278,18 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                     if (currentUser != null) {
                         String userId = currentUser.getUid();
                         // Create a new Trip object and upload it to the database
-                        List<Location> locations = new ArrayList<>();
-                        for (int i = 0; i < locationList.length(); i++) {
-                            String loc = locationList.optString(i, null);
-                            if (loc != null) {
-                                locations.add(new Location(loc, 0.0, 0.0));
-                            }
-                        }
+//                        List<Location> locations = new ArrayList<>();
+//                        for (int i = 0; i < locationList.length(); i++) {
+//                            String loc = locationList.optString(i, null);
+//                            if (loc != null) {
+//                                locations.add(new Location("", loc, "", 0.0, 0.0));
+//                            }
+//                        }
 
-//                        Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate), receivedDays,locations, userId);
-//                        FirestoreDB firestore = new FirestoreDB();
-//                        firestore.createTrip("userId", trip.convertTripToMap());
+                        // Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate),
+                        // receivedDays,locations, userId);
+                        // FirestoreDB firestore = new FirestoreDB();
+                        // firestore.createTrip("userId", trip.convertTripToMap());
 
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                         Date parsedDate;
@@ -269,21 +302,40 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
                         Timestamp startDate = new Timestamp(parsedDate);
 
                         // Create Trip object
-                        Trip trip = new Trip("New Trip", startDate, receivedDays, locations, userId);
+                        Trip trip = new Trip("New Trip", startDate, receivedDays, locationList, userId);
 
                         // Create FirestoreDB instance and add trip to Firestore
                         FirestoreDB firestore = new FirestoreDB();
-                        firestore.createTrip(userId, trip.convertTripToMap());
+                        // firestore.createTrip(userId, trip);
+                        firestore.createTrip(userId, trip, new OnSuccessListener<Trip>() {
+                            @Override
+                            public void onSuccess(Trip updatedTrip) {
+                                // Update the original trip with the returned one
+                                trip.setId(updatedTrip.getId());
+                                tripId = updatedTrip.getId();
+                                try {
+                                    planDetails.put("tripId", tripId);
+                                } catch (JSONException e) {
+                                    Log.d("PLAN", "Error in putting tripId into planDetails");
+                                }
+                                Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
+                                intent.putExtra("planDetails", planDetails.toString());
+                                intent.putExtra("tripId", tripId);
+                                startActivity(intent);
+                                // You can perform additional actions with the updated trip if needed
+                                Log.d("PLAN", "Trip created with ID: " + trip.getId());
+                            }
+                        }, new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Log.w("PLAN", "Error creating trip", e);
+                            }
+                        });
                     } else {
                         Log.d("PLAN", "[PlanDurationActivity] No user is signed in.");
                     }
 
 
-
-
-                    Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
-                    intent.putExtra("planDetails", planDetails.toString());
-                    startActivity(intent);
 
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
@@ -303,18 +355,18 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
 
     @Override
     public void DaysInteraction(String data) {
-        receivedDays =  Integer.parseInt(data);
+        receivedDays = Integer.parseInt(data);
 
         Calendar calendar = Calendar.getInstance();
-        receivedStartDate =  dateFormat.format(calendar.getTime());
+        receivedStartDate = dateFormat.format(calendar.getTime());
 
         calendar.add(Calendar.DAY_OF_MONTH, receivedDays - 1);
-        receivedEndDate=dateFormat.format(calendar.getTime());
+        receivedEndDate = dateFormat.format(calendar.getTime());
     }
 
     @Override
-    public void DatesInteraction(String startDate, String endDate){
-        if (startDate == null || endDate == null){
+    public void DatesInteraction(String startDate, String endDate) {
+        if (startDate == null || endDate == null) {
             receivedCalenderStartDate = null;
             receivedCalenderEndDate = null;
             revivedCalendarDays = 0;
@@ -357,18 +409,21 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
         }).addOnFailureListener(exception -> {
             if (exception instanceof ApiException) {
                 ApiException apiException = (ApiException) exception;
-                Toast.makeText(PlanDurationActivity.this, "Error fetching autocomplete predictions: " + apiException.getStatusCode(), Toast.LENGTH_LONG).show();
+                Toast.makeText(PlanDurationActivity.this,
+                        "Error fetching autocomplete predictions: " + apiException.getStatusCode(), Toast.LENGTH_LONG)
+                        .show();
             }
         });
     }
 
     @Override
     public void onButtonClicked(int index, Button button) {
-        if (locationList.length() <= 1) {
+        if (locationList.size() <= 1) {
             Toast.makeText(this, "At least one location being selected!", Toast.LENGTH_SHORT).show();
             return;
         }
-        locationList = removeLocationFromJsonArray(locationList, index);
+        locationList.remove(index);
+//        locationList = removeLocationFromJsonArray(locationList, index);
 
         LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);
         linearLayout.removeView(button);
@@ -376,19 +431,19 @@ public class PlanDurationActivity extends AppCompatActivity  implements OnFragme
         updateButtonTags();
     }
 
-    private JSONArray removeLocationFromJsonArray(JSONArray array, int index) {
-        JSONArray updatedArray = new JSONArray();
-        for (int i = 0; i < array.length(); i++) {
-            if (i != index) {
-                try {
-                    updatedArray.put(array.get(i));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return updatedArray;
-    }
+//    private JSONArray removeLocationFromJsonArray(JSONArray array, int index) {
+//        JSONArray updatedArray = new JSONArray();
+//        for (int i = 0; i < array.length(); i++) {
+//            if (i != index) {
+//                try {
+//                    updatedArray.put(array.get(i));
+//                } catch (JSONException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//        return updatedArray;
+//    }
 
     private void updateButtonTags() {
         LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);

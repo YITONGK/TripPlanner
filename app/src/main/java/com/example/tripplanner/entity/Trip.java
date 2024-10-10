@@ -39,7 +39,7 @@ public class Trip {
         this.name = name;
         this.startDate = startDate;
         this.numDays = numDays;
-        this.endDate = new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(numDays - 1), 0);
+        this.endDate = new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(numDays), 0);
         this.locations = locations;
         this.note = "";
         this.plans = new HashMap<>();
@@ -156,13 +156,33 @@ public class Trip {
     }
 
     public int getLastingDays() {
-        long daysBetween = TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
+        long daysBetween = TimeUnit.SECONDS.toDays(startDate.getSeconds() - endDate.getSeconds());
         System.out.println("Days between: " + daysBetween);
         return (int) daysBetween;
     }
 
     public void setPlans(Map<String, List<ActivityItem>> plans) {
         this.plans = plans;
+    }
+
+    public int getNumDays() {
+        return numDays;
+    }
+
+    @Override
+    public String toString() {
+        return "Trip{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                ", numDays=" + numDays +
+                ", locations=" + locations +
+                ", note='" + note + '\'' +
+                ", plans=" + plans +
+                ", database=" + database +
+                ", userIds=" + userIds +
+                '}';
     }
 }
 

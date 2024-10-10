@@ -4,13 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,15 +19,18 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.tripplanner.databinding.ActivityEditPlanBinding;
+import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanFragment;
 import com.google.android.material.tabs.TabLayout;
-
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class EditPlanActivity extends AppCompatActivity {
 
@@ -38,151 +38,264 @@ public class EditPlanActivity extends AppCompatActivity {
     private int days;
     private String tripName;
     private ActivityEditPlanBinding binding;
-    private ArrayList<Fragment> fragments = new ArrayList<>();
+    private final ArrayList<Fragment> fragments = new ArrayList<>();
     private FragmentManager fragmentManager;
+    private Trip trip;
+    private String tripId;
 
-    private JSONObject tripPlan;
-    private JSONArray placeArray;
-    ArrayList<String> placeList = new ArrayList<>();
     private ActivityResultLauncher<Intent> planSettingsLauncher;
 
-    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         binding = ActivityEditPlanBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        applyWindowInsets();
+
+        // Get intent extras
+        String tripId = getIntent().getStringExtra("tripId");
+        String jsonString = getIntent().getStringExtra("planDetails");
+
+        if (tripId != null && !tripId.isEmpty()) {
+            Log.d("TAG", "Trip ID: " + tripId);
+            this.tripId = tripId;
+            fetchTripData(tripId);
+        } else if (jsonString != null && !jsonString.isEmpty()) {
+            Log.d("TAG", "Plan Details JSON: " + jsonString);
+            parsePlanDetails(jsonString);
+
+            // Update the UI
+            runOnUiThread(() -> {
+                setupTripInfo();
+                initializeFragmentsAndTabs();
+                setupTabSelectedListener();
+                loadFragment(fragments.get(0));
+            });
+        } else {
+            // Handle the case where neither tripId nor planDetails are provided
+            Log.d("TAG", "No trip ID or plan details provided.");
+            // Optionally, finish the activity or show an error message
+            finish();
+        }
+
+        setupCloseButton();
+        setupPlanSettingsLauncher();
+        setupSettingsButton();
+        setupShareButton();
+    }
+
+    private void applyWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
 
-        // Initialize variables from intent
-        String jsonString = getIntent().getStringExtra("planDetails");
-        if (jsonString != null) {
-            try {
-                tripPlan = new JSONObject(jsonString);
-                placeArray = tripPlan.getJSONArray("location");
-                for (int i = 0; i < placeArray.length(); i++) {
-                    placeList.add(placeArray.getString(i));
-                }
-                StringBuilder sb = new StringBuilder();
-                for (String place : placeList) {
-                    sb.append(place).append(", ");
-                }
-                if (sb.length() > 0) {
-                    sb.setLength(sb.length() - 2);
-                }
-                selectedPlace = sb.toString();
-                days = tripPlan.getInt("days");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+    private void fetchTripData(String tripId) {
+        FirestoreDB firestoreDB = new FirestoreDB();
+        firestoreDB.getTripByTripId(tripId, this::onTripDataFetched, e -> {
+            Log.d("PLAN", "Error getting trip by trip ID: " + e.getMessage());
+            // Handle the error appropriately (e.g., show an error message to the user)
+        });
+    }
+
+    private void onTripDataFetched(Trip trip) {
+        Log.d("PLAN", "Trip data fetched: " + trip.toString());
+        this.trip = trip;
+        extractDetailsFromTrip(trip);
+
+        runOnUiThread(() -> {
+            setupTripInfo();
+            initializeFragmentsAndTabs();
+            setupTabSelectedListener();
+            loadFragment(fragments.get(0));
+        });
+    }
+
+    private void parsePlanDetails(String jsonString) {
+        try {
+            JSONObject tripPlan = new JSONObject(jsonString);
+            extractDetailsFromPlan(tripPlan);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            // Handle JSON parsing error
+            Log.d("TAG", "Error parsing plan details: " + e.getMessage());
         }
+    }
 
-        // Set trip name and days
-        TextView tripTo = findViewById(R.id.textViewSelectedPlace);
+    private void extractDetailsFromTrip(Trip trip) {
+        // Get locations and duration of the plan
+        List<Location> locations = trip.getLocations();
+
+        StringBuilder sb = new StringBuilder();
+        for (Location location : locations) {
+            sb.append(location.getName()).append(", ");
+        }
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 2);
+        }
+        selectedPlace = sb.toString();
+        days = trip.getNumDays();
+
+        // TODO: get activities of the plan
+    }
+
+    private void extractDetailsFromPlan(JSONObject tripPlan) {
+        try {
+            JSONArray locationArray = tripPlan.getJSONArray("location");
+            List<Location> locationList = new ArrayList<>();
+
+            for (int i = 0; i < locationArray.length(); i++) {
+                JSONObject locJson = locationArray.getJSONObject(i);
+                String id = locJson.getString("id");
+                String name = locJson.getString("name");
+                String type = locJson.getString("type");
+                double latitude = locJson.getDouble("latitude");
+                double longitude = locJson.getDouble("longitude");
+
+                Location loc = new Location(id, name, type, latitude, longitude);
+                locationList.add(loc);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (Location loc : locationList) {
+                sb.append(loc.getName()).append(", ");
+            }
+            if (sb.length() > 0) {
+                sb.setLength(sb.length() - 2);
+            }
+            selectedPlace = sb.toString();
+            days = tripPlan.getInt("days");
+            tripId = tripPlan.getString("tripId");
+
+            // TODO: get activities of the plan
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Log.d("TAG", "Error extracting details from plan: " + e.getMessage());
+        }
+    }
+
+    private void setupTripInfo() {
         tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
+        TextView tripTo = findViewById(R.id.textViewSelectedPlace);
         tripTo.setText(tripName);
         updateDayAndNightText();
+    }
 
+    private void setupCloseButton() {
         ImageButton closeButton = findViewById(R.id.closeButton);
         closeButton.setOnClickListener(view -> {
             Intent intent = new Intent(EditPlanActivity.this, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.putExtra("select_navigation_plan", true);
             startActivity(intent);
         });
+    }
 
+    private void setupPlanSettingsLauncher() {
         planSettingsLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == RESULT_OK) {
-                        Intent data = result.getData();
-                        if (data != null && data.hasExtra("tripName")) {
-                            String newTripName = data.getStringExtra("tripName");
-                            TextView tripTo1 = findViewById(R.id.textViewSelectedPlace);
-                            tripTo1.setText(newTripName);
-                            int newDays = data.getIntExtra("days", 0);
-                            if (days != newDays) {
-                                if (days < newDays) {
-                                    addTabsAndFragments(days, newDays);
-                                } else if (days > newDays) {
-                                    removeTabsAndFragments(days, newDays);
-                                }
-                                days = newDays;
-                                updateDayAndNightText();
-                                refreshTabsAndFragments();
-                                loadFragment(fragments.get(0));
-                            }
-                        }
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        handlePlanSettingsResult(result.getData());
                     }
-                }
-        );
+                });
+    }
 
+    private void handlePlanSettingsResult(Intent data) {
+        if (data.hasExtra("tripName")) {
+            String newTripName = data.getStringExtra("tripName");
+            TextView tripTo = findViewById(R.id.textViewSelectedPlace);
+            tripTo.setText(newTripName != null ? newTripName : tripName);
+
+            int newDays = data.getIntExtra("days", days);
+            if (days != newDays) {
+                adjustFragmentsForNewDays(newDays);
+                days = newDays;
+                updateDayAndNightText();
+                refreshTabsAndFragments();
+                loadFragment(fragments.get(0));
+            }
+        }
+    }
+
+    private void adjustFragmentsForNewDays(int newDays) {
+        if (days < newDays) {
+            addTabsAndFragments(days, newDays);
+        } else {
+            removeTabsAndFragments(days, newDays);
+        }
+    }
+
+    private void setupSettingsButton() {
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         settingsButton.setOnClickListener(view -> {
             Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
             intent.putExtra("tripName", tripName);
             intent.putExtra("days", days);
+            intent.putExtra("tripId", tripId);
             planSettingsLauncher.launch(intent);
-        });
-
-        fragmentManager = getSupportFragmentManager();
-        // Initialize fragments and tabs
-        initializeFragmentsAndTabs();
-
-        // Set up TabSelectedListener
-        TabLayout tabLayout = binding.tabLayout;
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                Fragment selectedFragment = fragments.get(tab.getPosition());
-                loadFragment(selectedFragment);
-            }
-
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-                // Handle unselected tab
-            }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-                // Handle reselected tab
-            }
         });
     }
 
     private void initializeFragmentsAndTabs() {
+        fragmentManager = getSupportFragmentManager();
         TabLayout tabLayout = binding.tabLayout;
         fragments.clear();
         FragmentTransaction transaction = fragmentManager.beginTransaction();
 
-        // Add Overview Fragment
+        addOverviewFragment(tabLayout, transaction);
+        addDayFragments(tabLayout, transaction);
+
+        transaction.commitNow();
+    }
+
+    private void addOverviewFragment(TabLayout tabLayout, FragmentTransaction transaction) {
         tabLayout.addTab(tabLayout.newTab().setText("Overview"));
         Fragment overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
         transaction.add(R.id.fragmentContainerView, overviewFragment, "fragment_overview");
         fragments.add(overviewFragment);
+    }
 
-        // Add Day Fragments
+    private void addDayFragments(TabLayout tabLayout, FragmentTransaction transaction) {
         for (int i = 0; i < days; i++) {
-            tabLayout.addTab(tabLayout.newTab().setText("Day " + (i + 1)));
+            String tabTitle = "Day " + (i + 1);
+            tabLayout.addTab(tabLayout.newTab().setText(tabTitle));
             Fragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
             transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
             transaction.hide(dayFragment);
             fragments.add(dayFragment);
         }
+    }
 
-        transaction.commitNow();
-        loadFragment(fragments.get(0));
+    private void setupTabSelectedListener() {
+        TabLayout tabLayout = binding.tabLayout;
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                loadFragment(fragments.get(tab.getPosition()));
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                // Optional: Handle unselected tab
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                // Optional: Handle reselected tab
+            }
+        });
     }
 
     private void addTabsAndFragments(int oldDays, int newDays) {
         TabLayout tabLayout = binding.tabLayout;
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         for (int i = oldDays; i < newDays; i++) {
-            tabLayout.addTab(tabLayout.newTab().setText("Day " + (i + 1)));
+            String tabTitle = "Day " + (i + 1);
+            tabLayout.addTab(tabLayout.newTab().setText(tabTitle));
             Fragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
             transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
             transaction.hide(dayFragment);
@@ -196,9 +309,8 @@ public class EditPlanActivity extends AppCompatActivity {
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         for (int i = oldDays - 1; i >= newDays; i--) {
             tabLayout.removeTabAt(i + 1);
-            Fragment fragment = fragments.get(i + 1);
+            Fragment fragment = fragments.remove(i + 1);
             transaction.remove(fragment);
-            fragments.remove(i + 1);
         }
         transaction.commitNow();
     }
@@ -207,31 +319,34 @@ public class EditPlanActivity extends AppCompatActivity {
         TabLayout tabLayout = binding.tabLayout;
         tabLayout.removeAllTabs();
         for (int i = 0; i < fragments.size(); i++) {
-            if (i == 0) {
-                tabLayout.addTab(tabLayout.newTab().setText("Overview"));
-            } else {
-                tabLayout.addTab(tabLayout.newTab().setText("Day " + i));
-            }
+            String tabTitle = (i == 0) ? "Overview" : "Day " + i;
+            tabLayout.addTab(tabLayout.newTab().setText(tabTitle));
         }
     }
 
     private void updateDayAndNightText() {
-        String dayAndNight;
+        String dayAndNightText;
         if (days == 1) {
-            dayAndNight = "1 day";
-        } else if (days == 2) {
-            dayAndNight = "2 days and 1 night";
+            dayAndNightText = "1 day";
         } else {
-            dayAndNight = days + " days and " + (days - 1) + " nights";
+            dayAndNightText = days + " days and " + (days - 1) + " nights";
         }
         TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);
-        daysAndNight.setText(dayAndNight);
+        daysAndNight.setText(dayAndNightText);
     }
 
     private void loadFragment(Fragment fragment) {
-        getSupportFragmentManager()
-                .beginTransaction()
+        fragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainerView, fragment)
                 .commit();
+    }
+
+    private void setupShareButton() {
+        ImageButton shareButton = findViewById(R.id.shareButton);
+        shareButton.setOnClickListener(view -> {
+            Intent intent = new Intent(EditPlanActivity.this, ShareTripActivity.class);
+            intent.putExtra("tripId", tripId);
+            startActivity(intent);
+        });
     }
 }

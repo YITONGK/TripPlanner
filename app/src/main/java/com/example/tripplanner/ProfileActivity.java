@@ -8,9 +8,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.tripplanner.databinding.ActivityProfileBinding;
+import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.User;
+import com.example.tripplanner.entity.UserTripStatistics;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -52,10 +56,9 @@ public class ProfileActivity extends AppCompatActivity {
                     email.setText(userData.getEmail());
                 }
             });
+
+            fetchUserTripStatistics(uid);
         }
-
-        //TODO: get trip summary from database
-
 
         binding.editProfileBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -87,6 +90,38 @@ public class ProfileActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
                 startActivity(intent);
+            }
+        });
+    }
+
+    private void fetchUserTripStatistics(String userId) {
+        FirestoreDB firestoreDB = new FirestoreDB();
+
+        firestoreDB.getUserTripStatistics(userId, new OnSuccessListener<UserTripStatistics>() {
+            @Override
+            public void onSuccess(UserTripStatistics statistics) {
+                int totalTrips = statistics.getTotalTrips();
+                int totalUniqueLocations = statistics.getTotalLocations();
+                int totalDays = statistics.getTotalDays();
+
+                // Display the statistics
+                TextView numTrip = findViewById(R.id.numTrip);
+                TextView numLocation = findViewById(R.id.numLocation);
+                TextView numDay = findViewById(R.id.numDay);
+
+                numTrip.setText(String.valueOf(totalTrips));
+                numLocation.setText(String.valueOf(totalUniqueLocations));
+                numDay.setText(String.valueOf(totalDays));
+
+                Log.d("STATISTICS", "Total Trips: " + totalTrips);
+                Log.d("STATISTICS", "Total Unique Locations: " + totalUniqueLocations);
+                Log.d("STATISTICS", "Total Days: " + totalDays);
+            }
+        }, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                // Handle the error
+                Log.e("STATISTICS", "Error retrieving trip statistics", e);
             }
         });
     }

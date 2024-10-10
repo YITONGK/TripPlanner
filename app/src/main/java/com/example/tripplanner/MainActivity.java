@@ -9,10 +9,15 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 
+import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.WeatherTripPlanner;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -22,11 +27,18 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.ui.AppBarConfiguration;
 
 import com.example.tripplanner.databinding.ActivityMainBinding;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
+
+import com.google.firebase.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,6 +55,8 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        handleIntent(getIntent());
 
         Fragment plan_layout = HomeFragment.newInstance(HomeFragment.PLAN);
         getSupportFragmentManager()
@@ -106,34 +120,48 @@ public class MainActivity extends AppCompatActivity {
 
         // Detect weather and plan trip
         weatherTripPlanner.detectWeatherAndPlanTrip();
+
+//          manually add a trip object
+//        String name = "My Awesome Trip";
+//        Timestamp startDate = Timestamp.now();
+//        int receivedDays = 5; // Duration of the trip in days
+//
+//        // Create a list of Location objects
+//        List<Location> locationList = new ArrayList<>();
+//        locationList.add(new Location("1", "New York City", "City", 40.7128, -74.0060));
+//        locationList.add(new Location("2", "Los Angeles", "City", 34.0522, -118.2437));
+//        locationList.add(new Location("3", "Chicago", "City", 41.8781, -87.6298));
+//
+//        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+//        FirebaseUser currentUser = mAuth.getCurrentUser();
+//        String userId = currentUser.getUid();
+//
+//        // Create Trip object
+//        Trip trip = new Trip(name, startDate, receivedDays, locationList, userId);
+//
+//        // Create FirestoreDB instance and add trip to Firestore
+//        FirestoreDB firestore = new FirestoreDB();
+//
+//        firestore.createTrip(userId, trip.convertTripToMap());
+
+//        FirestoreDB firestoreDB = new FirestoreDB();
+//        String tripId = "3Rt1mDAOhYzwLY4ouR7K";
+//
+//        firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
+//            @Override
+//            public void onSuccess(Void aVoid) {
+//                // Handle successful deletion
+//                Log.d("PLAN", "Trip successfully deleted.");
+//                // Update UI or navigate back
+//            }
+//        }, new OnFailureListener() {
+//            @Override
+//            public void onFailure(@NonNull Exception e) {
+//                // Handle deletion failure
+//                Log.e("PLAN", "Error deleting trip", e);
+//            }
+//        });
     }
-
-//     @Override
-//     public void onSensorChanged(SensorEvent event) {
-//         if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
-//             currentTemperature = event.values[0];
-//             Log.d("SENSOR", "Current temperature: " + currentTemperature);
-//         } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
-//             currentHumidity = event.values[0];
-//             Log.d("SENSOR", "Current humidity: " + currentHumidity);
-//         }
-
-//         checkConditionsAndNotify();
-//     }
-
-//     @Override
-//     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-//         // Do something here if sensor accuracy changes.
-//     }
-
-//     private void checkConditionsAndNotify() {
-//         if (currentTemperature > 30 || currentTemperature < 0 || currentHumidity > 80) {
-//             // Notify user and request GPT to re-plan the trip
-// //            requestGPTReplan();
-// //            Toast.makeText(this, "Temperature or Humidity is too high!", Toast.LENGTH_SHORT).show();
-//             Log.d("SENSOR", "Temperature or Humidity is too high!");
-//         }
-//     }
 
     @Override
     protected void onResume() {
@@ -147,6 +175,25 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         // Unregister sensor listeners when the activity is paused
         weatherTripPlanner.unregisterSensorListeners();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent); // Update the intent
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        if (intent != null && intent.getBooleanExtra("select_navigation_plan", false)) {
+            binding.navView.setSelectedItemId(R.id.navigation_plan);
+
+            Fragment planFragment = HomeFragment.newInstance(HomeFragment.PLAN);
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainerView, planFragment)
+                    .commit();
+        }
     }
 
 
