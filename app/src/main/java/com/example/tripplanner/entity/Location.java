@@ -18,6 +18,18 @@ public class Location implements Serializable {
         this.latitude = latitude;
         this.longitude = longitude;
     }
+    public Location(String name, String type, double latitude, double longitude) {
+        this.name = name;
+        this.type = type;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    public Location(String name, double latitude, double longitude) {
+        this.name = name;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
 
     public Map<String, Object> convertLocationToMap() {
         Map<String, Object> locationMap = new HashMap<>();

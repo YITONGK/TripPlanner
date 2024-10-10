@@ -74,6 +74,7 @@ public class PlanDurationActivity extends AppCompatActivity
     private String receivedCalenderEndDate;
     private int revivedCalendarDays;
     private int currentTabPosition = 0;
+    private String tripId;
 
     final String apiKey = BuildConfig.PLACES_API_KEY;
 
@@ -310,6 +311,7 @@ public class PlanDurationActivity extends AppCompatActivity
                             public void onSuccess(Trip updatedTrip) {
                                 // Update the original trip with the returned one
                                 trip.setId(updatedTrip.getId());
+                                tripId = updatedTrip.getId();
                                 // You can perform additional actions with the updated trip if needed
                                 Log.d("PLAN", "Trip created with ID: " + trip.getId());
                             }
@@ -325,6 +327,7 @@ public class PlanDurationActivity extends AppCompatActivity
 
                     Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
                     intent.putExtra("planDetails", planDetails.toString());
+                    intent.putExtra("tripId", tripId);
                     startActivity(intent);
 
                 } catch (JSONException e) {
