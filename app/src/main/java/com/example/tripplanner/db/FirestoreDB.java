@@ -31,14 +31,15 @@ public class FirestoreDB {
         this.firestore = FirebaseFirestore.getInstance();
     }
 
-     public void getTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener, OnFailureListener onFailureListener) {
+    public void getTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener,
+            OnFailureListener onFailureListener) {
         Timestamp now = Timestamp.now();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
                 .whereGreaterThan("startDate", now)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    
+
                     List<Trip> trips = new ArrayList<>();
                     for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
                         Log.d("PLAN", String.valueOf(document));
@@ -50,18 +51,19 @@ public class FirestoreDB {
                             Timestamp startDate = document.getTimestamp("startDate");
                             Timestamp endDate = document.getTimestamp("endDate");
                             int numDays = document.getLong("numDays").intValue();
-                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) document.get("locations");
+                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) document
+                                    .get("locations");
                             List<Location> locations = new ArrayList<>();
                             for (Map<String, Object> locMap : locationsMap) {
                                 Location location = new Location(
                                         (String) locMap.get("name"),
                                         ((Number) locMap.get("latitude")).doubleValue(),
-                                        ((Number) locMap.get("longitude")).doubleValue()
-                                );
+                                        ((Number) locMap.get("longitude")).doubleValue());
                                 locations.add(location);
                             }
                             String note = document.getString("note");
-                            Map<String, List<ActivityItem>> plans = (Map<String, List<ActivityItem>>) document.get("plans");
+                            Map<String, List<ActivityItem>> plans = (Map<String, List<ActivityItem>>) document
+                                    .get("plans");
                             List<String> userIds = (List<String>) document.get("userIds");
 
                             Trip trip = new Trip(name, startDate, endDate, locations, userIds.get(0));
@@ -78,14 +80,15 @@ public class FirestoreDB {
                 .addOnFailureListener(onFailureListener);
     }
 
-    public void getPastTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener, OnFailureListener onFailureListener) {
+    public void getPastTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener,
+            OnFailureListener onFailureListener) {
         Timestamp now = Timestamp.now();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
                 .whereLessThan("startDate", now)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    
+
                     List<Trip> trips = new ArrayList<>();
                     for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
                         Log.d("PLAN", String.valueOf(document));
@@ -97,18 +100,19 @@ public class FirestoreDB {
                             Timestamp startDate = document.getTimestamp("startDate");
                             Timestamp endDate = document.getTimestamp("endDate");
                             int numDays = document.getLong("numDays").intValue();
-                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) document.get("locations");
+                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) document
+                                    .get("locations");
                             List<Location> locations = new ArrayList<>();
                             for (Map<String, Object> locMap : locationsMap) {
                                 Location location = new Location(
                                         (String) locMap.get("name"),
                                         ((Number) locMap.get("latitude")).doubleValue(),
-                                        ((Number) locMap.get("longitude")).doubleValue()
-                                );
+                                        ((Number) locMap.get("longitude")).doubleValue());
                                 locations.add(location);
                             }
                             String note = document.getString("note");
-                            Map<String, List<ActivityItem>> plans = (Map<String, List<ActivityItem>>) document.get("plans");
+                            Map<String, List<ActivityItem>> plans = (Map<String, List<ActivityItem>>) document
+                                    .get("plans");
                             List<String> userIds = (List<String>) document.get("userIds");
 
                             Trip trip = new Trip(name, startDate, endDate, locations, userIds.get(0));
@@ -127,21 +131,47 @@ public class FirestoreDB {
 
     public void createTrip(String userId, Map<String, Object> tripData) {
         firestore.collection("trips").add(tripData)
-            .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                @Override
-                public void onSuccess(DocumentReference documentReference) {
-                    Log.d("PLAN", "DocumentSnapshot written with ID: " + documentReference.getId());
-                }
-            })
-            .addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Log.w("PLAN", "Error adding document", e);
-                }
-            });;
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
+                        Log.d("PLAN", "DocumentSnapshot written with ID: " + documentReference.getId());
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w("PLAN", "Error adding document", e);
+                    }
+                });
+        ;
     }
 
-    public void getTripByTripId(String tripId, OnSuccessListener<Trip> onSuccessListener, OnFailureListener onFailureListener) {
+    public void createTrip(String userId, Trip trip, OnSuccessListener<Trip> onSuccessListener,
+            OnFailureListener onFailureListener) {
+        Map<String, Object> tripData = trip.convertTripToMap();
+        firestore.collection("trips").add(tripData)
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
+                        Log.d("PLAN", "DocumentSnapshot written with ID: " + documentReference.getId());
+                        // Update the original Trip object with the new ID
+                        trip.setId(documentReference.getId());
+
+                        // Trigger the success listener with the updated Trip object
+                        onSuccessListener.onSuccess(trip);
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w("PLAN", "Error adding document", e);
+                    }
+                });
+        ;
+    }
+
+    public void getTripByTripId(String tripId, OnSuccessListener<Trip> onSuccessListener,
+            OnFailureListener onFailureListener) {
         firestore.collection("trips")
                 .document(tripId)
                 .get()
@@ -152,20 +182,22 @@ public class FirestoreDB {
                             String name = documentSnapshot.getString("name");
                             Timestamp startDate = documentSnapshot.getTimestamp("startDate");
                             Timestamp endDate = documentSnapshot.getTimestamp("endDate");
-                            int numDays = documentSnapshot.contains("numDays") ? documentSnapshot.getLong("numDays").intValue() : 0;
+                            int numDays = documentSnapshot.contains("numDays")
+                                    ? documentSnapshot.getLong("numDays").intValue()
+                                    : 0;
                             String note = documentSnapshot.getString("note");
                             List<String> userIds = (List<String>) documentSnapshot.get("userIds");
 
                             // Parse locations
                             List<Location> locations = new ArrayList<>();
-                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) documentSnapshot.get("locations");
+                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) documentSnapshot
+                                    .get("locations");
                             if (locationsMap != null) {
                                 for (Map<String, Object> locMap : locationsMap) {
                                     Location location = new Location(
                                             (String) locMap.get("name"),
                                             ((Number) locMap.get("latitude")).doubleValue(),
-                                            ((Number) locMap.get("longitude")).doubleValue()
-                                    );
+                                            ((Number) locMap.get("longitude")).doubleValue());
                                     locations.add(location);
                                 }
                             }
@@ -176,15 +208,15 @@ public class FirestoreDB {
                             if (plansMap != null) {
                                 for (Map.Entry<String, Object> entry : plansMap.entrySet()) {
                                     String day = entry.getKey();
-                                    List<Map<String, Object>> activityItemsMap = (List<Map<String, Object>>) entry.getValue();
+                                    List<Map<String, Object>> activityItemsMap = (List<Map<String, Object>>) entry
+                                            .getValue();
                                     List<ActivityItem> activityItems = new ArrayList<>();
                                     for (Map<String, Object> itemMap : activityItemsMap) {
                                         ActivityItem item = new ActivityItem(
                                                 (String) itemMap.get("name"),
                                                 (Timestamp) itemMap.get("startTime"),
                                                 (Timestamp) itemMap.get("endTime"),
-                                                (String) itemMap.get("notes")
-                                        );
+                                                (String) itemMap.get("notes"));
                                         activityItems.add(item);
                                     }
                                     plans.put(day, activityItems);
@@ -192,7 +224,8 @@ public class FirestoreDB {
                             }
 
                             // Create the Trip object
-                            Trip trip = new Trip(name, startDate, endDate, locations, userIds != null && !userIds.isEmpty() ? userIds.get(0) : null);
+                            Trip trip = new Trip(name, startDate, endDate, locations,
+                                    userIds != null && !userIds.isEmpty() ? userIds.get(0) : null);
                             trip.setId(documentSnapshot.getId());
                             trip.setNote(note);
                             trip.setPlans(plans);
@@ -211,7 +244,8 @@ public class FirestoreDB {
                 .addOnFailureListener(onFailureListener);
     }
 
-    public void getUserTripStatistics(String userId, OnSuccessListener<UserTripStatistics> onSuccessListener, OnFailureListener onFailureListener) {
+    public void getUserTripStatistics(String userId, OnSuccessListener<UserTripStatistics> onSuccessListener,
+            OnFailureListener onFailureListener) {
         Timestamp now = Timestamp.now();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
@@ -232,7 +266,8 @@ public class FirestoreDB {
                             totalDays += numDays;
 
                             // Parse locations
-                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) document.get("locations");
+                            List<Map<String, Object>> locationsMap = (List<Map<String, Object>>) document
+                                    .get("locations");
                             if (locationsMap != null) {
                                 for (Map<String, Object> locMap : locationsMap) {
                                     String locationName = (String) locMap.get("name");
@@ -258,8 +293,8 @@ public class FirestoreDB {
                 .addOnFailureListener(onFailureListener);
     }
 
-
-    public void deleteTripById(String tripId, OnSuccessListener<Void> onSuccessListener, OnFailureListener onFailureListener) {
+    public void deleteTripById(String tripId, OnSuccessListener<Void> onSuccessListener,
+            OnFailureListener onFailureListener) {
         firestore.collection("trips")
                 .document(tripId)
                 .delete()
@@ -276,6 +311,5 @@ public class FirestoreDB {
                     }
                 });
     }
-
 
 }
