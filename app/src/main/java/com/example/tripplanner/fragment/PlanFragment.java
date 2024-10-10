@@ -153,7 +153,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             weatherForecastContainer = rootView.findViewById(R.id.weatherForecastContainer);
 //            Log.d("Getting weather", "");
 
-            fetchAndDisplayWeatherData();
+//            fetchAndDisplayWeatherData();
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()

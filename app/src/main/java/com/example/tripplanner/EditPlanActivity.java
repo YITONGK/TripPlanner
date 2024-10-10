@@ -233,6 +233,7 @@ public class EditPlanActivity extends AppCompatActivity {
             Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
             intent.putExtra("tripName", tripName);
             intent.putExtra("days", days);
+            intent.putExtra("tripId", trip.getId());
             planSettingsLauncher.launch(intent);
         });
     }
