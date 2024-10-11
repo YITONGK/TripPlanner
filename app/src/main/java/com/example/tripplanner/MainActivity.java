@@ -15,6 +15,7 @@ import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.WeatherTripPlanner;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -23,6 +24,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.ui.AppBarConfiguration;
 
@@ -31,8 +33,14 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
@@ -94,10 +102,71 @@ public class MainActivity extends AppCompatActivity {
                 }
                 // To create new plan activity
                 if (id == R.id.navigation_add) {
-//                    Intent intent = new Intent(MainActivity.this, PlanDurationActivity.class);
-//                    intent.putExtra("selectedPlace", "Sydney");
-//                    startActivity(intent);
-                    startActivity(new Intent(MainActivity.this, CreateNewPlanActivity.class));
+                    BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(MainActivity.this);
+                    View view = LayoutInflater.from(MainActivity.this).inflate(R.layout.add_plan_bottom_sheet, null);
+                    bottomSheetDialog.setContentView(view);
+                    bottomSheetDialog.show();
+
+                    CardView addNewPlan = view.findViewById(R.id.addNewPlan);
+                    CardView importPlan = view.findViewById(R.id.addSharePlan);
+
+                    addNewPlan.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            bottomSheetDialog.dismiss();
+                            startActivity(new Intent(MainActivity.this, CreateNewPlanActivity.class));
+                        }
+                    });
+                    // import existing plan
+                    importPlan.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            bottomSheetDialog.dismiss();
+                            BottomSheetDialog importPlanBottomSheet = new BottomSheetDialog(MainActivity.this);
+                            View importPlanView = LayoutInflater.from(MainActivity.this).inflate(R.layout.import_plan_bottom_sheet, null);
+                            importPlanBottomSheet.setContentView(importPlanView);
+                            importPlanBottomSheet.show();
+
+                            EditText tripIDView = importPlanBottomSheet.findViewById(R.id.planID);
+                            String tripID = tripIDView.getText().toString();
+
+                            tripIDView.setOnEditorActionListener(new EditText.OnEditorActionListener() {
+                                @Override
+                                public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                                    if (actionId == EditorInfo.IME_ACTION_DONE) {
+                                        // check if the trip ID is valid
+                                        FirestoreDB firestoreDB = new FirestoreDB();
+                                        firestoreDB.getTripByTripId(tripID,
+                                            new OnSuccessListener<Trip>() {
+                                                @Override
+                                                public void onSuccess(Trip trip) {
+                                                    Log.d("IMPORT PLAN", "Trip ID Verified");
+                                                    // add user to the trip
+                                                    firestoreDB.addUserToTrip(tripID, new OnSuccessListener<String>() {
+                                                        @Override
+                                                        public void onSuccess(Trip trip) {
+                                                            Log.d("IMPORT PLAN", "Successfully added user to trip");
+                                                            // Navigate to added trip details
+                                                            Intent i = new Intent(MainActivity.this, EditPlanActivity.class);
+                                                            i.putExtra("tripId", tripID);
+                                                            startActivity(i);
+                                                        }
+                                                    },
+                                                        e -> {Log.d("IMPORT PLAN", "Failed to add user to trip" + e.getMessage());}
+                                                    );
+                                                }
+                                            },
+                                            e -> {
+                                                Log.d("IMPORT PLAN", "Trip ID Invalid" + e.getMessage());
+                                            }
+                                        );
+                                    }
+                                    return false;
+                                }
+                            });
+
+                        }
+                    });
 
                     return true;
                 }
