@@ -113,5 +113,8 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
                 }
             });
         }
+        public void bind(Trip trip) {
+            // titleTextView.setText(trip.getTitle());
+        }
     }
 }

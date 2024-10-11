@@ -342,4 +342,7 @@ public class FirestoreDB {
                 });
     }
 
+    // Add new user into an existing trip
+
+
 }

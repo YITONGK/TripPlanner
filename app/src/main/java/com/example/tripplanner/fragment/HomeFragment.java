@@ -208,4 +208,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         PastTripsBottomSheet bottomSheet = new PastTripsBottomSheet();
         bottomSheet.show(getChildFragmentManager(), bottomSheet.getTag());
     }
+
+
 }
