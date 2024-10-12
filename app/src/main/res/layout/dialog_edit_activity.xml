@@ -1,47 +1,45 @@
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:padding="16dp">
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:padding="16dp"
+    <EditText
+        android:id="@+id/startTime"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:hint="Start Time" />
 
-        <EditText
-            android:id="@+id/startTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Start Time" />
+    <EditText
+        android:id="@+id/endTime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="End Time"
+        android:layout_below="@id/startTime"
+        android:layout_marginTop="8dp" />
 
-        <EditText
-            android:id="@+id/endTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="End Time"
-            android:layout_marginTop="8dp"/>
+    <EditText
+        android:id="@+id/inputLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Location"
+        android:layout_below="@id/endTime"
+        android:layout_marginTop="8dp" />
 
-        <EditText
-            android:id="@+id/inputLocation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Location"
-            android:layout_marginTop="8dp" />
+    <ListView
+        android:id="@+id/autocompleteListView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_below="@id/inputLocation"
+        android:layout_marginTop="0dp"
+        android:visibility="gone"
+        android:background="@android:color/white"
+        android:elevation="4dp" />
 
-        <ListView
-            android:id="@+id/autocompleteListView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone" />
-
-        <EditText
-            android:id="@+id/inputNotes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Note"
-            android:layout_marginTop="8dp" />
-
-
-
-    </LinearLayout>
-</ScrollView>
+    <EditText
+        android:id="@+id/inputNotes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Note"
+        android:layout_below="@id/inputLocation"
+        android:layout_marginTop="8dp" />
+</RelativeLayout>
