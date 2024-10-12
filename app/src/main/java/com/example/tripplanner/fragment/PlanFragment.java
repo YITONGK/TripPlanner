@@ -56,6 +56,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import com.example.tripplanner.entity.Weather;
 import com.example.tripplanner.utils.WeatherAPIClient;
+import com.google.firebase.Timestamp;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -70,11 +72,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     public static final int PLAN_SPECIFIC_DAY = 1;
     static final String LAYOUT_TYPE = "type";
     private int layout = OVERVIEW;
-    private int dayIndex = -1; // To identify the day
+    private Timestamp startDate;
+    private int dayIndex = -1;
     private GoogleMap mMap;
 
     private List<Location> locationList;
-    private String startDate;
+    private String startDay;
     private int lastingDays;
 
     private PlacesClient placesClient;
@@ -109,15 +112,18 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             this.layout = getArguments().getInt(LAYOUT_TYPE, OVERVIEW);
             if (this.layout == PLAN_SPECIFIC_DAY) {
                 this.dayIndex = getArguments().getInt("dayIndex", -1);
+                long startDateMillis = getArguments().getLong("startDateMillis");
+                this.startDate = new Timestamp(new Date(startDateMillis));
             }
         }
     }
 
-    public static PlanFragment newInstance(int layoutType, int dayIndex) {
+    public static PlanFragment newInstance(int layoutType, Timestamp startDate, int dayIndex) {
         PlanFragment fragment = new PlanFragment();
         Bundle bundle = new Bundle();
         bundle.putInt(LAYOUT_TYPE, layoutType);
         bundle.putInt("dayIndex", dayIndex);
+        bundle.putLong("startDateMillis", startDate.toDate().getTime());
         fragment.setArguments(bundle);
         return fragment;
     }
@@ -213,8 +219,29 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         autocompleteAdapter = new AutocompleteAdapter(getContext(), new ArrayList<>());
         autocompleteListView.setAdapter(autocompleteAdapter);
 
-        startTime.setText(activityItem.getStartTimeString());
-        endTime.setText(activityItem.getEndTimeString());
+//        startTime.setText(activityItem.getStartTimeString());
+//        endTime.setText(activityItem.getEndTimeString());
+
+        final int[] startHour = new int[1];
+        final int[] startMinute = new int[1];
+        final int[] endHour = new int[1];
+        final int[] endMinute = new int[1];
+
+        if (activityItem.getStartTime() != null) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(activityItem.getStartTime().toDate());
+            startHour[0] = calendar.get(Calendar.HOUR_OF_DAY);
+            startMinute[0] = calendar.get(Calendar.MINUTE);
+            startTime.setText(String.format("%02d:%02d", startHour[0], startMinute[0]));
+        }
+
+        if (activityItem.getEndTime() != null) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(activityItem.getEndTime().toDate());
+            endHour[0] = calendar.get(Calendar.HOUR_OF_DAY);
+            endMinute[0] = calendar.get(Calendar.MINUTE);
+            endTime.setText(String.format("%02d:%02d", endHour[0], endMinute[0]));
+        }
         inputLocation.setText(activityItem.getLocationString());
         inputNotes.setText(activityItem.getNotes());
 
@@ -222,13 +249,14 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public void onClick(View v) {
 
-                Calendar calendar = Calendar.getInstance();
-                int hour = calendar.get(Calendar.HOUR_OF_DAY);
-                int minute = calendar.get(Calendar.MINUTE);
+                int hour = startHour[0] != 0 ? startHour[0] : Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+                int minute = startMinute[0] != 0 ? startMinute[0] : Calendar.getInstance().get(Calendar.MINUTE);
 
                 TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                        startHour[0] = hourOfDay;
+                        startMinute[0] = minute;
                         startTime.setText(String.format("%02d:%02d", hourOfDay, minute));
                     }
                 }, hour, minute, true);
@@ -241,13 +269,14 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public void onClick(View v) {
 
-                Calendar calendar = Calendar.getInstance();
-                int hour = calendar.get(Calendar.HOUR_OF_DAY);
-                int minute = calendar.get(Calendar.MINUTE);
+                int hour = endHour[0] != 0 ? endHour[0] : Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+                int minute = endMinute[0] != 0 ? endMinute[0] : Calendar.getInstance().get(Calendar.MINUTE);
 
                 TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                        endHour[0] = hourOfDay;
+                        endMinute[0] = minute;
                         endTime.setText(String.format("%02d:%02d", hourOfDay, minute));
                     }
                 }, hour, minute, true);
@@ -285,8 +314,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int which) {
-                activityItem.setStartTime(startTime.getText().toString());
-                activityItem.setEndTime(endTime.getText().toString());
+                Timestamp startTimestamp = buildTimestamp(startDate, dayIndex, startHour[0], startMinute[0]);
+                Timestamp endTimestamp = buildTimestamp(startDate, dayIndex, endHour[0], endMinute[0]);
+
+                activityItem.setStartTime(startTimestamp);
+                activityItem.setEndTime(endTimestamp);
                 activityItem.setLocation(inputLocation.getText().toString());
                 activityItem.setNotes(inputNotes.getText().toString());
                 adapter.notifyDataSetChanged();
@@ -430,6 +462,19 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         return dateFormat.format(calendar.getTime());
     }
 
+    private Timestamp buildTimestamp(Timestamp startDate, int dayIndex, int hour, int minute) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(startDate.toDate());
+        calendar.add(Calendar.DAY_OF_YEAR, dayIndex);
+        calendar.set(Calendar.HOUR_OF_DAY, hour);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        Date date = calendar.getTime();
+        return new Timestamp(date);
+    }
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -448,8 +493,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         this.locationList = locationList;
     }
 
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
+    public void setStartDate(String startDay) {
+        this.startDay = startDay;
     }
 
 }

@@ -27,7 +27,6 @@ public class AutocompleteAdapter extends ArrayAdapter<AutocompletePrediction> {
 
         TextView textView1 = row.findViewById(android.R.id.text1);
         TextView textView2 = row.findViewById(android.R.id.text2);
-        Log.d("Place detail", item.toString());
         textView1.setText(item.getPrimaryText(null));
         textView2.setText(item.getSecondaryText(null));
 

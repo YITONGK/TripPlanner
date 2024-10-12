@@ -24,6 +24,7 @@ import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanFragment;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.Timestamp;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,6 +36,7 @@ import java.util.List;
 public class EditPlanActivity extends AppCompatActivity {
 
     private String selectedPlace;
+    private Timestamp startDate;
     private int days;
     private String tripName;
     private ActivityEditPlanBinding binding;
@@ -56,6 +58,7 @@ public class EditPlanActivity extends AppCompatActivity {
         // Get intent extras
         String tripId = getIntent().getStringExtra("tripId");
         String jsonString = getIntent().getStringExtra("planDetails");
+        Log.d("convert json string", "Plan Details JSON: " + jsonString);
 
         if (tripId != null && !tripId.isEmpty()) {
             Log.d("TAG", "Trip ID: " + tripId);
@@ -137,6 +140,7 @@ public class EditPlanActivity extends AppCompatActivity {
             sb.setLength(sb.length() - 2);
         }
         selectedPlace = sb.toString();
+        startDate = trip.getStartDate();
         days = trip.getNumDays();
 
         // TODO: get activities of the plan
@@ -167,6 +171,7 @@ public class EditPlanActivity extends AppCompatActivity {
                 sb.setLength(sb.length() - 2);
             }
             selectedPlace = sb.toString();
+            Log.d("start_day", "extractDetailsFromPlan: " + startDate);
             days = tripPlan.getInt("days");
             tripId = tripPlan.getString("tripId");
 
@@ -254,7 +259,7 @@ public class EditPlanActivity extends AppCompatActivity {
 
     private void addOverviewFragment(TabLayout tabLayout, FragmentTransaction transaction) {
         tabLayout.addTab(tabLayout.newTab().setText("Overview"));
-        PlanFragment overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
+        PlanFragment overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, startDate, -1);
         overviewFragment.setLocationList(trip.getLocations());
         overviewFragment.setStartDate(trip.getStartDate().toString());
         overviewFragment.setLastingDays(days);
@@ -266,7 +271,7 @@ public class EditPlanActivity extends AppCompatActivity {
         for (int i = 0; i < days; i++) {
             String tabTitle = "Day " + (i + 1);
             tabLayout.addTab(tabLayout.newTab().setText(tabTitle));
-            PlanFragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
+            PlanFragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, startDate, i);
             transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
             transaction.hide(dayFragment);
             fragments.add(dayFragment);
@@ -299,7 +304,7 @@ public class EditPlanActivity extends AppCompatActivity {
         for (int i = oldDays; i < newDays; i++) {
             String tabTitle = "Day " + (i + 1);
             tabLayout.addTab(tabLayout.newTab().setText(tabTitle));
-            Fragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
+            Fragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, startDate, i);
             transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
             transaction.hide(dayFragment);
             fragments.add(dayFragment);

@@ -6,6 +6,7 @@ import com.google.firebase.Timestamp;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -65,14 +66,18 @@ public class ActivityItem {
 
     public String getStartTimeString() {
         if (startTime != null) {
-            return startTime.toDate().toString();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(startTime.toDate());
+            return String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
         }
         return "";
     }
 
     public String getEndTimeString() {
         if (endTime != null) {
-            return endTime.toDate().toString();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(endTime.toDate());
+            return String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
         }
         return "";
     }

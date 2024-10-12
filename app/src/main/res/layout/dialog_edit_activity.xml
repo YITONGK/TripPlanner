@@ -7,7 +7,11 @@
         android:id="@+id/startTime"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Start Time" />
+        android:hint="Start Time"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:clickable="true"
+        android:inputType="none"/>
 
     <EditText
         android:id="@+id/endTime"
@@ -15,7 +19,11 @@
         android:layout_height="wrap_content"
         android:hint="End Time"
         android:layout_below="@id/startTime"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:clickable="true"
+        android:inputType="none"/>
 
     <EditText
         android:id="@+id/inputLocation"
