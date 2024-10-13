@@ -242,7 +242,6 @@ public class PlanDurationActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 try {
-
                     JSONArray locationArray = new JSONArray();
                     planDetails.put("tripId", tripId);
                     for (Location loc : locationList) {
