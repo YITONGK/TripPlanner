@@ -51,7 +51,6 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
-import android.os.AsyncTask;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import com.example.tripplanner.entity.Weather;
@@ -64,6 +63,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 public class PlanFragment extends Fragment implements OnMapReadyCallback {
@@ -91,10 +91,15 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private ListView activityLocationList;
     private ArrayList<ActivityItem> activityItemArray;
     private ActivityItemAdapter adapter;
+    private AtomicReference<Location> activityLocation = new AtomicReference<>();
+
 
     private LinearLayout weatherForecastContainer;
     private WeatherAPIClient weatherAPIClient;
 
+    public interface OnPlaceFetchedListener {
+        void onPlaceFetched(Location location);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -219,13 +224,19 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         autocompleteAdapter = new AutocompleteAdapter(getContext(), new ArrayList<>());
         autocompleteListView.setAdapter(autocompleteAdapter);
 
-//        startTime.setText(activityItem.getStartTimeString());
-//        endTime.setText(activityItem.getEndTimeString());
-
         final int[] startHour = new int[1];
         final int[] startMinute = new int[1];
         final int[] endHour = new int[1];
         final int[] endMinute = new int[1];
+        final boolean[] isStartTimeSelected = {false};
+        final boolean[] isEndTimeSelected = {false};
+
+        activityLocation = new AtomicReference<>();
+
+        if (activityItem.getLocation() != null) {
+            activityLocation.set(activityItem.getLocation());
+            inputLocation.setText(activityItem.getLocationString());
+        }
 
         if (activityItem.getStartTime() != null) {
             Calendar calendar = Calendar.getInstance();
@@ -258,6 +269,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                         startHour[0] = hourOfDay;
                         startMinute[0] = minute;
                         startTime.setText(String.format("%02d:%02d", hourOfDay, minute));
+                        isStartTimeSelected[0] = true;
                     }
                 }, hour, minute, true);
 
@@ -278,6 +290,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                         endHour[0] = hourOfDay;
                         endMinute[0] = minute;
                         endTime.setText(String.format("%02d:%02d", hourOfDay, minute));
+                        isEndTimeSelected[0] = true;
                     }
                 }, hour, minute, true);
 
@@ -304,26 +317,40 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             public void afterTextChanged(Editable s) { }
         });
 
-        autocompleteListView.setOnItemClickListener((parent, view, pos, id) -> {
+        autocompleteListView.setOnItemClickListener((parent, view1, pos, id) -> {
             AutocompletePrediction item = autocompleteAdapter.getItem(pos);
             String placeId = item.getPlaceId();
-            fetchPlaceFromPlaceId(placeId, inputLocation, autocompleteListView);
+            fetchPlaceFromPlaceId(placeId, inputLocation, autocompleteListView, new OnPlaceFetchedListener() {
+                @Override
+                public void onPlaceFetched(Location location) {
+                    // Set the activityLocation to the fetched location
+                    activityLocation.set(location);
+                }
+            });
         });
-
 
         builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int which) {
-                Timestamp startTimestamp = buildTimestamp(startDate, dayIndex, startHour[0], startMinute[0]);
-                Timestamp endTimestamp = buildTimestamp(startDate, dayIndex, endHour[0], endMinute[0]);
-
-                activityItem.setStartTime(startTimestamp);
-                activityItem.setEndTime(endTimestamp);
-                activityItem.setLocation(inputLocation.getText().toString());
+                if (isStartTimeSelected[0]) {
+                    Timestamp startTimestamp = buildTimestamp(startDate, dayIndex, startHour[0], startMinute[0]);
+                    activityItem.setStartTime(startTimestamp);
+                }
+                if (isEndTimeSelected[0]) {
+                    Timestamp endTimestamp = buildTimestamp(startDate, dayIndex, endHour[0], endMinute[0]);
+                    activityItem.setEndTime(endTimestamp);
+                }
+                if (activityLocation.get() != null) {
+                    activityItem.setLocation(activityLocation.get());
+                } else if (activityItem.getLocation() == null && !inputLocation.getText().toString().isEmpty()) {
+                    // Handle manual input
+                    activityItem.setLocation(new Location("", inputLocation.getText().toString(), "", 0, 0));
+                }
                 activityItem.setNotes(inputNotes.getText().toString());
                 adapter.notifyDataSetChanged();
             }
         });
+
         builder.setNegativeButton("Cancel", null);
 
         builder.setNeutralButton("Delete", new DialogInterface.OnClickListener() {
@@ -367,11 +394,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         });
     }
 
-    private void fetchPlaceFromPlaceId(String placeId, EditText inputLocation, ListView autocompleteListView) {
+    private void fetchPlaceFromPlaceId(String placeId, EditText inputLocation, ListView autocompleteListView, OnPlaceFetchedListener listener) {
         List<Place.Field> placeFields = Arrays.asList(
                 Place.Field.ID,
                 Place.Field.NAME,
-                Place.Field.ADDRESS,
+                Place.Field.TYPES,
                 Place.Field.LAT_LNG
         );
 
@@ -380,8 +407,18 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
         placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
             Place place = response.getPlace();
-            inputLocation.setText(place.getName());
-            autocompleteListView.setVisibility(View.GONE);
+            if (place != null) {
+                Location loc = new Location(
+                        place.getId(),
+                        place.getName(),
+                        place.getPlaceTypes().get(0),
+                        place.getLatLng().latitude,
+                        place.getLatLng().longitude
+                );
+                inputLocation.setText(place.getName());
+                autocompleteListView.setVisibility(View.GONE);
+                listener.onPlaceFetched(loc);
+            }
         }).addOnFailureListener((exception) -> {
             if (exception instanceof ApiException) {
                 ApiException apiException = (ApiException) exception;
@@ -390,6 +427,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             }
         });
     }
+
 
     private void fetchAndDisplayWeatherData() {
         Log.d("Getting weather", "start");

@@ -84,6 +84,7 @@ public class ActivityItem {
 
     public String getLocationString() {
         if (location != null) {
+            Log.d("try to get location name", location.toString());
             return location.getName();
         }
         return "";
