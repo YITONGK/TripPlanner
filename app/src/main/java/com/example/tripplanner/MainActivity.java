@@ -194,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
                     .replace(R.id.fragmentContainerView, planFragment)
                     .commit();
         }
-    }
+     }
 
 
 

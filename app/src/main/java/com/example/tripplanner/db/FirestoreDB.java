@@ -343,6 +343,23 @@ public class FirestoreDB {
     }
 
     // Add new user into an existing trip
+    public void addUserToTrip(String tripId, String newUserId, OnSuccessListener<Void> onSuccessListener,
+        OnFailureListener onFailureListener) {
+        DocumentReference tripRef = firestore.collection("trips").document(tripId);
 
+        tripRef.update("userIds", FieldValue.arrayUnion(newUserId))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("PLAN", "User " + newUserId + " added to trip with ID: " + tripId);
+                    if (onSuccessListener != null) {
+                        onSuccessListener.onSuccess(aVoid);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("PLAN", "Error adding user to trip with ID: " + tripId, e);
+                    if (onFailureListener != null) {
+                        onFailureListener.onFailure(e);
+                    }
+                });
+    }
 
 }
