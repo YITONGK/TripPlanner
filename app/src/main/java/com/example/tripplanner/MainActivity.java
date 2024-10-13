@@ -38,6 +38,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -128,40 +129,49 @@ public class MainActivity extends AppCompatActivity {
                             importPlanBottomSheet.show();
 
                             EditText tripIDView = importPlanBottomSheet.findViewById(R.id.planID);
-                            String tripID = tripIDView.getText().toString();
+                            Button confirmButton = importPlanView.findViewById(R.id.confirmButton);
 
-                            tripIDView.setOnEditorActionListener(new EditText.OnEditorActionListener() {
+                            confirmButton.setOnClickListener(new View.OnClickListener() {
                                 @Override
-                                public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                                    if (actionId == EditorInfo.IME_ACTION_DONE) {
-                                        // check if the trip ID is valid
+                                public void onClick(View v) {
+                                    String tripID = tripIDView.getText().toString().trim();
+                                    if (!tripID.isEmpty()) {
+                                        Log.d("SHARE", tripID);
+                                        // Validate the trip ID
                                         FirestoreDB firestoreDB = new FirestoreDB();
                                         firestoreDB.getTripByTripId(tripID,
                                             new OnSuccessListener<Trip>() {
                                                 @Override
                                                 public void onSuccess(Trip trip) {
                                                     Log.d("IMPORT PLAN", "Trip ID Verified");
-                                                    // add user to the trip
-                                                    firestoreDB.addUserToTrip(tripID, new OnSuccessListener<String>() {
-                                                        @Override
-                                                        public void onSuccess(Trip trip) {
-                                                            Log.d("IMPORT PLAN", "Successfully added user to trip");
-                                                            // Navigate to added trip details
-                                                            Intent i = new Intent(MainActivity.this, EditPlanActivity.class);
-                                                            i.putExtra("tripId", tripID);
-                                                            startActivity(i);
-                                                        }
-                                                    },
-                                                        e -> {Log.d("IMPORT PLAN", "Failed to add user to trip" + e.getMessage());}
-                                                    );
+                                                    // Ensure currentUser is not null
+                                                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                                                    if (currentUser != null) {
+                                                        String userId = currentUser.getUid();
+
+                                                        // Add user to the trip
+                                                        firestoreDB.addUserToTrip(tripID, userId, 
+                                                            (Void) -> {
+                                                                Log.d("IMPORT PLAN", "Successfully added user to trip");
+                                                                // Navigate to added trip details
+                                                                Intent i = new Intent(MainActivity.this, EditPlanActivity.class);
+                                                                i.putExtra("tripId", tripID);
+                                                                startActivity(i);
+                                                            },
+                                                            e -> Log.e("IMPORT PLAN", "Failed to add user to trip: " + e.getMessage())
+                                                        );
+                                                    }
                                                 }
                                             },
                                             e -> {
-                                                Log.d("IMPORT PLAN", "Trip ID Invalid" + e.getMessage());
+                                                Log.d("IMPORT PLAN", "Trip ID Invalid: " + e.getMessage());
+                                                // Notify user of invalid trip ID
+                                                Toast.makeText(MainActivity.this, "Invalid Trip ID. Please try again.", Toast.LENGTH_SHORT).show();
                                             }
                                         );
+                                    } else {
+                                        Log.e("SHARE", "Trip ID is empty");
                                     }
-                                    return false;
                                 }
                             });
 

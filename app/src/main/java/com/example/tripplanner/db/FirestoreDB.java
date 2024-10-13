@@ -13,6 +13,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.time.LocalDateTime;
@@ -200,6 +201,14 @@ public class FirestoreDB {
 
     public void getTripByTripId(String tripId, OnSuccessListener<Trip> onSuccessListener,
             OnFailureListener onFailureListener) {
+        if (tripId == null || tripId.isEmpty()) {
+            Log.e("FirestoreDB", "Invalid trip ID: " + tripId);
+            if (onFailureListener != null) {
+                onFailureListener.onFailure(new IllegalArgumentException("Trip ID cannot be null or empty"));
+            }
+            return;
+        }
+        Log.d("FirestoreDB", tripId);
         firestore.collection("trips")
                 .document(tripId)
                 .get()
