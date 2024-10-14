@@ -8,7 +8,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class ActivityItem {
     private String name;
@@ -31,6 +33,8 @@ public class ActivityItem {
         this.endTime = endTime;
         this.notes = notes;
     }
+
+    public ActivityItem () {}
 
     public void setName(String name) {
         this.name = name;
@@ -56,13 +60,13 @@ public class ActivityItem {
         this.startTime = startTime;
     }
 
-    public void setStartTime(String startTime) {
-        this.startTime = convertStringToTimestamp(startTime);
-    }
+//    public void setStartTime(String startTime) {
+//        this.startTime = convertStringToTimestamp(startTime);
+//    }
 
-    public void setEndTime(String endTime) {
-        this.endTime = convertStringToTimestamp(endTime);
-    }
+//    public void setEndTime(String endTime) {
+//        this.endTime = convertStringToTimestamp(endTime);
+//    }
 
     public String getStartTimeString() {
         if (startTime != null) {
@@ -121,8 +125,20 @@ public class ActivityItem {
         this.location = location;
     }
 
-    public void setLocation(String location) {
-        this.location = new Location("", location, "", 0, 0);
-        Log.d("PLAN", "[ActivityItem] setLocation by String");
+//    public void setLocation(String location) {
+//        this.location = new Location("", location, "", 0, 0);
+//        Log.d("PLAN", "[ActivityItem] setLocation by String");
+//    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", name);
+        map.put("startTime", startTime);
+        map.put("endTime", endTime);
+        map.put("notes", notes);
+        if (location != null) {
+            map.put("location", location.toMap());
+        }
+        return map;
     }
 }

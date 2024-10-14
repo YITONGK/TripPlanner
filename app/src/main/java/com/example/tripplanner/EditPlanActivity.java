@@ -17,12 +17,14 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tripplanner.databinding.ActivityEditPlanBinding;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanFragment;
+import com.example.tripplanner.fragment.PlanViewModel;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.Timestamp;
 
@@ -108,6 +110,9 @@ public class EditPlanActivity extends AppCompatActivity {
         Log.d("PLAN", "Trip data fetched: " + trip.toString());
         this.trip = trip;
         extractDetailsFromTrip(trip);
+
+        PlanViewModel planViewModel = new ViewModelProvider(this).get(PlanViewModel.class);
+        planViewModel.setTrip(trip);
 
         runOnUiThread(() -> {
             setupTripInfo();

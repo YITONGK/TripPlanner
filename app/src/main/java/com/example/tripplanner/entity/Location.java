@@ -31,6 +31,8 @@ public class Location implements Serializable {
         this.longitude = longitude;
     }
 
+    public Location() {}
+
     public Map<String, Object> convertLocationToMap() {
         Map<String, Object> locationMap = new HashMap<>();
         locationMap.put("id", id);
@@ -65,6 +67,33 @@ public class Location implements Serializable {
     public double getLongitude() {
         return longitude;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", id);
+        map.put("name", name);
+        map.put("type", type);
+        map.put("latitude", latitude);
+        map.put("longitude", longitude);
+        return map;
+    }
+
 
     @Override
     public String toString() {

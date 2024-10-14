@@ -194,8 +194,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 String activityName = input.getText().toString();
                 if (!activityName.isEmpty()) {
                     ActivityItem activityItem = new ActivityItem(activityName);
-                    activityItemArray.add(activityItem);
+                    // Update in ViewModel and save
+                    viewModel.addActivity(dayIndex, activityItem);
                     adapter.notifyDataSetChanged();
+                    viewModel.saveTripToDatabase();
                 } else {
                     Toast.makeText(getContext(), "Please enter something", Toast.LENGTH_SHORT).show();
                 }
@@ -348,6 +350,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 }
                 activityItem.setNotes(inputNotes.getText().toString());
                 adapter.notifyDataSetChanged();
+
+                // Update in ViewModel and save
+                viewModel.updateActivity(dayIndex, position, activityItem);
+                viewModel.saveTripToDatabase();
             }
         });
 
@@ -362,9 +368,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                         .setMessage("Are you sure you want to delete this activity?")
                         .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface confirmDialog, int whichButton) {
-                                // Remove the activity item and notify the adapter
-                                activityItemArray.remove(position);
+                                // Update in ViewModel and save
+                                viewModel.removeActivity(dayIndex, position);
                                 adapter.notifyDataSetChanged();
+                                viewModel.saveTripToDatabase();
+
                                 confirmDialog.dismiss();
                                 dialogInterface.dismiss();
                             }
