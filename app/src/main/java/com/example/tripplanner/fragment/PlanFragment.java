@@ -28,6 +28,7 @@ import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -36,6 +37,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import java.util.ArrayList;
@@ -76,7 +78,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private int dayIndex = -1;
     private GoogleMap mMap;
 
-    private List<Location> locationList;
+    public static List<Location> locationList;
     private String startDay;
     private int lastingDays;
 
@@ -85,6 +87,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     final String apiKey = BuildConfig.PLACES_API_KEY;
 
     private PlanViewModel viewModel;
+    private Trip trip;
 
     // For specific day plan
     private TextView addActivityLocation;
@@ -112,6 +115,22 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
         // Get ViewModel instance
         viewModel = new ViewModelProvider(requireActivity()).get(PlanViewModel.class);
+
+        // Observe tripLiveData
+        viewModel.getTripLiveData().observe(this, new Observer<Trip>() {
+            @Override
+            public void onChanged(Trip trip) {
+                if (trip != null) {
+                    PlanFragment.this.trip = trip;
+                    PlanFragment.this.locationList = trip.getLocations();
+
+                    // For OVERVIEW layout, fetch weather data when trip data is available
+                    if (layout == OVERVIEW) {
+                        fetchAndDisplayWeatherData();
+                    }
+                }
+            }
+        });
 
         if (this.getArguments() != null) {
             this.layout = getArguments().getInt(LAYOUT_TYPE, OVERVIEW);
@@ -168,7 +187,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             weatherForecastContainer = rootView.findViewById(R.id.weatherForecastContainer);
 //            Log.d("Getting weather", "");
 
-            fetchAndDisplayWeatherData();
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -438,7 +456,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
 
     private void fetchAndDisplayWeatherData() {
-        Log.d("Getting weather", "start");
+        Log.d("Getting_weather", "start");
+        if (locationList == null || locationList.isEmpty()) {
+            Log.e("PlanFragment", "locationList is null or empty in fetchAndDisplayWeatherData");
+            return;
+        }
+        Log.d("Getting_weather", locationList.toString());
         double latitude = 40.7128;
         double longitude = -74.0060;
         int startDateIndex = 1;

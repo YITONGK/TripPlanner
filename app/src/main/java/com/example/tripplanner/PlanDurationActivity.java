@@ -279,8 +279,8 @@ public class PlanDurationActivity extends AppCompatActivity
                         String userId = currentUser.getUid();
 
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                        Date parsedDate;
-                        int tripDays;
+                        Date parsedDate = new Date();
+                        int tripDays = 0;
                         try {
                             if (currentTabPosition == 0) { // Days
                                 parsedDate = dateFormat.parse(receivedStartDate);
@@ -288,10 +288,6 @@ public class PlanDurationActivity extends AppCompatActivity
                             } else if (currentTabPosition == 1) { // Calendar
                                 parsedDate = dateFormat.parse(receivedCalenderStartDate);
                                 tripDays = revivedCalendarDays;
-                            } else {
-                                // Default to Days tab if somehow neither is selected
-                                parsedDate = dateFormat.parse(receivedStartDate);
-                                tripDays = receivedDays;
                             }
                         } catch (ParseException e) {
                             e.printStackTrace();
@@ -301,6 +297,7 @@ public class PlanDurationActivity extends AppCompatActivity
 
                         // Create Trip object
                         Trip trip = new Trip("New Trip", startDate, tripDays, locationList, userId);
+                        Log.d("trip_info", trip.toString());
 
                         // Create FirestoreDB instance and add trip to Firestore
                         FirestoreDB firestore = new FirestoreDB();
@@ -421,8 +418,6 @@ public class PlanDurationActivity extends AppCompatActivity
             return;
         }
         locationList.remove(index);
-//        locationList = removeLocationFromJsonArray(locationList, index);
-
         LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);
         linearLayout.removeView(button);
 
