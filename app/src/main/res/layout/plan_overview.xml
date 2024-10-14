@@ -38,22 +38,31 @@
             android:layout_below="@id/noteInput"
             android:layout_marginTop="16dp" />
 
-        <LinearLayout
-            android:id="@+id/weatherForecastContainer"
+<!--        <LinearLayout-->
+<!--            android:id="@+id/weatherForecastContainer"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_below="@id/weatherForecastTitle"-->
+<!--            android:orientation="vertical"-->
+<!--            android:padding="8dp">-->
+<!--        </LinearLayout>-->
+
+        <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/weatherForecastTitle"
-            android:orientation="vertical"
+            android:scrollbars="horizontal"
+            android:id="@+id/weatherRecyclerView"
+            android:layout_below="@+id/weatherForecastTitle"
             android:padding="8dp">
-        </LinearLayout>
 
+        </androidx.recyclerview.widget.RecyclerView>
 
         <TextView
             android:id="@+id/routineOverview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="🗺️ Routine Overview"
-            android:layout_below="@id/weatherForecastContainer"
+            android:layout_below="@id/weatherRecyclerView"
             android:textSize="24sp"
             android:padding="8dp"
             android:layout_marginTop="16dp" />
