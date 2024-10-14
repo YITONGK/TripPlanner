@@ -47,6 +47,7 @@ import java.util.List;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
@@ -364,7 +365,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                     activityItem.setLocation(activityLocation.get());
                 } else if (activityItem.getLocation() == null && !inputLocation.getText().toString().isEmpty()) {
                     // Handle manual input
-                    activityItem.setLocation(new Location("", inputLocation.getText().toString(), "", 0, 0));
+                    activityItem.setLocation(new Location("", inputLocation.getText().toString(), "", 0, 0, ""));
                 }
                 activityItem.setNotes(inputNotes.getText().toString());
                 adapter.notifyDataSetChanged();
@@ -424,6 +425,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         List<Place.Field> placeFields = Arrays.asList(
                 Place.Field.ID,
                 Place.Field.NAME,
+                Place.Field.ADDRESS_COMPONENTS,
                 Place.Field.TYPES,
                 Place.Field.LAT_LNG
         );
@@ -433,13 +435,23 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
         placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
             Place place = response.getPlace();
+            String country = null;
+            if (place.getAddressComponents() != null) {
+                for (AddressComponent component : place.getAddressComponents().asList()) {
+                    if (component.getTypes().contains("country")) {
+                        country = component.getName();
+                        break;
+                    }
+                }
+            }
             if (place != null) {
                 Location loc = new Location(
                         place.getId(),
                         place.getName(),
                         place.getPlaceTypes().get(0),
                         place.getLatLng().latitude,
-                        place.getLatLng().longitude
+                        place.getLatLng().longitude,
+                        country
                 );
                 inputLocation.setText(place.getName());
                 autocompleteListView.setVisibility(View.GONE);

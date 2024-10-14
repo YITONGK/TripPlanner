@@ -24,6 +24,7 @@ import com.example.tripplanner.fragment.PlanDurationFragment;
 import com.example.tripplanner.utils.OnFragmentInteractionListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -182,7 +183,7 @@ public class PlanDurationActivity extends AppCompatActivity
                         List<Place.Field> placeFields = Arrays.asList(
                                 Place.Field.ID,
                                 Place.Field.NAME,
-//                              Place.Field.ADDRESS,
+                                Place.Field.ADDRESS_COMPONENTS,
                                 Place.Field.TYPES,
                                 Place.Field.LAT_LNG
                         );
@@ -192,7 +193,23 @@ public class PlanDurationActivity extends AppCompatActivity
 
                         placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
                             Place place = response.getPlace();
-                            Location loc = new Location(place.getId(), place.getName(), place.getPlaceTypes().get(0), place.getLatLng().latitude, place.getLatLng().longitude);
+                            String country = null;
+                            if (place.getAddressComponents() != null) {
+                                for (AddressComponent component : place.getAddressComponents().asList()) {
+                                    if (component.getTypes().contains("country")) {
+                                        country = component.getName();
+                                        break;
+                                    }
+                                }
+                            }
+                            Location loc = new Location(
+                                    place.getId(),
+                                    place.getName(),
+                                    place.getPlaceTypes().get(0),
+                                    place.getLatLng().latitude,
+                                    place.getLatLng().longitude,
+                                    country
+                            );
                             locationList.add(loc);
                             buttonDecorator.addSingleButton(loc.getName(),locationList.size() - 1);
                         }).addOnFailureListener((exception) -> {

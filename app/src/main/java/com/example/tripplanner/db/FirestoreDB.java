@@ -86,7 +86,8 @@ public class FirestoreDB {
                                         (String) locMap.get("name"),
                                         (String) locMap.get("type"),
                                         ((Number) locMap.get("latitude")).doubleValue(),
-                                        ((Number) locMap.get("longitude")).doubleValue());
+                                        ((Number) locMap.get("longitude")).doubleValue(),
+                                        (String) locMap.get("country"));
                                 locations.add(location);
                             }
                             String note = document.getString("note");
@@ -227,7 +228,8 @@ public class FirestoreDB {
                                             (String) locMap.get("name"),
                                             (String) locMap.get("type"),
                                             ((Number) locMap.get("latitude")).doubleValue(),
-                                            ((Number) locMap.get("longitude")).doubleValue());
+                                            ((Number) locMap.get("longitude")).doubleValue(),
+                                            (String) locMap.get("country"));
                                     locations.add(location);
                                 }
                             }

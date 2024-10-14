@@ -24,6 +24,7 @@ import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.utils.GptApiClient;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
@@ -168,7 +169,7 @@ public class CreateNewPlanActivity extends AppCompatActivity {
         List<Place.Field> placeFields = Arrays.asList(
                 Place.Field.ID,
                 Place.Field.NAME,
-//                Place.Field.ADDRESS,
+                Place.Field.ADDRESS_COMPONENTS,
                 Place.Field.TYPES,
                 Place.Field.LAT_LNG
         );
@@ -193,11 +194,29 @@ public class CreateNewPlanActivity extends AppCompatActivity {
     private void handlePlaceSelection(Place place) {
         editTextMessage.setText(place.getName());
 
+        String country = null;
+        if (place.getAddressComponents() != null) {
+            for (AddressComponent component : place.getAddressComponents().asList()) {
+                if (component.getTypes().contains("country")) {
+                    country = component.getName();
+                    break;
+                }
+            }
+        }
+
+        Log.d("Place_country", country);
+
         Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
 
-        Location loc = new Location(place.getId(), place.getName(), place.getPlaceTypes().get(0), place.getLatLng().latitude, place.getLatLng().longitude);
-        Log.d("new loc", loc.toString());
-        Log.d("Place details", place.getName() + place.getAddress() + place.getLatLng().latitude + place.getLatLng().longitude);
+        Location loc = new Location(
+                place.getId(),
+                place.getName(),
+                place.getPlaceTypes().get(0),
+                place.getLatLng().latitude,
+                place.getLatLng().longitude,
+                country
+        );
+
         intent.putExtra("selectedPlace", loc);
 
         startActivity(intent);
