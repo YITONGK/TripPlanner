@@ -277,24 +277,22 @@ public class PlanDurationActivity extends AppCompatActivity
                     FirebaseUser currentUser = mAuth.getCurrentUser();
                     if (currentUser != null) {
                         String userId = currentUser.getUid();
-                        // Create a new Trip object and upload it to the database
-//                        List<Location> locations = new ArrayList<>();
-//                        for (int i = 0; i < locationList.length(); i++) {
-//                            String loc = locationList.optString(i, null);
-//                            if (loc != null) {
-//                                locations.add(new Location("", loc, "", 0.0, 0.0));
-//                            }
-//                        }
-
-                        // Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate),
-                        // receivedDays,locations, userId);
-                        // FirestoreDB firestore = new FirestoreDB();
-                        // firestore.createTrip("userId", trip.convertTripToMap());
 
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                         Date parsedDate;
+                        int tripDays;
                         try {
-                            parsedDate = dateFormat.parse(receivedStartDate);
+                            if (currentTabPosition == 0) { // Days
+                                parsedDate = dateFormat.parse(receivedStartDate);
+                                tripDays = receivedDays;
+                            } else if (currentTabPosition == 1) { // Calendar
+                                parsedDate = dateFormat.parse(receivedCalenderStartDate);
+                                tripDays = revivedCalendarDays;
+                            } else {
+                                // Default to Days tab if somehow neither is selected
+                                parsedDate = dateFormat.parse(receivedStartDate);
+                                tripDays = receivedDays;
+                            }
                         } catch (ParseException e) {
                             e.printStackTrace();
                             return;
@@ -302,7 +300,7 @@ public class PlanDurationActivity extends AppCompatActivity
                         Timestamp startDate = new Timestamp(parsedDate);
 
                         // Create Trip object
-                        Trip trip = new Trip("New Trip", startDate, receivedDays, locationList, userId);
+                        Trip trip = new Trip("New Trip", startDate, tripDays, locationList, userId);
 
                         // Create FirestoreDB instance and add trip to Firestore
                         FirestoreDB firestore = new FirestoreDB();
@@ -431,19 +429,6 @@ public class PlanDurationActivity extends AppCompatActivity
         updateButtonTags();
     }
 
-//    private JSONArray removeLocationFromJsonArray(JSONArray array, int index) {
-//        JSONArray updatedArray = new JSONArray();
-//        for (int i = 0; i < array.length(); i++) {
-//            if (i != index) {
-//                try {
-//                    updatedArray.put(array.get(i));
-//                } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//        return updatedArray;
-//    }
 
     private void updateButtonTags() {
         LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);
