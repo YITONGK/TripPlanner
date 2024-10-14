@@ -62,7 +62,6 @@ import java.util.Map;
 public class PlanDurationActivity extends AppCompatActivity
         implements OnFragmentInteractionListener, ButtonDecorator.OnButtonClickListener {
     private PlanDurationBinding binding;
-    private JSONObject planDetails =  new JSONObject();
     private List<Location> locationList = new ArrayList<>();
     private ButtonDecorator buttonDecorator;
     private int receivedDays;
@@ -242,37 +241,6 @@ public class PlanDurationActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 try {
-
-                    JSONArray locationArray = new JSONArray();
-                    planDetails.put("tripId", tripId);
-                    for (Location loc : locationList) {
-                        JSONObject locJson = new JSONObject();
-                        locJson.put("id", loc.getId());
-                        locJson.put("name", loc.getName());
-                        locJson.put("type", loc.getType());
-                        locJson.put("latitude", loc.getLatitude());
-                        locJson.put("longitude", loc.getLongitude());
-                        locationArray.put(locJson);
-                    }
-                    planDetails.put("location", locationArray);
-
-                    if (currentTabPosition == 0) { // Days
-                        planDetails.put("days", receivedDays);
-                        planDetails.put("startDate", receivedStartDate);
-                        planDetails.put("endDate", receivedEndDate);
-                    } else if (currentTabPosition == 1) { // Calendar
-                        if (receivedCalenderStartDate == null || receivedCalenderEndDate == null ||
-                                receivedCalenderStartDate.isEmpty() || receivedCalenderEndDate.isEmpty()) {
-                            Toast.makeText(PlanDurationActivity.this, "Please select Start date and End date",
-                                    Toast.LENGTH_SHORT).show();
-                            return;
-                        } else {
-                            planDetails.put("days", revivedCalendarDays);
-                            planDetails.put("startDate", receivedCalenderStartDate);
-                            planDetails.put("endDate", receivedCalenderEndDate);
-                        }
-                    }
-
                     FirebaseAuth mAuth = FirebaseAuth.getInstance();
                     FirebaseUser currentUser = mAuth.getCurrentUser();
                     if (currentUser != null) {
@@ -308,13 +276,7 @@ public class PlanDurationActivity extends AppCompatActivity
                                 // Update the original trip with the returned one
                                 trip.setId(updatedTrip.getId());
                                 tripId = updatedTrip.getId();
-                                try {
-                                    planDetails.put("tripId", tripId);
-                                } catch (JSONException e) {
-                                    Log.d("PLAN", "Error in putting tripId into planDetails");
-                                }
                                 Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
-                                intent.putExtra("planDetails", planDetails.toString());
                                 intent.putExtra("tripId", tripId);
                                 startActivity(intent);
                                 // You can perform additional actions with the updated trip if needed
@@ -329,10 +291,7 @@ public class PlanDurationActivity extends AppCompatActivity
                     } else {
                         Log.d("PLAN", "[PlanDurationActivity] No user is signed in.");
                     }
-
-
-
-                } catch (JSONException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -423,7 +382,6 @@ public class PlanDurationActivity extends AppCompatActivity
 
         updateButtonTags();
     }
-
 
     private void updateButtonTags() {
         LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);

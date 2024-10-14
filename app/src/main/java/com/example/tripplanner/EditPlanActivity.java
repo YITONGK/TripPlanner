@@ -59,24 +59,11 @@ public class EditPlanActivity extends AppCompatActivity {
 
         // Get intent extras
         String tripId = getIntent().getStringExtra("tripId");
-        String jsonString = getIntent().getStringExtra("planDetails");
-        Log.d("convert json string", "Plan Details JSON: " + jsonString);
 
         if (tripId != null && !tripId.isEmpty()) {
             Log.d("TAG", "Trip ID: " + tripId);
             this.tripId = tripId;
             fetchTripData(tripId);
-        } else if (jsonString != null && !jsonString.isEmpty()) {
-            Log.d("TAG", "Plan Details JSON: " + jsonString);
-            parsePlanDetails(jsonString);
-
-            // Update the UI
-            runOnUiThread(() -> {
-                setupTripInfo();
-                initializeFragmentsAndTabs();
-                setupTabSelectedListener();
-                loadFragment(fragments.get(0));
-            });
         } else {
             // Handle the case where neither tripId nor planDetails are provided
             Log.d("TAG", "No trip ID or plan details provided.");
@@ -122,17 +109,6 @@ public class EditPlanActivity extends AppCompatActivity {
         });
     }
 
-    private void parsePlanDetails(String jsonString) {
-        try {
-            JSONObject tripPlan = new JSONObject(jsonString);
-            extractDetailsFromPlan(tripPlan);
-        } catch (JSONException e) {
-            e.printStackTrace();
-            // Handle JSON parsing error
-            Log.d("TAG", "Error parsing plan details: " + e.getMessage());
-        }
-    }
-
     private void extractDetailsFromTrip(Trip trip) {
         // Get locations and duration of the plan
         List<Location> locations = trip.getLocations();
@@ -149,42 +125,6 @@ public class EditPlanActivity extends AppCompatActivity {
         days = trip.getNumDays();
 
         // TODO: get activities of the plan
-    }
-
-    private void extractDetailsFromPlan(JSONObject tripPlan) {
-        try {
-            JSONArray locationArray = tripPlan.getJSONArray("location");
-            List<Location> locationList = new ArrayList<>();
-
-            for (int i = 0; i < locationArray.length(); i++) {
-                JSONObject locJson = locationArray.getJSONObject(i);
-                String id = locJson.getString("id");
-                String name = locJson.getString("name");
-                String type = locJson.getString("type");
-                double latitude = locJson.getDouble("latitude");
-                double longitude = locJson.getDouble("longitude");
-
-                Location loc = new Location(id, name, type, latitude, longitude);
-                locationList.add(loc);
-            }
-
-            StringBuilder sb = new StringBuilder();
-            for (Location loc : locationList) {
-                sb.append(loc.getName()).append(", ");
-            }
-            if (sb.length() > 0) {
-                sb.setLength(sb.length() - 2);
-            }
-            selectedPlace = sb.toString();
-            Log.d("start_day", "extractDetailsFromPlan: " + startDate);
-            days = tripPlan.getInt("days");
-            tripId = tripPlan.getString("tripId");
-
-            // TODO: get activities of the plan
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Log.d("TAG", "Error extracting details from plan: " + e.getMessage());
-        }
     }
 
     private void setupTripInfo() {
