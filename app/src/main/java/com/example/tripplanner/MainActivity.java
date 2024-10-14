@@ -153,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
                                                         firestoreDB.addUserToTrip(tripID, userId, 
                                                             (Void) -> {
                                                                 Log.d("IMPORT PLAN", "Successfully added user to trip");
+                                                                importPlanBottomSheet.dismiss();
                                                                 // Navigate to added trip details
                                                                 Intent i = new Intent(MainActivity.this, EditPlanActivity.class);
                                                                 i.putExtra("tripId", tripID);
