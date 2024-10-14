@@ -51,7 +51,7 @@ public class Trip {
         
     }
 
-    public Trip(String name, Timestamp endDate, Timestamp startDate, List<Location> locations, String userId) {
+    public Trip(String name, Timestamp startDate, Timestamp endDate, List<Location> locations, String userId) {
         this.name = name;
         this.endDate = endDate;
         this.startDate = startDate;
@@ -156,7 +156,7 @@ public class Trip {
     }
 
     public int getLastingDays() {
-        long daysBetween = TimeUnit.SECONDS.toDays(startDate.getSeconds() - endDate.getSeconds());
+        long daysBetween = TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
         System.out.println("Days between: " + daysBetween);
         return (int) daysBetween;
     }

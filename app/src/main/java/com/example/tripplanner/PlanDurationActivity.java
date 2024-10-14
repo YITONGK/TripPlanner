@@ -277,29 +277,18 @@ public class PlanDurationActivity extends AppCompatActivity
                     if (currentUser != null) {
                         String userId = currentUser.getUid();
                         // Create a new Trip object and upload it to the database
-//                        List<Location> locations = new ArrayList<>();
-//                        for (int i = 0; i < locationList.length(); i++) {
-//                            String loc = locationList.optString(i, null);
-//                            if (loc != null) {
-//                                locations.add(new Location("", loc, "", 0.0, 0.0));
-//                            }
-//                        }
-
-                        // Trip trip = new Trip("New Trip", LocalDate.parse(receivedStartDate),
-                        // receivedDays,locations, userId);
-                        // FirestoreDB firestore = new FirestoreDB();
-                        // firestore.createTrip("userId", trip.convertTripToMap());
-
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                        Date parsedDate;
+                        Date parsedDate = new Date();
                         try {
                             parsedDate = dateFormat.parse(receivedStartDate);
                         } catch (ParseException e) {
-                            e.printStackTrace();
-                            return;
+                            Log.d("PLAN", "Failed to parse date: " + e);
                         }
-                        Timestamp startDate = new Timestamp(parsedDate);
 
+                        Timestamp startDate = new Timestamp(parsedDate);
+                        Log.d("PLAN", "Start Date: " + receivedStartDate);
+                        Log.d("PLAN", "Start Date: " + startDate);
+                        Log.d("PLAN", "Start Date: " + startDate.toDate());
                         // Create Trip object
                         Trip trip = new Trip("New Trip", startDate, receivedDays, locationList, userId);
 
@@ -323,6 +312,8 @@ public class PlanDurationActivity extends AppCompatActivity
                                 startActivity(intent);
                                 // You can perform additional actions with the updated trip if needed
                                 Log.d("PLAN", "Trip created with ID: " + trip.getId());
+                                Log.d("PLAN", trip.toString());
+                                Log.d("PLAN", updatedTrip.toString());
                             }
                         }, new OnFailureListener() {
                             @Override

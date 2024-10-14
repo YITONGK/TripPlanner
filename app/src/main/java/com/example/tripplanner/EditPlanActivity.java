@@ -24,12 +24,15 @@ import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanFragment;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.Timestamp;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class EditPlanActivity extends AppCompatActivity {
@@ -37,6 +40,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private String selectedPlace;
     private int days;
     private String tripName;
+    private String startDate;
     private ActivityEditPlanBinding binding;
     private final ArrayList<Fragment> fragments = new ArrayList<>();
     private FragmentManager fragmentManager;
@@ -139,6 +143,11 @@ public class EditPlanActivity extends AppCompatActivity {
         selectedPlace = sb.toString();
         days = trip.getNumDays();
 
+//        Timestamp startDateTimestamp = trip.getStartDate();
+//        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+//        Date date = new Date(Long.parseLong(startDateTimestamp.toString()));
+//        startDate = sf.format(date);
+
         // TODO: get activities of the plan
     }
 
@@ -169,6 +178,7 @@ public class EditPlanActivity extends AppCompatActivity {
             selectedPlace = sb.toString();
             days = tripPlan.getInt("days");
             tripId = tripPlan.getString("tripId");
+            startDate = tripPlan.getString("startDate");
 
             // TODO: get activities of the plan
         } catch (JSONException e) {
