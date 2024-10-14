@@ -267,9 +267,9 @@ public class WeatherTripPlanner implements SensorEventListener {
         }
 
 
-        if (isTemperatureSensorAvailable && isHumiditySensorAvailable) {
-            decideNotificationWithSensorData(ambientTemperature, relativeHumidity);
-        }
+//        if (isTemperatureSensorAvailable && isHumiditySensorAvailable) {
+//            decideNotificationWithSensorData(ambientTemperature, relativeHumidity);
+//        }
     }
 
     @Override

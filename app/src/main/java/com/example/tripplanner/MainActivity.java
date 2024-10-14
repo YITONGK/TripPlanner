@@ -198,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
         weatherTripPlanner = new WeatherTripPlanner(this);
 
         // Detect weather and plan trip
-        weatherTripPlanner.detectWeatherAndPlanTrip();
+//        weatherTripPlanner.detectWeatherAndPlanTrip();
 
 //          manually add a trip object
 //        String name = "My Awesome Trip";
