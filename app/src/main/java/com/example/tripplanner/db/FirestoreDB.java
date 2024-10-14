@@ -354,9 +354,9 @@ public class FirestoreDB {
                 });
     }
 
-    public void updateTrip(String tripId, Map<String, Object> tripData, OnSuccessListener<Boolean> listener) {
+    public void updateTrip(String tripId, Trip trip, OnSuccessListener<Boolean> listener) {
         firestore.collection("trips").document(tripId)
-                .set(tripData)
+                .set(trip.convertTripToMap())
                 .addOnSuccessListener(aVoid -> {
                     listener.onSuccess(true);
                 })

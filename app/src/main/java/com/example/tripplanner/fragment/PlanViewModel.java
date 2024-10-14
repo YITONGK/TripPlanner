@@ -71,11 +71,11 @@ public class PlanViewModel extends ViewModel {
         if (trip != null) {
             FirestoreDB firestoreDB = new FirestoreDB();
             Log.d("trip saved", trip.toString());
-            firestoreDB.updateTrip(trip.getId(), trip.convertTripToMap(), success -> {
+            firestoreDB.updateTrip(trip.getId(), trip, success -> {
                 if (success) {
-                    // Trip saved successfully
+                    Log.d("trip saved", "saveTripToDatabase: success");
                 } else {
-                    // Handle save failure
+                    Log.e("trip saved", "saveTripToDatabase: fail");
                 }
             });
         }
