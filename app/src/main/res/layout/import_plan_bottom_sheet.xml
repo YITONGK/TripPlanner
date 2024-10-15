@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="28dp">
+
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/planID"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Please enter the plan ID"
+        android:inputType="textEmailAddress"
+        android:imeOptions="actionDone"/>
+
+    <Button
+        android:id="@+id/confirmButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Confirm"
+        android:layout_gravity="center" />
+
+    <View
+        android:layout_width="wrap_content"
+        android:layout_height="30dp" />
+
+</LinearLayout>

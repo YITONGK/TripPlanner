@@ -20,9 +20,11 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
+import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
@@ -39,6 +41,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,7 +102,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private AtomicReference<Location> activityLocation = new AtomicReference<>();
 
 
-    private LinearLayout weatherForecastContainer;
+    // For weather forecast
+    private ArrayList<Map<Integer, Weather>> allWeatherData = new ArrayList<>();
+    private WeatherAdapter weatherAdapter;
+//    private LinearLayout weatherForecastContainer;
     private WeatherAPIClient weatherAPIClient;
 
     public interface OnPlaceFetchedListener {
@@ -154,7 +161,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View rootView;
         if (this.layout == PLAN_SPECIFIC_DAY) {
@@ -185,9 +192,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
             weatherAPIClient = new WeatherAPIClient();
-            weatherForecastContainer = rootView.findViewById(R.id.weatherForecastContainer);
+//            weatherForecastContainer = rootView.findViewById(R.id.weatherForecastContainer);
 //            Log.d("Getting weather", "");
 
+            fetchAndDisplayWeatherData(rootView);
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -466,81 +474,51 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         });
     }
 
+    private void fetchAndDisplayWeatherData(View rootView) {
+        Log.d("Getting weather", "start");
 
-    private void fetchAndDisplayWeatherData() {
-        Log.d("Getting_weather", "start");
-        if (locationList == null || locationList.isEmpty()) {
-            Log.e("PlanFragment", "locationList is null or empty in fetchAndDisplayWeatherData");
-            return;
-        }
-        Log.d("Getting_weather", locationList.toString());
-        double latitude = 40.7128;
-        double longitude = -74.0060;
-        int startDateIndex = 1;
-        int endDateIndex = 5;
+        // bind the adapter
+        RecyclerView recyclerView = rootView.findViewById(R.id.weatherRecyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(rootView.getContext(), LinearLayoutManager.HORIZONTAL, false));
+        weatherAdapter = new WeatherAdapter(rootView.getContext(), allWeatherData);
+        recyclerView.setAdapter(weatherAdapter);
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-        executor.execute(() -> {
-            Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(latitude, longitude, startDateIndex, endDateIndex);
-            Log.d("Getting weather", weatherData.toString());
-            handler.post(() -> {
-                if (!isAdded()) {
-                    // Fragment is not attached to the activity anymore, so we can't proceed.
-                    return;
-                }
-                if (weatherData != null && !weatherData.isEmpty()) {
-                    displayWeatherData(weatherData);
-                } else {
-                    Toast.makeText(getContext(), "Failed to fetch weather data", Toast.LENGTH_SHORT).show();
-                }
-                executor.shutdown(); // Shut down the executor
+        // manually create some locations
+        Location melbourne = new Location("Melbourne", 40, 136);
+        Location newYork = new Location("New York", 40, -74);
+        List<Location> locationList = new ArrayList<>();
+        locationList.add(melbourne);
+        locationList.add(newYork);
+
+        // request weather data for all locations in the trip
+        for (Location location : locationList) {
+            double latitude = location.getLatitude();
+            double longitude = location.getLongitude();
+            int startDateIndex = 1;
+            int endDateIndex = startDateIndex + lastingDays;
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Handler handler = new Handler(Looper.getMainLooper());
+            executor.execute(() -> {
+                Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(location.getName(), latitude, longitude, startDateIndex, endDateIndex);
+                Log.d("Getting weather", weatherData.toString());
+                handler.post(() -> {
+                    if (!isAdded()) {
+                        // Fragment is not attached to the activity anymore, so we can't proceed.
+                        return;
+                    }
+                    if (weatherData != null && !weatherData.isEmpty()) {
+                        allWeatherData.add(weatherData);
+                        Log.d("weather data", allWeatherData.toString());
+                        // Notify the adapter that the data has changed
+                        weatherAdapter.notifyDataSetChanged();
+                    } else {
+                        Toast.makeText(getContext(), "Failed to fetch weather data", Toast.LENGTH_SHORT).show();
+                    }
+                    executor.shutdown(); // Shut down the executor
+                });
             });
-        });
-    }
-
-
-    private void displayWeatherData(Map<Integer, Weather> weatherData) {
-        weatherForecastContainer.removeAllViews();
-
-        for (int i = 1; i <= weatherData.size(); i++) {
-            Weather weather = weatherData.get(i);
-
-            View weatherItemView = LayoutInflater.from(requireContext()).inflate(R.layout.weather_forecast_item, weatherForecastContainer, false);
-
-            // Find views
-            TextView weatherDate = weatherItemView.findViewById(R.id.weatherDate);
-            ImageView weatherIcon = weatherItemView.findViewById(R.id.weatherIcon);
-            TextView weatherDescription = weatherItemView.findViewById(R.id.weatherDescription);
-            TextView weatherTemperature = weatherItemView.findViewById(R.id.weatherTemperature);
-
-            String dateString = getDateForIndex(i);
-            weatherDate.setText(dateString);
-
-            weatherDescription.setText(weather.getDescription());
-            weatherTemperature.setText(String.format(Locale.getDefault(), "%.1f°C - %.1f°C", weather.getMinTemp(), weather.getMaxTemp()));
-
-            String iconUrl = "https://openweathermap.org/img/wn/" + weather.getIcon() + "@2x.png";
-            loadImageIntoImageView(weatherIcon, iconUrl);
-
-            weatherForecastContainer.addView(weatherItemView);
         }
-    }
-
-
-    private void loadImageIntoImageView(ImageView imageView, String url) {
-        Glide.with(this)
-                .load(url)
-//                .placeholder(R.drawable.placeholder_image)
-//                .error(R.drawable.error_image)
-                .into(imageView);
-    }
-
-    private String getDateForIndex(int index) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_YEAR, index);
-        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
-        return dateFormat.format(calendar.getTime());
     }
 
     private Timestamp buildTimestamp(Timestamp startDate, int dayIndex, int hour, int minute) {

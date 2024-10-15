@@ -13,6 +13,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.time.LocalDateTime;
@@ -201,6 +202,14 @@ public class FirestoreDB {
 
     public void getTripByTripId(String tripId, OnSuccessListener<Trip> onSuccessListener,
             OnFailureListener onFailureListener) {
+        if (tripId == null || tripId.isEmpty()) {
+            Log.e("FirestoreDB", "Invalid trip ID: " + tripId);
+            if (onFailureListener != null) {
+                onFailureListener.onFailure(new IllegalArgumentException("Trip ID cannot be null or empty"));
+            }
+            return;
+        }
+        Log.d("FirestoreDB", tripId);
         firestore.collection("trips")
                 .document(tripId)
                 .get()
@@ -350,6 +359,26 @@ public class FirestoreDB {
                 })
                 .addOnFailureListener(e -> {
                     Log.e("PLAN", "Error deleting trip with ID: " + tripId, e);
+                    if (onFailureListener != null) {
+                        onFailureListener.onFailure(e);
+                    }
+                });
+    }
+
+    // Add new user into an existing trip
+    public void addUserToTrip(String tripId, String newUserId, OnSuccessListener<Void> onSuccessListener,
+        OnFailureListener onFailureListener) {
+        DocumentReference tripRef = firestore.collection("trips").document(tripId);
+
+        tripRef.update("userIds", FieldValue.arrayUnion(newUserId))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("PLAN", "User " + newUserId + " added to trip with ID: " + tripId);
+                    if (onSuccessListener != null) {
+                        onSuccessListener.onSuccess(aVoid);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("PLAN", "Error adding user to trip with ID: " + tripId, e);
                     if (onFailureListener != null) {
                         onFailureListener.onFailure(e);
                     }

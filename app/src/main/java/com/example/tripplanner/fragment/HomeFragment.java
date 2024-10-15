@@ -79,7 +79,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
 
     private void displayAllPlans(View rootView) {
         RecyclerView recyclerView = rootView.findViewById(R.id.allPlanRecyclerView);
-        // ArrayList<Trip> allPlans = new ArrayList<>();
         // bind the adapter
         adapter = new AllPlanAdapter(rootView.getContext(), allPlans, this);
         recyclerView.setAdapter(adapter);
@@ -99,23 +98,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                 adapter.notifyDataSetChanged();
                 for (Trip trip : trips) {
                     Log.d("PLAN", "Trip: " + trip.toString());
-
-                    // String tripId = trip.getId();
-                    //
-                    // firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
-                    // @Override
-                    // public void onSuccess(Void aVoid) {
-                    // // Handle successful deletion
-                    // Log.d("PLAN", "Trip successfully deleted.");
-                    // // Update UI or navigate back
-                    // }
-                    // }, new OnFailureListener() {
-                    // @Override
-                    // public void onFailure(@NonNull Exception e) {
-                    // // Handle deletion failure
-                    // Log.e("PLAN", "Error deleting trip", e);
-                    // }
-                    // });
                 }
             }, e -> {
                 Log.d("PLAN", "Error getting trips: " + e.getMessage());
@@ -160,6 +142,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         // .position(PERTH)
         // .title("Perth"));
         // markerPerth.setTag(0);
+
+        // Show the bottom sheet when the map is ready
+        showPastTripsBottomSheet();
     }
 
     // Recommended method to generate new LayoutDemoFragment
@@ -200,4 +185,11 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         Log.d("SENSOR", "location: " + location);
         return location;
     }
+
+    private void showPastTripsBottomSheet() {
+        PastTripsBottomSheet bottomSheet = new PastTripsBottomSheet();
+        bottomSheet.show(getChildFragmentManager(), bottomSheet.getTag());
+    }
+
+
 }

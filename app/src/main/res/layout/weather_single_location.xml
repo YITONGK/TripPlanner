@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/weatherForecastCard"
+    app:cardBackgroundColor="@color/beige"
+    app:cardCornerRadius="20dp">
+
+    <LinearLayout
+        android:id="@+id/weatherForecastContainer"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/locationName"
+            android:text="Location name"
+            android:textSize="20dp"
+            android:textStyle="bold"
+            android:layout_marginStart="8dp"/>
+
+        <!-- This LinearLayout will dynamically be filled with forecast items -->
+        <LinearLayout
+            android:id="@+id/forecastLinearLayout"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
