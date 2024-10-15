@@ -323,7 +323,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (!s.toString().isEmpty()) {
-                    performAutocomplete(s.toString());
+                    PlacesClientProvider.performAutocomplete(s.toString(), placesClient, autocompleteAdapter);
                     autocompleteListView.setVisibility(View.VISIBLE);
                 } else {
                     autocompleteAdapter.clear();
@@ -400,23 +400,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         });
 
         builder.show();
-    }
-
-    private void performAutocomplete(String query) {
-        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
-                .setQuery(query)
-                .build();
-
-        placesClient.findAutocompletePredictions(request).addOnSuccessListener(response -> {
-            autocompleteAdapter.clear();
-            autocompleteAdapter.addAll(response.getAutocompletePredictions());
-            autocompleteAdapter.notifyDataSetChanged();
-        }).addOnFailureListener(exception -> {
-            if (exception instanceof ApiException) {
-                ApiException apiException = (ApiException) exception;
-                Toast.makeText(getContext(), "Error fetching autocomplete predictions: " + apiException.getStatusCode(), Toast.LENGTH_LONG).show();
-            }
-        });
     }
 
     private void fetchPlaceFromPlaceId(String placeId, EditText inputLocation, ListView autocompleteListView, OnPlaceFetchedListener listener) {

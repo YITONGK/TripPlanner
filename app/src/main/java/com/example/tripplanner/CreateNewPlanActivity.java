@@ -83,7 +83,7 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s.length() > 0) {
-                    performAutocomplete(s.toString());
+                    PlacesClientProvider.performAutocomplete(s.toString(), placesClient, adapter);
                     listViewAutocomplete.setVisibility(View.VISIBLE);
                 } else {
                     adapter.clear();
@@ -96,25 +96,6 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
             }
         });
-
-        // for when API breaks down, just press enter to go to PlanDurationActivity
-//        editTextMessage.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-//            @Override
-//            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-//                if (actionId == EditorInfo.IME_ACTION_DONE) {
-//                    String inputText = editTextMessage.getText().toString().trim();
-//                    if (!inputText.isEmpty()) {
-//                        Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
-//                        intent.putExtra("selectedPlace", inputText);
-//                        startActivity(intent);
-//                    } else {
-//                        Toast.makeText(CreateNewPlanActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
-//                    }
-//                    return true;
-//                }
-//                return false;
-//            }
-//        });
 
         Button gptPlanButton = findViewById(R.id.gptPlanButton);
         gptPlanButton.setOnClickListener(new View.OnClickListener() {
@@ -144,23 +125,6 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             }
         });
 
-    }
-
-    private void performAutocomplete(String query) {
-        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
-                .setQuery(query)
-                .build();
-
-        placesClient.findAutocompletePredictions(request).addOnSuccessListener(response -> {
-            adapter.clear();
-            adapter.addAll(response.getAutocompletePredictions());
-            adapter.notifyDataSetChanged();
-        }).addOnFailureListener(exception -> {
-            if (exception instanceof ApiException) {
-                ApiException apiException = (ApiException) exception;
-                Toast.makeText(CreateNewPlanActivity.this, "Error fetching autocomplete predictions: " + apiException.getStatusCode(), Toast.LENGTH_LONG).show();
-            }
-        });
     }
 
     private void fetchPlaceFromPlaceId(String placeId) {

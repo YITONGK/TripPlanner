@@ -31,9 +31,6 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONArray;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
@@ -156,7 +153,7 @@ public class PlanDurationActivity extends AppCompatActivity
                     @Override
                     public boolean onQueryTextChange(String newText) {
                         if (newText.length() > 0) {
-                            performAutocomplete(newText, placesClient, adapter);
+                            PlacesClientProvider.performAutocomplete(newText, placesClient, adapter);
                             listViewAutocomplete.setVisibility(View.VISIBLE);
                         } else {
                             adapter.clear();
@@ -361,25 +358,6 @@ public class PlanDurationActivity extends AppCompatActivity
         } catch (ParseException e) {
             e.printStackTrace();
         }
-    }
-
-    private void performAutocomplete(String query, PlacesClient placesClient, AutocompleteAdapter adapter) {
-        FindAutocompletePredictionsRequest request = FindAutocompletePredictionsRequest.builder()
-                .setQuery(query)
-                .build();
-
-        placesClient.findAutocompletePredictions(request).addOnSuccessListener(response -> {
-            adapter.clear();
-            adapter.addAll(response.getAutocompletePredictions());
-            adapter.notifyDataSetChanged();
-        }).addOnFailureListener(exception -> {
-            if (exception instanceof ApiException) {
-                ApiException apiException = (ApiException) exception;
-                Toast.makeText(PlanDurationActivity.this,
-                        "Error fetching autocomplete predictions: " + apiException.getStatusCode(), Toast.LENGTH_LONG)
-                        .show();
-            }
-        });
     }
 
     @Override
