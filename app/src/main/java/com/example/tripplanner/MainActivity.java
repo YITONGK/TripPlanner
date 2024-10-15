@@ -11,10 +11,13 @@ import android.os.Bundle;
 
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.WeatherTripPlanner;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -55,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
 
     private GoogleMap mMap;
+    private PlacesClient placesClient;
 
     private WeatherTripPlanner weatherTripPlanner;
 
@@ -64,6 +68,12 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        if (!Places.isInitialized()) {
+            Places.initialize(getApplicationContext(), BuildConfig.PLACES_API_KEY);
+        }
+        placesClient = Places.createClient(this);
+        PlacesClientProvider.initialize(placesClient);
 
         handleIntent(getIntent());
 

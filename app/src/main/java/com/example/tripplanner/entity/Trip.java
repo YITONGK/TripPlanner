@@ -168,7 +168,6 @@ public class Trip {
 
     public int getLastingDays() {
         long daysBetween = TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
-        System.out.println("Days between: " + daysBetween);
         return (int) daysBetween;
     }
 

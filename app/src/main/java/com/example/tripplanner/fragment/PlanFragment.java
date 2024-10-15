@@ -30,6 +30,7 @@ import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -115,11 +116,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (!Places.isInitialized()) {
-            Places.initialize(requireContext().getApplicationContext(), apiKey);
-        }
-        placesClient = Places.createClient(requireContext());
+        placesClient = PlacesClientProvider.getPlacesClient();
 
         // Get ViewModel instance
         viewModel = new ViewModelProvider(requireActivity()).get(PlanViewModel.class);

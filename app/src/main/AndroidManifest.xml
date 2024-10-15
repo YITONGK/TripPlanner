@@ -67,7 +67,8 @@
 
         <activity
             android:name=".PlanDurationActivity"
-            android:exported="true"></activity>
+            android:exported="true">
+        </activity>
 
     </application>
 

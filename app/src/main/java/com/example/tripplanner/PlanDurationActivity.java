@@ -19,6 +19,7 @@ import com.example.tripplanner.adapter.ButtonDecorator;
 import com.example.tripplanner.databinding.PlanDurationBinding;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanDurationFragment;
 import com.example.tripplanner.utils.OnFragmentInteractionListener;
@@ -75,9 +76,6 @@ public class PlanDurationActivity extends AppCompatActivity
     private int revivedCalendarDays;
     private int currentTabPosition = 0;
     private String tripId;
-
-    final String apiKey = BuildConfig.PLACES_API_KEY;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,9 +103,7 @@ public class PlanDurationActivity extends AppCompatActivity
             }
         });
 
-        if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), apiKey);
-        }
+        placesClient = PlacesClientProvider.getPlacesClient();
 
         // Button Add Location Functions
         // New location will be add into the JSONArray
@@ -137,7 +133,6 @@ public class PlanDurationActivity extends AppCompatActivity
                         }
                     }
                 });
-                placesClient = Places.createClient(PlanDurationActivity.this);
 
                 SearchView searchViewLocation = bottomSheetView.findViewById(R.id.searchViewLocation);
                 ListView listViewAutocomplete = bottomSheetView.findViewById(R.id.listViewAutocomplete);

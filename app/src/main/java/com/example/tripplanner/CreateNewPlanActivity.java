@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.utils.GptApiClient;
 import com.google.android.gms.common.api.ApiException;
@@ -52,10 +53,7 @@ public class CreateNewPlanActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_create_new_plan);
 
-        if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), apiKey);
-        }
-        placesClient = Places.createClient(this);
+        placesClient = PlacesClientProvider.getPlacesClient();
 
         ImageButton closeButton = findViewById(R.id.closeButton);
         closeButton.setOnClickListener(new View.OnClickListener() {
