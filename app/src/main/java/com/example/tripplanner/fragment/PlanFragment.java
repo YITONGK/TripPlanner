@@ -3,6 +3,7 @@ package com.example.tripplanner.fragment;
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -24,6 +25,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
+import com.example.tripplanner.MapActivity;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
@@ -47,6 +49,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
@@ -68,6 +71,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -531,9 +535,22 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+//        modify here
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
+//        Days : [lat, lon]
+        HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
+
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                Intent intent = new Intent(getActivity(), MapActivity.class);
+                intent.putExtra("daysAndLocationsMap", daysAndLocationsMap);
+                startActivity(intent);
+            }
+        });
     }
 
     public void setLastingDays(int lastingDays) {
@@ -547,5 +564,28 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     public void setStartDate(String startDay) {
         this.startDay = startDay;
     }
+
+    public HashMap<String, List<Double[]>> getDaysAndLocations(){
+        HashMap<String, List<Double[]>> locationMap = new HashMap<>();
+
+        Set<String> keys = viewModel.getTrip().getPlans().keySet();
+
+        for (String key : keys) {
+            List<ActivityItem> activityItems = viewModel.getTrip().getPlans().get(key);
+            List<Double[]> latLngList = new ArrayList<>();
+
+            for (ActivityItem item : activityItems) {
+                Location location = item.getLocation();
+                if (location != null) {
+                    double latitude = location.getLatitude();
+                    double longitude = location.getLongitude();
+                    latLngList.add(new Double[] { latitude, longitude });
+                }
+            }
+            locationMap.put(key, latLngList);
+        }
+        return locationMap;
+    }
+
 
 }
