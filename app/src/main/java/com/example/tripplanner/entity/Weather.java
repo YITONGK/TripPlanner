@@ -1,12 +1,14 @@
 package com.example.tripplanner.entity;
 
 public class Weather {
+    private String locationName;
     private double minTemp;
     private double maxTemp;
     private String description;
     private String icon;
 
-    public Weather(double minTemp, double maxTemp, String description, String icon) {
+    public Weather(String name, double minTemp, double maxTemp, String description, String icon) {
+        this.locationName = name;
         this.minTemp = minTemp;
         this.maxTemp = maxTemp;
         this.description = description;
@@ -27,5 +29,9 @@ public class Weather {
 
     public String getIcon() {
         return icon;
+    }
+
+    public String getLocationName() {
+        return locationName;
     }
 }

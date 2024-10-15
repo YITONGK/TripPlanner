@@ -87,7 +87,8 @@ public class FirestoreDB {
                                         (String) locMap.get("name"),
                                         (String) locMap.get("type"),
                                         ((Number) locMap.get("latitude")).doubleValue(),
-                                        ((Number) locMap.get("longitude")).doubleValue());
+                                        ((Number) locMap.get("longitude")).doubleValue(),
+                                        (String) locMap.get("country"));
                                 locations.add(location);
                             }
                             String note = document.getString("note");
@@ -236,7 +237,8 @@ public class FirestoreDB {
                                             (String) locMap.get("name"),
                                             (String) locMap.get("type"),
                                             ((Number) locMap.get("latitude")).doubleValue(),
-                                            ((Number) locMap.get("longitude")).doubleValue());
+                                            ((Number) locMap.get("longitude")).doubleValue(),
+                                            (String) locMap.get("country"));
                                     locations.add(location);
                                 }
                             }
@@ -251,11 +253,23 @@ public class FirestoreDB {
                                             .getValue();
                                     List<ActivityItem> activityItems = new ArrayList<>();
                                     for (Map<String, Object> itemMap : activityItemsMap) {
-                                        ActivityItem item = new ActivityItem(
-                                                (String) itemMap.get("name"),
-                                                (Timestamp) itemMap.get("startTime"),
-                                                (Timestamp) itemMap.get("endTime"),
-                                                (String) itemMap.get("notes"));
+                                        ActivityItem item = new ActivityItem();
+                                        item.setName((String) itemMap.get("name"));
+                                        item.setStartTime((Timestamp) itemMap.get("startTime"));
+                                        item.setEndTime((Timestamp) itemMap.get("endTime"));
+                                        item.setNotes((String) itemMap.get("notes"));
+
+                                        // Reconstruct Location
+                                        Map<String, Object> locationMap = (Map<String, Object>) itemMap.get("location");
+                                        if (locationMap != null) {
+                                            Location location = new Location();
+                                            location.setId((String) locationMap.get("id"));
+                                            location.setName((String) locationMap.get("name"));
+                                            location.setType((String) locationMap.get("type"));
+                                            location.setLatitude(((Number) locationMap.get("latitude")).doubleValue());
+                                            location.setLongitude(((Number) locationMap.get("longitude")).doubleValue());
+                                            item.setLocation(location);
+                                        }
                                         activityItems.add(item);
                                     }
                                     plans.put(day, activityItems);
@@ -368,6 +382,17 @@ public class FirestoreDB {
                     if (onFailureListener != null) {
                         onFailureListener.onFailure(e);
                     }
+                });
+    }
+
+    public void updateTrip(String tripId, Trip trip, OnSuccessListener<Boolean> listener) {
+        firestore.collection("trips").document(tripId)
+                .set(trip.convertTripToMap())
+                .addOnSuccessListener(aVoid -> {
+                    listener.onSuccess(true);
+                })
+                .addOnFailureListener(e -> {
+                    listener.onSuccess(false);
                 });
     }
 

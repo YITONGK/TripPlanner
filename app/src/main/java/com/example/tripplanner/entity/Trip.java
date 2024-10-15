@@ -85,8 +85,16 @@ public class Trip {
                                           .map(Location::convertLocationToMap)
                                           .collect(Collectors.toList()));
         map.put("note", note);
-        map.put("plans", plans);
         map.put("userIds", userIds);
+        Map<String, List<Map<String, Object>>> plansMap = new HashMap<>();
+        for (Map.Entry<String, List<ActivityItem>> entry : plans.entrySet()) {
+            List<Map<String, Object>> activityMaps = new ArrayList<>();
+            for (ActivityItem activity : entry.getValue()) {
+                activityMaps.add(activity.toMap());
+            }
+            plansMap.put(entry.getKey(), activityMaps);
+        }
+        map.put("plans", plansMap);
         return map;
     }
 
@@ -107,6 +115,9 @@ public class Trip {
     }
 
     public Map<String, List<ActivityItem>> getPlans() {
+        if (plans == null) {
+            plans = new HashMap<>();
+        }
         return plans;
     }
 

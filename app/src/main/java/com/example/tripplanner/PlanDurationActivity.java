@@ -24,6 +24,7 @@ import com.example.tripplanner.fragment.PlanDurationFragment;
 import com.example.tripplanner.utils.OnFragmentInteractionListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -62,7 +63,6 @@ import java.util.Map;
 public class PlanDurationActivity extends AppCompatActivity
         implements OnFragmentInteractionListener, ButtonDecorator.OnButtonClickListener {
     private PlanDurationBinding binding;
-    private JSONObject planDetails =  new JSONObject();
     private List<Location> locationList = new ArrayList<>();
     private ButtonDecorator buttonDecorator;
     private int receivedDays;
@@ -183,7 +183,7 @@ public class PlanDurationActivity extends AppCompatActivity
                         List<Place.Field> placeFields = Arrays.asList(
                                 Place.Field.ID,
                                 Place.Field.NAME,
-//                              Place.Field.ADDRESS,
+                                Place.Field.ADDRESS_COMPONENTS,
                                 Place.Field.TYPES,
                                 Place.Field.LAT_LNG
                         );
@@ -193,7 +193,23 @@ public class PlanDurationActivity extends AppCompatActivity
 
                         placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
                             Place place = response.getPlace();
-                            Location loc = new Location(place.getId(), place.getName(), place.getPlaceTypes().get(0), place.getLatLng().latitude, place.getLatLng().longitude);
+                            String country = null;
+                            if (place.getAddressComponents() != null) {
+                                for (AddressComponent component : place.getAddressComponents().asList()) {
+                                    if (component.getTypes().contains("country")) {
+                                        country = component.getName();
+                                        break;
+                                    }
+                                }
+                            }
+                            Location loc = new Location(
+                                    place.getId(),
+                                    place.getName(),
+                                    place.getPlaceTypes().get(0),
+                                    place.getLatLng().latitude,
+                                    place.getLatLng().longitude,
+                                    country
+                            );
                             locationList.add(loc);
                             buttonDecorator.addSingleButton(loc.getName(),locationList.size() - 1);
                         }).addOnFailureListener((exception) -> {
@@ -242,45 +258,22 @@ public class PlanDurationActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 try {
-                    JSONArray locationArray = new JSONArray();
-                    planDetails.put("tripId", tripId);
-                    for (Location loc : locationList) {
-                        JSONObject locJson = new JSONObject();
-                        locJson.put("id", loc.getId());
-                        locJson.put("name", loc.getName());
-                        locJson.put("type", loc.getType());
-                        locJson.put("latitude", loc.getLatitude());
-                        locJson.put("longitude", loc.getLongitude());
-                        locationArray.put(locJson);
-                    }
-                    planDetails.put("location", locationArray);
-
-                    if (currentTabPosition == 0) { // Days
-                        planDetails.put("days", receivedDays);
-                        planDetails.put("startDate", receivedStartDate);
-                        planDetails.put("endDate", receivedEndDate);
-                    } else if (currentTabPosition == 1) { // Calendar
-                        if (receivedCalenderStartDate == null || receivedCalenderEndDate == null ||
-                                receivedCalenderStartDate.isEmpty() || receivedCalenderEndDate.isEmpty()) {
-                            Toast.makeText(PlanDurationActivity.this, "Please select Start date and End date",
-                                    Toast.LENGTH_SHORT).show();
-                            return;
-                        } else {
-                            planDetails.put("days", revivedCalendarDays);
-                            planDetails.put("startDate", receivedCalenderStartDate);
-                            planDetails.put("endDate", receivedCalenderEndDate);
-                        }
-                    }
-
                     FirebaseAuth mAuth = FirebaseAuth.getInstance();
                     FirebaseUser currentUser = mAuth.getCurrentUser();
                     if (currentUser != null) {
                         String userId = currentUser.getUid();
-                        // Create a new Trip object and upload it to the database
+
                         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
                         Date parsedDate = new Date();
+                        int tripDays = 0;
                         try {
-                            parsedDate = dateFormat.parse(receivedStartDate);
+                            if (currentTabPosition == 0) { // Days
+                                parsedDate = dateFormat.parse(receivedStartDate);
+                                tripDays = receivedDays;
+                            } else if (currentTabPosition == 1) { // Calendar
+                                parsedDate = dateFormat.parse(receivedCalenderStartDate);
+                                tripDays = revivedCalendarDays;
+                            }
                         } catch (ParseException e) {
                             Log.d("PLAN", "Failed to parse date: " + e);
                         }
@@ -290,7 +283,8 @@ public class PlanDurationActivity extends AppCompatActivity
                         Log.d("PLAN", "Start Date: " + startDate);
                         Log.d("PLAN", "Start Date: " + startDate.toDate());
                         // Create Trip object
-                        Trip trip = new Trip("New Trip", startDate, receivedDays, locationList, userId);
+                        Trip trip = new Trip("New Trip", startDate, tripDays, locationList, userId);
+                        Log.d("trip_info", trip.toString());
 
                         // Create FirestoreDB instance and add trip to Firestore
                         FirestoreDB firestore = new FirestoreDB();
@@ -301,13 +295,7 @@ public class PlanDurationActivity extends AppCompatActivity
                                 // Update the original trip with the returned one
                                 trip.setId(updatedTrip.getId());
                                 tripId = updatedTrip.getId();
-                                try {
-                                    planDetails.put("tripId", tripId);
-                                } catch (JSONException e) {
-                                    Log.d("PLAN", "Error in putting tripId into planDetails");
-                                }
                                 Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
-                                intent.putExtra("planDetails", planDetails.toString());
                                 intent.putExtra("tripId", tripId);
                                 startActivity(intent);
                                 // You can perform additional actions with the updated trip if needed
@@ -324,10 +312,7 @@ public class PlanDurationActivity extends AppCompatActivity
                     } else {
                         Log.d("PLAN", "[PlanDurationActivity] No user is signed in.");
                     }
-
-
-
-                } catch (JSONException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -413,27 +398,11 @@ public class PlanDurationActivity extends AppCompatActivity
             return;
         }
         locationList.remove(index);
-//        locationList = removeLocationFromJsonArray(locationList, index);
-
         LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);
         linearLayout.removeView(button);
 
         updateButtonTags();
     }
-
-//    private JSONArray removeLocationFromJsonArray(JSONArray array, int index) {
-//        JSONArray updatedArray = new JSONArray();
-//        for (int i = 0; i < array.length(); i++) {
-//            if (i != index) {
-//                try {
-//                    updatedArray.put(array.get(i));
-//                } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//        return updatedArray;
-//    }
 
     private void updateButtonTags() {
         LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);

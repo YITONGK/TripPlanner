@@ -6,7 +6,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -14,9 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.tripplanner.MainActivity;
 import com.example.tripplanner.R;
-import com.example.tripplanner.SignupActivity;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
@@ -77,7 +74,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
             count += plan.size();
         }
         String countStr = count > 1 ? " activities" : " activity";
-        holder.numActivity.setText(countStr);
+        holder.numActivity.setText(count + countStr);
 
         //TODO: get the cover image of the trip
 //        holder.img.setImageResource(allPlans.get(position).getImage());

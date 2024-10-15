@@ -1,6 +1,7 @@
 package com.example.tripplanner.adapter;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,6 +45,7 @@ public class ActivityItemAdapter extends ArrayAdapter<ActivityItem> {
             details += "End Time: " + activityItem.getEndTimeString() + "\n";
         }
         if (activityItem.getLocation() != null) {
+            Log.d("location null", activityItem.getLocation().toString());
             details += "Location: " + activityItem.getLocation().getName() + "\n";
         }
         if (!activityItem.getNotes().isEmpty()) {

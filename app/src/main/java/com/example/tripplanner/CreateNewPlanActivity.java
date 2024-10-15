@@ -24,6 +24,7 @@ import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.utils.GptApiClient;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
@@ -69,24 +70,12 @@ public class CreateNewPlanActivity extends AppCompatActivity {
 
         adapter = new AutocompleteAdapter(this, new ArrayList<>());
         listViewAutocomplete.setAdapter(adapter);
-//        listViewAutocomplete.setOnItemClickListener((parent, view, position, id) -> {
-//            AutocompletePrediction prediction = adapter.getItem(position);
-//            editTextMessage.setText(prediction.getFullText(null));
-//
-//            // Create an intent to start EditPlanActivity
-//            Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
-//            // Put the selected item's description as an extra in the intent
-//            intent.putExtra("selectedPlace", prediction.getPrimaryText(null).toString());
-//            startActivity(intent);
-//        });
-
         listViewAutocomplete.setOnItemClickListener((parent, view, position, id) -> {
             AutocompletePrediction prediction = adapter.getItem(position);
             String placeId = prediction.getPlaceId();
 
             fetchPlaceFromPlaceId(placeId);
         });
-
 
         editTextMessage.addTextChangedListener(new TextWatcher() {
             @Override
@@ -110,24 +99,24 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             }
         });
 
-        // for when API breaks down, press enter
-        editTextMessage.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    String inputText = editTextMessage.getText().toString().trim();
-                    if (!inputText.isEmpty()) {
-                        Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
-                        intent.putExtra("selectedPlace", inputText);
-                        startActivity(intent);
-                    } else {
-                        Toast.makeText(CreateNewPlanActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
-                    }
-                    return true;
-                }
-                return false;
-            }
-        });
+        // for when API breaks down, just press enter to go to PlanDurationActivity
+//        editTextMessage.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+//            @Override
+//            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+//                if (actionId == EditorInfo.IME_ACTION_DONE) {
+//                    String inputText = editTextMessage.getText().toString().trim();
+//                    if (!inputText.isEmpty()) {
+//                        Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
+//                        intent.putExtra("selectedPlace", inputText);
+//                        startActivity(intent);
+//                    } else {
+//                        Toast.makeText(CreateNewPlanActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
+//                    }
+//                    return true;
+//                }
+//                return false;
+//            }
+//        });
 
         Button gptPlanButton = findViewById(R.id.gptPlanButton);
         gptPlanButton.setOnClickListener(new View.OnClickListener() {
@@ -180,7 +169,7 @@ public class CreateNewPlanActivity extends AppCompatActivity {
         List<Place.Field> placeFields = Arrays.asList(
                 Place.Field.ID,
                 Place.Field.NAME,
-//                Place.Field.ADDRESS,
+                Place.Field.ADDRESS_COMPONENTS,
                 Place.Field.TYPES,
                 Place.Field.LAT_LNG
         );
@@ -202,23 +191,33 @@ public class CreateNewPlanActivity extends AppCompatActivity {
         });
     }
 
-
-
     private void handlePlaceSelection(Place place) {
         editTextMessage.setText(place.getName());
 
+        String country = null;
+        if (place.getAddressComponents() != null) {
+            for (AddressComponent component : place.getAddressComponents().asList()) {
+                if (component.getTypes().contains("country")) {
+                    country = component.getName();
+                    break;
+                }
+            }
+        }
+
+        Log.d("Place_country", country);
+
         Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
 
-        Location loc = new Location(place.getId(), place.getName(), place.getPlaceTypes().get(0), place.getLatLng().latitude, place.getLatLng().longitude);
-        Log.d("new loc", loc.toString());
-        Log.d("Place details", place.getName() + place.getAddress() + place.getLatLng().latitude + place.getLatLng().longitude);
+        Location loc = new Location(
+                place.getId(),
+                place.getName(),
+                place.getPlaceTypes().get(0),
+                place.getLatLng().latitude,
+                place.getLatLng().longitude,
+                country
+        );
+
         intent.putExtra("selectedPlace", loc);
-
-//        intent.putExtra("selectedPlace", place.getName());
-
-//        intent.putExtra("selectedPlaceAddress", place.getAddress());
-//        intent.putExtra("selectedPlaceLat", place.getLatLng().latitude);
-//        intent.putExtra("selectedPlaceLng", place.getLatLng().longitude);
 
         startActivity(intent);
     }
