@@ -61,7 +61,6 @@ public class EditPlanActivity extends AppCompatActivity {
         String tripId = getIntent().getStringExtra("tripId");
 
         if (tripId != null && !tripId.isEmpty()) {
-            Log.d("TAG", "Trip ID: " + tripId);
             this.tripId = tripId;
             fetchTripData(tripId);
         } else {
@@ -94,7 +93,6 @@ public class EditPlanActivity extends AppCompatActivity {
     }
 
     private void onTripDataFetched(Trip trip) {
-        Log.d("PLAN", "Trip data fetched: " + trip.toString());
         this.trip = trip;
         extractDetailsFromTrip(trip);
 

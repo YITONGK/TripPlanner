@@ -5,14 +5,11 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -20,16 +17,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.example.tripplanner.entity.Location;
-import com.example.tripplanner.entity.PlacesClientProvider;
-import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.utils.GptApiClient;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
 import java.util.ArrayList;
@@ -41,14 +35,9 @@ public class CreateNewPlanActivity extends AppCompatActivity {
     private ListView listViewAutocomplete;
     private AutocompleteAdapter adapter;
     private PlacesClient placesClient;
-    final String apiKey = BuildConfig.PLACES_API_KEY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        if (apiKey.equals("")) {
-            Toast.makeText(this, "API key error", Toast.LENGTH_LONG).show();
-            return;
-        }
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_create_new_plan);
@@ -141,9 +130,7 @@ public class CreateNewPlanActivity extends AppCompatActivity {
 
         placesClient.fetchPlace(request).addOnSuccessListener((response) -> {
             Place place = response.getPlace();
-
             handlePlaceSelection(place);
-
         }).addOnFailureListener((exception) -> {
             if (exception instanceof ApiException) {
                 ApiException apiException = (ApiException) exception;
@@ -165,8 +152,6 @@ public class CreateNewPlanActivity extends AppCompatActivity {
                 }
             }
         }
-
-        Log.d("Place_country", country);
 
         Intent intent = new Intent(CreateNewPlanActivity.this, PlanDurationActivity.class);
 

@@ -1,4 +1,4 @@
-package com.example.tripplanner.entity;
+package com.example.tripplanner.utils;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.google.android.gms.common.api.ApiException;

@@ -19,7 +19,7 @@ import com.example.tripplanner.adapter.ButtonDecorator;
 import com.example.tripplanner.databinding.PlanDurationBinding;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.Location;
-import com.example.tripplanner.entity.PlacesClientProvider;
+import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanDurationFragment;
 import com.example.tripplanner.utils.OnFragmentInteractionListener;
@@ -32,22 +32,17 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.Toast;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 
 import java.text.ParseException;
@@ -56,7 +51,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 public class PlanDurationActivity extends AppCompatActivity
         implements OnFragmentInteractionListener, ButtonDecorator.OnButtonClickListener {
@@ -81,10 +75,8 @@ public class PlanDurationActivity extends AppCompatActivity
 
         //2. add data into the JSONArray
         Location location = (Location) getIntent().getSerializableExtra("selectedPlace");
-        Log.d("passed location", location.toString());
         locationList.add(location);
 
-        // Remove Button (Dynamic add based on the JSON Objects)
         // 3. add the button based on the JSONARRAY
         LinearLayout linearLayout = findViewById(R.id.linear_layout_buttons);
         buttonDecorator = new ButtonDecorator(linearLayout, this);
@@ -274,7 +266,6 @@ public class PlanDurationActivity extends AppCompatActivity
 
                         // Create Trip object
                         Trip trip = new Trip("New Trip", startDate, tripDays, locationList, userId);
-                        Log.d("trip_info", trip.toString());
 
                         // Create FirestoreDB instance and add trip to Firestore
                         FirestoreDB firestore = new FirestoreDB();
@@ -289,7 +280,6 @@ public class PlanDurationActivity extends AppCompatActivity
                                 intent.putExtra("tripId", tripId);
                                 startActivity(intent);
                                 // You can perform additional actions with the updated trip if needed
-                                Log.d("PLAN", "Trip created with ID: " + trip.getId());
                             }
                         }, new OnFailureListener() {
                             @Override
@@ -305,7 +295,6 @@ public class PlanDurationActivity extends AppCompatActivity
                 }
             }
         });
-
     }
 
     private void loadFragment(Fragment fragment) {

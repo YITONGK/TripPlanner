@@ -21,17 +21,7 @@ public class ActivityItem {
 
     public ActivityItem (String name) {
         this.name = name;
-//        this.startTime = Timestamp.now();
-//        this.endTime = Timestamp.now();
-//        this.location = new Location("", 0, 0);
         this.notes = "";
-    }
-
-    public ActivityItem(String name, Timestamp startTime, Timestamp endTime, String notes) {
-        this.name = name;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.notes = notes;
     }
 
     public ActivityItem () {}
@@ -60,14 +50,6 @@ public class ActivityItem {
         this.startTime = startTime;
     }
 
-//    public void setStartTime(String startTime) {
-//        this.startTime = convertStringToTimestamp(startTime);
-//    }
-
-//    public void setEndTime(String endTime) {
-//        this.endTime = convertStringToTimestamp(endTime);
-//    }
-
     public String getStartTimeString() {
         if (startTime != null) {
             Calendar calendar = Calendar.getInstance();
@@ -88,7 +70,6 @@ public class ActivityItem {
 
     public String getLocationString() {
         if (location != null) {
-            Log.d("try to get location name", location.toString());
             return location.getName();
         }
         return "";
@@ -124,11 +105,6 @@ public class ActivityItem {
     public void setLocation(Location location) {
         this.location = location;
     }
-
-//    public void setLocation(String location) {
-//        this.location = new Location("", location, "", 0, 0);
-//        Log.d("PLAN", "[ActivityItem] setLocation by String");
-//    }
 
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();

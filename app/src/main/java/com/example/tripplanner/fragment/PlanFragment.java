@@ -23,14 +23,13 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.bumptech.glide.Glide;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.example.tripplanner.entity.Location;
-import com.example.tripplanner.entity.PlacesClientProvider;
+import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -51,23 +50,17 @@ import java.util.Calendar;
 import java.util.List;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
-import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import com.example.tripplanner.entity.Weather;
 import com.example.tripplanner.utils.WeatherAPIClient;
 import com.google.firebase.Timestamp;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -90,7 +83,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
     private PlacesClient placesClient;
     private AutocompleteAdapter autocompleteAdapter;
-    final String apiKey = BuildConfig.PLACES_API_KEY;
 
     private PlanViewModel viewModel;
     private Trip trip;
@@ -102,11 +94,9 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private ActivityItemAdapter adapter;
     private AtomicReference<Location> activityLocation = new AtomicReference<>();
 
-
     // For weather forecast
     private ArrayList<Map<Integer, Weather>> allWeatherData = new ArrayList<>();
     private WeatherAdapter weatherAdapter;
-//    private LinearLayout weatherForecastContainer;
     private WeatherAPIClient weatherAPIClient;
 
     public interface OnPlaceFetchedListener {
@@ -448,8 +438,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void fetchAndDisplayWeatherData(View rootView) {
-        Log.d("Getting weather", "start");
-
         // bind the adapter
         RecyclerView recyclerView = rootView.findViewById(R.id.weatherRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(rootView.getContext(), LinearLayoutManager.HORIZONTAL, false));
@@ -457,13 +445,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         recyclerView.setAdapter(weatherAdapter);
 
         if (locationList == null) {
-            Log.d("location list null", "null");
             return;
         }
 
         // request weather data for all locations in the trip
         for (Location location : locationList) {
-            Log.d("Getting_weather", location.getName());
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
             int startDateIndex = 1;
@@ -473,7 +459,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             Handler handler = new Handler(Looper.getMainLooper());
             executor.execute(() -> {
                 Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(location.getName(), latitude, longitude, startDateIndex, endDateIndex);
-                Log.d("Getting weather", weatherData.toString());
                 handler.post(() -> {
                     if (!isAdded()) {
                         // Fragment is not attached to the activity anymore, so we can't proceed.
@@ -481,7 +466,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                     }
                     if (weatherData != null && !weatherData.isEmpty()) {
                         allWeatherData.add(weatherData);
-                        Log.d("weather data", allWeatherData.toString());
                         // Notify the adapter that the data has changed
                         weatherAdapter.notifyDataSetChanged();
                     } else {
