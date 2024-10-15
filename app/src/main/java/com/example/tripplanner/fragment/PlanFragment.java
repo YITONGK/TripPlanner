@@ -131,11 +131,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 if (trip != null) {
                     PlanFragment.this.trip = trip;
                     PlanFragment.this.locationList = trip.getLocations();
-
-                    // For OVERVIEW layout, fetch weather data when trip data is available
-                    if (layout == OVERVIEW) {
-                        fetchAndDisplayWeatherData();
-                    }
                 }
             }
         });
@@ -192,8 +187,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
             weatherAPIClient = new WeatherAPIClient();
-//            weatherForecastContainer = rootView.findViewById(R.id.weatherForecastContainer);
-//            Log.d("Getting weather", "");
 
             fetchAndDisplayWeatherData(rootView);
         }
@@ -483,15 +476,14 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         weatherAdapter = new WeatherAdapter(rootView.getContext(), allWeatherData);
         recyclerView.setAdapter(weatherAdapter);
 
-        // manually create some locations
-        Location melbourne = new Location("Melbourne", 40, 136);
-        Location newYork = new Location("New York", 40, -74);
-        List<Location> locationList = new ArrayList<>();
-        locationList.add(melbourne);
-        locationList.add(newYork);
+        if (locationList == null) {
+            Log.d("location list null", "null");
+            return;
+        }
 
         // request weather data for all locations in the trip
         for (Location location : locationList) {
+            Log.d("Getting_weather", location.getName());
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
             int startDateIndex = 1;
