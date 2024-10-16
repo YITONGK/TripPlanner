@@ -33,16 +33,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
+        android:background="@android:color/transparent"
         app:tabIndicatorColor="@android:color/black"
-        app:tabIndicatorFullWidth="true"
         app:tabIndicatorHeight="2dp"
         app:tabSelectedTextColor="@android:color/black"
         app:tabTextColor="@android:color/darker_gray"
         app:tabMode="scrollable"
-        app:tabMinWidth="100dp"
+        app:tabMinWidth="80dp"
+        app:tabPaddingStart="8dp"
+        app:tabPaddingEnd="8dp"
+        app:tabBackground="@drawable/tab_background_selector"
         app:layout_constraintTop_toBottomOf="@id/imageView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

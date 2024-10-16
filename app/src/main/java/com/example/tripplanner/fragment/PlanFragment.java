@@ -542,12 +542,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
 //        Days : [lat, lon]
         HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
-
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
                 Intent intent = new Intent(getActivity(), MapActivity.class);
                 intent.putExtra("daysAndLocationsMap", daysAndLocationsMap);
+                intent.putExtra("numDays",viewModel.getTrip().getNumDays());
                 startActivity(intent);
             }
         });
