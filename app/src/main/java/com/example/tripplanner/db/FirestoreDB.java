@@ -33,9 +33,19 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FirestoreDB {
 
     private FirebaseFirestore firestore;
+    private static FirestoreDB instance; // Singleton instance
 
-    public FirestoreDB() {
+    // Private constructor to prevent instantiation
+    private FirestoreDB() {
         this.firestore = FirebaseFirestore.getInstance();
+    }
+
+    // Public method to provide access to the singleton instance
+    public static synchronized FirestoreDB getInstance() {
+        if (instance == null) {
+            instance = new FirestoreDB();
+        }
+        return instance;
     }
 
     private Timestamp getCurrentDate() {
@@ -267,7 +277,8 @@ public class FirestoreDB {
                                             location.setName((String) locationMap.get("name"));
                                             location.setType((String) locationMap.get("type"));
                                             location.setLatitude(((Number) locationMap.get("latitude")).doubleValue());
-                                            location.setLongitude(((Number) locationMap.get("longitude")).doubleValue());
+                                            location.setLongitude(
+                                                    ((Number) locationMap.get("longitude")).doubleValue());
                                             item.setLocation(location);
                                         }
                                         activityItems.add(item);
@@ -367,7 +378,7 @@ public class FirestoreDB {
 
     // Add new user into an existing trip
     public void addUserToTrip(String tripId, String newUserId, OnSuccessListener<Void> onSuccessListener,
-        OnFailureListener onFailureListener) {
+            OnFailureListener onFailureListener) {
         DocumentReference tripRef = firestore.collection("trips").document(tripId);
 
         tripRef.update("userIds", FieldValue.arrayUnion(newUserId))
