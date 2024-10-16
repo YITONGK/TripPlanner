@@ -41,12 +41,14 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
@@ -67,7 +69,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 
-public class PlanFragment extends Fragment implements OnMapReadyCallback {
+public class PlanFragment extends Fragment implements OnMapReadyCallback, ActivityItemAdapter.OnStartDragListener {
 
     public static final int OVERVIEW = 0;
     public static final int PLAN_SPECIFIC_DAY = 1;
@@ -89,10 +91,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
 
     // For specific day plan
     private TextView addActivityLocation;
-    private ListView activityLocationList;
+    private RecyclerView activityLocationRecyclerView;
     private ArrayList<ActivityItem> activityItemArray;
     private ActivityItemAdapter adapter;
     private AtomicReference<Location> activityLocation = new AtomicReference<>();
+
+    private ItemTouchHelper itemTouchHelper;
 
     // For weather forecast
     private ArrayList<Map<Integer, Weather>> allWeatherData = new ArrayList<>();
@@ -150,12 +154,70 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             rootView = inflater.inflate(R.layout.plan_specific_day, container, false);
 
             addActivityLocation = rootView.findViewById(R.id.addActivityLocation);
-            activityLocationList = rootView.findViewById(R.id.activityLocationList);
+            activityLocationRecyclerView = rootView.findViewById(R.id.activityLocationRecyclerView);
 
             // Get the activity items list for this day from the ViewModel
             activityItemArray = viewModel.getActivityItemArray(dayIndex);
             adapter = new ActivityItemAdapter(getContext(), activityItemArray);
-            activityLocationList.setAdapter(adapter);
+
+            ItemTouchHelper.Callback callback = new ItemTouchHelper.Callback() {
+
+                @Override
+                public boolean isLongPressDragEnabled() {
+                    return false;
+                }
+
+                @Override
+                public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                    int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+                    int swipeFlags = 0;
+                    return makeMovementFlags(dragFlags, swipeFlags);
+                }
+
+                @Override
+                public boolean onMove(@NonNull RecyclerView recyclerView,
+                                      @NonNull RecyclerView.ViewHolder viewHolder,
+                                      @NonNull RecyclerView.ViewHolder target) {
+                    int fromPosition = viewHolder.getAdapterPosition();
+                    int toPosition = target.getAdapterPosition();
+
+                    // 更新数据源并通知适配器
+                    Collections.swap(activityItemArray, fromPosition, toPosition);
+                    adapter.notifyItemMoved(fromPosition, toPosition);
+
+                    return true;
+                }
+
+                @Override
+                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                    // 不处理滑动删除
+                }
+
+                @Override
+                public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                    super.clearView(recyclerView, viewHolder);
+                    // 保存更新后的顺序
+                    viewModel.updateActivityList(dayIndex, activityItemArray);
+                    viewModel.saveTripToDatabase();
+                }
+
+
+            };
+
+            itemTouchHelper = new ItemTouchHelper(callback);
+            itemTouchHelper.attachToRecyclerView(activityLocationRecyclerView);
+
+            adapter.setOnStartDragListener(this);
+
+            activityLocationRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+            activityLocationRecyclerView.setAdapter(adapter);
+
+            adapter.setOnItemClickListener(new ActivityItemAdapter.OnItemClickListener() {
+                @Override
+                public void onItemClick(int position) {
+                    showEditActivityDialog(position);
+                }
+            });
 
             addActivityLocation.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -164,12 +226,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 }
             });
 
-            activityLocationList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    showEditActivityDialog(position);
-                }
-            });
+//            activityLocationList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//                @Override
+//                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//                    showEditActivityDialog(position);
+//                }
+//            });
 
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
@@ -185,6 +247,15 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         }
 
         return rootView;
+    }
+
+    @Override
+    public void onStartDrag(RecyclerView.ViewHolder viewHolder) {
+        if (itemTouchHelper != null) {
+            itemTouchHelper.startDrag(viewHolder);
+        } else {
+            Log.e("PlanFragment", "itemTouchHelper is null");
+        }
     }
 
     private void showAddActivityDialog() {
@@ -489,7 +560,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         Date date = calendar.getTime();
         return new Timestamp(date);
     }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
