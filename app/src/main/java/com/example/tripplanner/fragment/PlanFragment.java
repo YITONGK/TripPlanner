@@ -57,9 +57,6 @@ import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
-
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import com.example.tripplanner.entity.Weather;
 import com.example.tripplanner.utils.WeatherAPIClient;
 import com.google.firebase.Timestamp;
@@ -70,6 +67,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -486,6 +484,38 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             Log.d("Getting_weather", location.getName());
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
+
+            // Get today's date
+//            Calendar todayCalendar = Calendar.getInstance();
+//            todayCalendar.set(Calendar.HOUR_OF_DAY, 0);
+//            todayCalendar.set(Calendar.MINUTE, 0);
+//            todayCalendar.set(Calendar.SECOND, 0);
+//            todayCalendar.set(Calendar.MILLISECOND, 0);
+//            Date today = todayCalendar.getTime();
+//
+//            // Convert start timestamp to a Date object
+//            Date start = new Date(startDate);
+//
+//            // Calculate the end date
+//            Calendar endCalendar = Calendar.getInstance();
+//            endCalendar.setTime(start);
+//            endCalendar.add(Calendar.DAY_OF_MONTH, lastingDays);
+//            Date endDate = endCalendar.getTime();
+//
+//            // Calculate start index and end index
+//            long startIndex = TimeUnit.DAYS.convert(start.getTime() - today.getTime(), TimeUnit.MILLISECONDS);
+//            long endIndex = TimeUnit.DAYS.convert(endDate.getTime() - today.getTime(), TimeUnit.MILLISECONDS);
+//
+//            // Adjust start index if today is after start date
+//            if (startIndex < 0) {
+//                startIndex = 0;
+//            }
+//
+//            // Check if the end index is within the next 16 days
+//            if (endIndex > 16) {
+//                endIndex = 16;
+//            }
+
             int startDateIndex = 1;
             int endDateIndex = startDateIndex + lastingDays;
 
@@ -512,6 +542,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             });
         }
     }
+
+
 
     private Timestamp buildTimestamp(Timestamp startDate, int dayIndex, int hour, int minute) {
         Calendar calendar = Calendar.getInstance();

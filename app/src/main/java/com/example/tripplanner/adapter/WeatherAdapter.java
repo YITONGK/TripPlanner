@@ -50,15 +50,13 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHold
 
             // Populate the forecast view with weather data
             TextView weatherDate = forecastView.findViewById(R.id.weatherDate);
-//            TextView weatherDescription = forecastView.findViewById(R.id.weatherDescription);
             TextView weatherTemperature = forecastView.findViewById(R.id.weatherTemperature);
             ImageView weatherIcon = forecastView.findViewById(R.id.weatherIcon);
 
             // Set views
             String dateString = getDateForIndex(i);
             weatherDate.setText(dateString);
-//            weatherDescription.setText(weather.getDescription());
-            weatherTemperature.setText(String.format(Locale.getDefault(), "%.1f°C - %.1f°C", weather.getMinTemp(), weather.getMaxTemp()));
+            weatherTemperature.setText(String.format(Locale.getDefault(), "%d°C - %d°C", Math.round(weather.getMinTemp()), Math.round(weather.getMaxTemp())));
 
             String iconName = "icon_" + weather.getIcon().substring(0,2);
             weatherIcon.setImageResource(context.getResources().getIdentifier(iconName, "drawable", context.getPackageName()));
