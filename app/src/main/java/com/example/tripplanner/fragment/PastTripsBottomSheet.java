@@ -61,7 +61,7 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment implements A
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
             String userId = currentUser.getUid();
-            FirestoreDB firestoreDB = new FirestoreDB();
+            FirestoreDB firestoreDB = FirestoreDB.getInstance();
             firestoreDB.getPastTripsByUserId(userId, new OnSuccessListener<List<Trip>>() {
                 @Override
                 public void onSuccess(List<Trip> trips) {

@@ -138,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                                     if (!tripID.isEmpty()) {
                                         Log.d("SHARE", tripID);
                                         // Validate the trip ID
-                                        FirestoreDB firestoreDB = new FirestoreDB();
+                                        FirestoreDB firestoreDB = FirestoreDB.getInstance();
                                         firestoreDB.getTripByTripId(tripID,
                                             new OnSuccessListener<Trip>() {
                                                 @Override

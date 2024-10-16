@@ -77,7 +77,7 @@ public class PlanViewModel extends ViewModel {
     public void saveTripToDatabase() {
         Trip currentTrip = tripLiveData.getValue();
         if (currentTrip != null) {
-            FirestoreDB firestoreDB = new FirestoreDB();
+            FirestoreDB firestoreDB = FirestoreDB.getInstance();
             Log.d("trip saved", currentTrip.toString());
             firestoreDB.updateTrip(currentTrip.getId(), currentTrip, success -> {
                 if (success) {

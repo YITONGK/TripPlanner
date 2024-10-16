@@ -43,7 +43,6 @@ public class EditPlanActivity extends AppCompatActivity {
     private Timestamp startDate;
     private int days;
     private String tripName;
-    private String startDate;
     private ActivityEditPlanBinding binding;
     private final ArrayList<Fragment> fragments = new ArrayList<>();
     private FragmentManager fragmentManager;
@@ -89,7 +88,7 @@ public class EditPlanActivity extends AppCompatActivity {
     }
 
     private void fetchTripData(String tripId) {
-        FirestoreDB firestoreDB = new FirestoreDB();
+        FirestoreDB firestoreDB = FirestoreDB.getInstance();
         firestoreDB.getTripByTripId(tripId, this::onTripDataFetched, e -> {
             Log.d("PLAN", "Error getting trip by trip ID: " + e.getMessage());
             // Handle the error appropriately (e.g., show an error message to the user)
