@@ -1,12 +1,7 @@
 package com.example.tripplanner;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.os.Bundle;
 
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
@@ -17,11 +12,10 @@ import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.RoutePlanner;
-import com.example.tripplanner.utils.WeatherTripPlanner;
+import com.example.tripplanner.utils.SensorDetector;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.navigation.NavigationBarView;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import androidx.activity.EdgeToEdge;
@@ -37,32 +31,14 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.firebase.Timestamp;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -72,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
     private GoogleMap mMap;
 
-    private WeatherTripPlanner weatherTripPlanner;
+    private SensorDetector sensorDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -218,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Initialize WeatherTripPlanner
-        weatherTripPlanner = new WeatherTripPlanner(this);
+        sensorDetector = new SensorDetector(this);
 
         // Detect weather and plan trip
         // weatherTripPlanner.detectWeatherAndPlanTrip();
@@ -267,14 +243,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // Register sensor listeners when the activity is resumed
-        weatherTripPlanner.registerSensorListeners();
+        sensorDetector.registerSensorListeners();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         // Unregister sensor listeners when the activity is paused
-        weatherTripPlanner.unregisterSensorListeners();
+        sensorDetector.unregisterSensorListeners();
     }
 
     @Override
