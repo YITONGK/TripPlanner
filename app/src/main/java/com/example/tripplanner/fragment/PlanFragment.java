@@ -181,7 +181,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     int fromPosition = viewHolder.getAdapterPosition();
                     int toPosition = target.getAdapterPosition();
 
-                    // 更新数据源并通知适配器
                     Collections.swap(activityItemArray, fromPosition, toPosition);
                     adapter.notifyItemMoved(fromPosition, toPosition);
 
@@ -190,13 +189,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
                 @Override
                 public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
-                    // 不处理滑动删除
                 }
 
                 @Override
                 public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                     super.clearView(recyclerView, viewHolder);
-                    // 保存更新后的顺序
                     viewModel.updateActivityList(dayIndex, activityItemArray);
                     viewModel.saveTripToDatabase();
                 }
