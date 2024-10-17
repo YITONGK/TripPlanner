@@ -45,6 +45,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -87,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         binding.navView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @SuppressLint("NonConstantResourceId")
             @Override
-            public boolean onNavigationItemSelected (@NonNull MenuItem item){
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
 
                 int id = item.getItemId();
 
@@ -124,7 +129,8 @@ public class MainActivity extends AppCompatActivity {
                         public void onClick(View view) {
                             bottomSheetDialog.dismiss();
                             BottomSheetDialog importPlanBottomSheet = new BottomSheetDialog(MainActivity.this);
-                            View importPlanView = LayoutInflater.from(MainActivity.this).inflate(R.layout.import_plan_bottom_sheet, null);
+                            View importPlanView = LayoutInflater.from(MainActivity.this)
+                                    .inflate(R.layout.import_plan_bottom_sheet, null);
                             importPlanBottomSheet.setContentView(importPlanView);
                             importPlanBottomSheet.show();
 
@@ -138,38 +144,43 @@ public class MainActivity extends AppCompatActivity {
                                     if (!tripID.isEmpty()) {
                                         Log.d("SHARE", tripID);
                                         // Validate the trip ID
-                                        FirestoreDB firestoreDB = new FirestoreDB();
+                                        FirestoreDB firestoreDB = FirestoreDB.getInstance();
                                         firestoreDB.getTripByTripId(tripID,
-                                            new OnSuccessListener<Trip>() {
-                                                @Override
-                                                public void onSuccess(Trip trip) {
-                                                    Log.d("IMPORT PLAN", "Trip ID Verified");
-                                                    // Ensure currentUser is not null
-                                                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                                                    if (currentUser != null) {
-                                                        String userId = currentUser.getUid();
+                                                new OnSuccessListener<Trip>() {
+                                                    @Override
+                                                    public void onSuccess(Trip trip) {
+                                                        Log.d("IMPORT PLAN", "Trip ID Verified");
+                                                        // Ensure currentUser is not null
+                                                        FirebaseUser currentUser = FirebaseAuth.getInstance()
+                                                                .getCurrentUser();
+                                                        if (currentUser != null) {
+                                                            String userId = currentUser.getUid();
 
-                                                        // Add user to the trip
-                                                        firestoreDB.addUserToTrip(tripID, userId, 
-                                                            (Void) -> {
-                                                                Log.d("IMPORT PLAN", "Successfully added user to trip");
-                                                                importPlanBottomSheet.dismiss();
-                                                                // Navigate to added trip details
-                                                                Intent i = new Intent(MainActivity.this, EditPlanActivity.class);
-                                                                i.putExtra("tripId", tripID);
-                                                                startActivity(i);
-                                                            },
-                                                            e -> Log.e("IMPORT PLAN", "Failed to add user to trip: " + e.getMessage())
-                                                        );
+                                                            // Add user to the trip
+                                                            firestoreDB.addUserToTrip(tripID, userId,
+                                                                    (Void) -> {
+                                                                        Log.d("IMPORT PLAN",
+                                                                                "Successfully added user to trip");
+                                                                        importPlanBottomSheet.dismiss();
+                                                                        // Navigate to added trip details
+                                                                        Intent i = new Intent(MainActivity.this,
+                                                                                EditPlanActivity.class);
+                                                                        i.putExtra("tripId", tripID);
+                                                                        startActivity(i);
+                                                                    },
+                                                                    e -> Log.e("IMPORT PLAN",
+                                                                            "Failed to add user to trip: "
+                                                                                    + e.getMessage()));
+                                                        }
                                                     }
-                                                }
-                                            },
-                                            e -> {
-                                                Log.d("IMPORT PLAN", "Trip ID Invalid: " + e.getMessage());
-                                                // Notify user of invalid trip ID
-                                                Toast.makeText(MainActivity.this, "Invalid Trip ID. Please try again.", Toast.LENGTH_SHORT).show();
-                                            }
-                                        );
+                                                },
+                                                e -> {
+                                                    Log.d("IMPORT PLAN", "Trip ID Invalid: " + e.getMessage());
+                                                    // Notify user of invalid trip ID
+                                                    Toast.makeText(MainActivity.this,
+                                                            "Invalid Trip ID. Please try again.", Toast.LENGTH_SHORT)
+                                                            .show();
+                                                });
                                     } else {
                                         Log.e("SHARE", "Trip ID is empty");
                                     }
@@ -198,49 +209,65 @@ public class MainActivity extends AppCompatActivity {
         // Initialize WeatherTripPlanner
         weatherTripPlanner = new WeatherTripPlanner(this);
 
+        String origin = "New York, NY";
+        String destination = "Los Angeles, CA";
+        String[] modes = { "driving", "walking", "transit" };
+        String[] modes = { "driving", "walking", "transit" };
+
+        for (String mode : modes) {
+            try {
+                String url = buildDirectionsUrl(origin, destination, mode);
+                getDistanceMatrix(url);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
+
         // Detect weather and plan trip
-//        weatherTripPlanner.detectWeatherAndPlanTrip();
+        // weatherTripPlanner.detectWeatherAndPlanTrip();
 
-//          manually add a trip object
-//        String name = "My Awesome Trip";
-//        Timestamp startDate = Timestamp.now();
-//        int receivedDays = 5; // Duration of the trip in days
-//
-//        // Create a list of Location objects
-//        List<Location> locationList = new ArrayList<>();
-//        locationList.add(new Location("1", "New York City", "City", 40.7128, -74.0060));
-//        locationList.add(new Location("2", "Los Angeles", "City", 34.0522, -118.2437));
-//        locationList.add(new Location("3", "Chicago", "City", 41.8781, -87.6298));
-//
-//        FirebaseAuth mAuth = FirebaseAuth.getInstance();
-//        FirebaseUser currentUser = mAuth.getCurrentUser();
-//        String userId = currentUser.getUid();
-//
-//        // Create Trip object
-//        Trip trip = new Trip(name, startDate, receivedDays, locationList, userId);
-//
-//        // Create FirestoreDB instance and add trip to Firestore
-//        FirestoreDB firestore = new FirestoreDB();
-//
-//        firestore.createTrip(userId, trip.convertTripToMap());
+        // manually add a trip object
+        // String name = "My Awesome Trip";
+        // Timestamp startDate = Timestamp.now();
+        // int receivedDays = 5; // Duration of the trip in days
+        //
+        // // Create a list of Location objects
+        // List<Location> locationList = new ArrayList<>();
+        // locationList.add(new Location("1", "New York City", "City", 40.7128,
+        // -74.0060));
+        // locationList.add(new Location("2", "Los Angeles", "City", 34.0522,
+        // -118.2437));
+        // locationList.add(new Location("3", "Chicago", "City", 41.8781, -87.6298));
+        //
+        // FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        // FirebaseUser currentUser = mAuth.getCurrentUser();
+        // String userId = currentUser.getUid();
+        //
+        // // Create Trip object
+        // Trip trip = new Trip(name, startDate, receivedDays, locationList, userId);
+        //
+        // // Create FirestoreDB instance and add trip to Firestore
+        // FirestoreDB firestore = new FirestoreDB();
+        //
+        // firestore.createTrip(userId, trip.convertTripToMap());
 
-//        FirestoreDB firestoreDB = new FirestoreDB();
-//        String tripId = "3Rt1mDAOhYzwLY4ouR7K";
-//
-//        firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
-//            @Override
-//            public void onSuccess(Void aVoid) {
-//                // Handle successful deletion
-//                Log.d("PLAN", "Trip successfully deleted.");
-//                // Update UI or navigate back
-//            }
-//        }, new OnFailureListener() {
-//            @Override
-//            public void onFailure(@NonNull Exception e) {
-//                // Handle deletion failure
-//                Log.e("PLAN", "Error deleting trip", e);
-//            }
-//        });
+        // FirestoreDB firestoreDB = new FirestoreDB();
+        // String tripId = "3Rt1mDAOhYzwLY4ouR7K";
+        //
+        // firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
+        // @Override
+        // public void onSuccess(Void aVoid) {
+        // // Handle successful deletion
+        // Log.d("PLAN", "Trip successfully deleted.");
+        // // Update UI or navigate back
+        // }
+        // }, new OnFailureListener() {
+        // @Override
+        // public void onFailure(@NonNull Exception e) {
+        // // Handle deletion failure
+        // Log.e("PLAN", "Error deleting trip", e);
+        // }
+        // });
     }
 
     @Override
@@ -274,8 +301,53 @@ public class MainActivity extends AppCompatActivity {
                     .replace(R.id.fragmentContainerView, planFragment)
                     .commit();
         }
-     }
+    }
 
+    private String buildDirectionsUrl(String origin, String destination, String mode)
+            throws UnsupportedEncodingException {
+        String apiKey = "YOUR_API_KEY"; // Replace with your actual API key
+        String urlOrigin = URLEncoder.encode(origin, "UTF-8");
+        String urlDestination = URLEncoder.encode(destination, "UTF-8");
+        String urlMode = URLEncoder.encode(mode, "UTF-8");
 
+        return "https://maps.googleapis.com/maps/api/directions/json?"
+                + "origin=" + urlOrigin
+                + "&destination=" + urlDestination
+                + "&mode=" + urlMode
+                + "&key=" + apiKey;
+    }
+
+    // New method to get distance matrix from Google Maps API
+    private void getDistanceMatrix(String url) {
+
+        // Make a network request to the Google Maps API
+        // You can use libraries like Retrofit or OkHttp for this
+        // For simplicity, this example uses a basic approach
+        new Thread(() -> {
+            try {
+                URL requestUrl = new URL(url);
+                HttpURLConnection connection = (HttpURLConnection) requestUrl.openConnection();
+                connection.setRequestMethod("GET");
+                connection.connect();
+
+                int responseCode = connection.getResponseCode();
+                if (responseCode == 200) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+                    // Handle the response (parse JSON, etc.)
+                    Log.d("DistanceMatrix", response.toString());
+                } else {
+                    Log.e("DistanceMatrix", "Error: " + responseCode);
+                }
+            } catch (Exception e) {
+                Log.e("DistanceMatrix", "Exception: " + e.getMessage());
+            }
+        }).start();
+    }
 
 }

@@ -287,7 +287,7 @@ public class PlanDurationActivity extends AppCompatActivity
                         Log.d("trip_info", trip.toString());
 
                         // Create FirestoreDB instance and add trip to Firestore
-                        FirestoreDB firestore = new FirestoreDB();
+                        FirestoreDB firestore = FirestoreDB.getInstance();
                         // firestore.createTrip(userId, trip);
                         firestore.createTrip(userId, trip, new OnSuccessListener<Trip>() {
                             @Override
