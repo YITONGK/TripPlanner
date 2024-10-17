@@ -2,7 +2,8 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:background="?android:attr/windowBackground">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -37,15 +38,6 @@
             android:padding="8dp"
             android:layout_below="@id/noteInput"
             android:layout_marginTop="16dp" />
-
-<!--        <LinearLayout-->
-<!--            android:id="@+id/weatherForecastContainer"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_below="@id/weatherForecastTitle"-->
-<!--            android:orientation="vertical"-->
-<!--            android:padding="8dp">-->
-<!--        </LinearLayout>-->
 
         <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"

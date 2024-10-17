@@ -49,6 +49,11 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -72,6 +77,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -81,7 +87,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     public static final int PLAN_SPECIFIC_DAY = 1;
     static final String LAYOUT_TYPE = "type";
     private int layout = OVERVIEW;
-    private Timestamp startDate;
+    private static Timestamp startDate;
     private int dayIndex = -1;
     private GoogleMap mMap;
 
@@ -128,6 +134,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 if (trip != null) {
                     PlanFragment.this.trip = trip;
                     PlanFragment.this.locationList = trip.getLocations();
+                    PlanFragment.this.startDate = trip.getStartDate();
                 }
             }
         });
@@ -520,13 +527,51 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         for (Location location : locationList) {
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
-            int startDateIndex = 1;
+
+            // Calculate start index and end index
+            Calendar calendar = Calendar.getInstance();
+            Date date = calendar.getTime();
+//            Timestamp currentTime = new Timestamp(date);
+            LocalDateTime start = LocalDateTime
+                .ofInstant(Instant.ofEpochMilli(date.getTime()), ZoneId.systemDefault())
+                .truncatedTo(ChronoUnit.DAYS);
+
+            LocalDateTime stop = LocalDateTime
+                .ofInstant(Instant.ofEpochMilli(startDate.getSeconds()*1000), ZoneId.systemDefault())
+                .truncatedTo(ChronoUnit.DAYS);
+
+            Duration duration = Duration.between(start, stop);
+
+            int startDateIndex = (int) duration.toDays();
+//            int startDateIndex = (int) TimeUnit.SECONDS.toDays(startDate.getSeconds() - currentTime.getSeconds());
+            Log.d("start date index", String.valueOf(startDateIndex));
             int endDateIndex = startDateIndex + lastingDays;
+
+            // Adjust start index if today is after start date
+            if (startDateIndex < 0) {
+                startDateIndex = 0;
+                if (endDateIndex > 5) {
+                    endDateIndex = 5;
+                }
+            } else if (startDateIndex >= 16) {
+                startDateIndex = 0;
+                endDateIndex = 5;
+            } else {
+                if (endDateIndex - startDateIndex > 5) {
+                    endDateIndex = startDateIndex + 5;
+                }
+                if (endDateIndex > 16) {
+                    endDateIndex = 16;
+                }
+            }
+
+            int finalStartDateIndex = startDateIndex;
+            int finalEndDateIndex = endDateIndex;
 
             ExecutorService executor = Executors.newSingleThreadExecutor();
             Handler handler = new Handler(Looper.getMainLooper());
             executor.execute(() -> {
-                Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(location.getName(), latitude, longitude, startDateIndex, endDateIndex);
+                Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(location.getName(), latitude, longitude, finalStartDateIndex, finalEndDateIndex);
                 handler.post(() -> {
                     if (!isAdded()) {
                         // Fragment is not attached to the activity anymore, so we can't proceed.
