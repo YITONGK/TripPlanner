@@ -23,7 +23,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.bumptech.glide.Glide;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
@@ -44,6 +43,11 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -61,9 +65,7 @@ import com.example.tripplanner.entity.Weather;
 import com.example.tripplanner.utils.WeatherAPIClient;
 import com.google.firebase.Timestamp;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -77,7 +79,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     public static final int PLAN_SPECIFIC_DAY = 1;
     static final String LAYOUT_TYPE = "type";
     private int layout = OVERVIEW;
-    private Timestamp startDate;
+    private static Timestamp startDate;
     private int dayIndex = -1;
     private GoogleMap mMap;
 
@@ -129,6 +131,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 if (trip != null) {
                     PlanFragment.this.trip = trip;
                     PlanFragment.this.locationList = trip.getLocations();
+                    PlanFragment.this.startDate = trip.getStartDate();
                 }
             }
         });
@@ -485,45 +488,50 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             double latitude = location.getLatitude();
             double longitude = location.getLongitude();
 
-            // Get today's date
-//            Calendar todayCalendar = Calendar.getInstance();
-//            todayCalendar.set(Calendar.HOUR_OF_DAY, 0);
-//            todayCalendar.set(Calendar.MINUTE, 0);
-//            todayCalendar.set(Calendar.SECOND, 0);
-//            todayCalendar.set(Calendar.MILLISECOND, 0);
-//            Date today = todayCalendar.getTime();
-//
-//            // Convert start timestamp to a Date object
-//            Date start = new Date(startDate);
-//
-//            // Calculate the end date
-//            Calendar endCalendar = Calendar.getInstance();
-//            endCalendar.setTime(start);
-//            endCalendar.add(Calendar.DAY_OF_MONTH, lastingDays);
-//            Date endDate = endCalendar.getTime();
-//
-//            // Calculate start index and end index
-//            long startIndex = TimeUnit.DAYS.convert(start.getTime() - today.getTime(), TimeUnit.MILLISECONDS);
-//            long endIndex = TimeUnit.DAYS.convert(endDate.getTime() - today.getTime(), TimeUnit.MILLISECONDS);
-//
-//            // Adjust start index if today is after start date
-//            if (startIndex < 0) {
-//                startIndex = 0;
-//            }
-//
-//            // Check if the end index is within the next 16 days
-//            if (endIndex > 16) {
-//                endIndex = 16;
-//            }
+            // Calculate start index and end index
+            Calendar calendar = Calendar.getInstance();
+            Date date = calendar.getTime();
+//            Timestamp currentTime = new Timestamp(date);
+            LocalDateTime start = LocalDateTime
+                .ofInstant(Instant.ofEpochMilli(date.getTime()), ZoneId.systemDefault())
+                .truncatedTo(ChronoUnit.DAYS);
 
-            int startDateIndex = 1;
+            LocalDateTime stop = LocalDateTime
+                .ofInstant(Instant.ofEpochMilli(startDate.getSeconds()*1000), ZoneId.systemDefault())
+                .truncatedTo(ChronoUnit.DAYS);
+
+            Duration duration = Duration.between(start, stop);
+
+            int startDateIndex = (int) duration.toDays();
+//            int startDateIndex = (int) TimeUnit.SECONDS.toDays(startDate.getSeconds() - currentTime.getSeconds());
+            Log.d("start date index", String.valueOf(startDateIndex));
             int endDateIndex = startDateIndex + lastingDays;
+
+            // Adjust start index if today is after start date
+            if (startDateIndex < 0) {
+                startDateIndex = 0;
+                if (endDateIndex > 5) {
+                    endDateIndex = 5;
+                }
+            } else if (startDateIndex >= 16) {
+                startDateIndex = 0;
+                endDateIndex = 5;
+            } else {
+                if (endDateIndex - startDateIndex > 5) {
+                    endDateIndex = startDateIndex + 5;
+                }
+                if (endDateIndex > 16) {
+                    endDateIndex = 16;
+                }
+            }
+
+            int finalStartDateIndex = startDateIndex;
+            int finalEndDateIndex = endDateIndex;
 
             ExecutorService executor = Executors.newSingleThreadExecutor();
             Handler handler = new Handler(Looper.getMainLooper());
             executor.execute(() -> {
-                Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(location.getName(), latitude, longitude, startDateIndex, endDateIndex);
-                Log.d("Getting weather", weatherData.toString());
+                Map<Integer, Weather> weatherData = weatherAPIClient.getWeatherForecast(location.getName(), latitude, longitude, finalStartDateIndex, finalEndDateIndex);
                 handler.post(() -> {
                     if (!isAdded()) {
                         // Fragment is not attached to the activity anymore, so we can't proceed.

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHolder> {
     private Context context;
@@ -25,6 +26,7 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHold
     public WeatherAdapter(Context context, ArrayList<Map<Integer, Weather>> allWeatherData) {
         this.context = context;
         this.allWeatherData = allWeatherData;
+
     }
 
     @NonNull
@@ -38,12 +40,13 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHold
     @Override
     public void onBindViewHolder(@NonNull WeatherAdapter.ViewHolder holder, int position) {
         Map<Integer, Weather> weatherData = allWeatherData.get(position);
+        Set<Integer> dayList = weatherData.keySet();
         // Clear any previously added views in the forecast container
         holder.forecastLinearLayout.removeAllViews();
 
-        holder.locationName.setText(weatherData.get(1).getLocationName());
+        holder.locationName.setText(weatherData.get(dayList.toArray()[0]).getLocationName());
 
-        for (int i = 1; i <= weatherData.size(); i++) {
+        for (Integer i : dayList) {
             Weather weather = weatherData.get(i);
             // Inflate a single forecast item view
             View forecastView = LayoutInflater.from(context).inflate(R.layout.weather_forecast_item, holder.forecastLinearLayout, false);
