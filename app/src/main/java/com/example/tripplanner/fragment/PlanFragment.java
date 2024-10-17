@@ -27,6 +27,7 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.example.tripplanner.MapActivity;
 import com.example.tripplanner.adapter.WeatherAdapter;
+import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
@@ -533,7 +534,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         }
         else{
             Log.d("noteinput", "showTripNote: trip is null");
+            return;
         }
+
+        FirestoreDB firestoreDB = new FirestoreDB();
 
         // Save note input when the user types
         noteInput.addTextChangedListener(new TextWatcher() {
@@ -545,11 +549,19 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 Log.d("NoteInput", "User input: " + s.toString());
-                viewModel.getTrip().setNote(s.toString());
+                trip.setNote(s.toString());
             }
 
             @Override
             public void afterTextChanged(Editable s) {
+//                Log.d("trip note saved", "new trip: " + trip.toString());
+                firestoreDB.updateTrip(trip.getId(), trip, success -> {
+                    if (success) {
+                        Log.d("trip saved", "saveTripToDatabase: success");
+                    } else {
+                        Log.e("trip saved", "saveTripToDatabase: fail");
+                    }
+                });
             }
         });
     }
@@ -604,10 +616,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     public HashMap<String, List<Double[]>> getDaysAndLocations(){
         HashMap<String, List<Double[]>> locationMap = new HashMap<>();
 
-        Set<String> keys = viewModel.getTrip().getPlans().keySet();
+        Set<String> keys = trip.getPlans().keySet();
 
         for (String key : keys) {
-            List<ActivityItem> activityItems = viewModel.getTrip().getPlans().get(key);
+            List<ActivityItem> activityItems = trip.getPlans().get(key);
             List<Double[]> latLngList = new ArrayList<>();
 
             for (ActivityItem item : activityItems) {
