@@ -9,8 +9,10 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 
+import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
+import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
@@ -220,19 +222,13 @@ public class MainActivity extends AppCompatActivity {
 
         List<ActivityItem> activityItems = new ArrayList<>();
         // Create some sample ActivityItems
-        ActivityItem item1 = new ActivityItem("Visit Museum");
-        item1.setStartTime(Timestamp.now());
-        item1.setEndTime(Timestamp.now());
-        item1.setLocation(new Location("Museum of Art", 40.779437, -73.963244));
+        ActivityItem item1 = new ActivityItem("Visit NYU");
+        item1.setLocation(new Location("New York University", 40.779437, -73.963244));
 
         ActivityItem item2 = new ActivityItem("Lunch at Central Park");
-        item2.setStartTime(Timestamp.now());
-        item2.setEndTime(Timestamp.now());
         item2.setLocation(new Location("Central Park", 40.785091, -73.968285));
 
         ActivityItem item3 = new ActivityItem("Empire State Building Tour");
-        item3.setStartTime(Timestamp.now());
-        item3.setEndTime(Timestamp.now());
         item3.setLocation(new Location("Empire State Building", 40.748817, -73.985428));
 
         // Add items to the list
@@ -240,70 +236,30 @@ public class MainActivity extends AppCompatActivity {
         activityItems.add(item2);
         activityItems.add(item3);
 
-        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new Callback() {
+
+
+        // Fetch the distance matrix
+        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
             @Override
-            public void onFailure(Request request, IOException e) {
-                Log.d("DistanceMatrix", "DistanceMatrix request failed: " + e.getMessage());
+            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+                // Handle the successful result
+                Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
+                List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItems);
+                Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
+
             }
 
             @Override
-            public void onResponse(Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String responseData = response.body().string();
-                    Log.d("DistanceMatrix", responseData);
-//                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(responseData);
-                    // Use the bestRoute as needed
-                } else {
-                    Log.d("DistanceMatrix", "DistanceMatrix request error: " + response.code());
-                }
+            public void onFailure(Exception e) {
+                // Handle the error
+                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
             }
+
         });
 
         // Detect weather and plan trip
         // weatherTripPlanner.detectWeatherAndPlanTrip();
 
-        // manually add a trip object
-        // String name = "My Awesome Trip";
-        // Timestamp startDate = Timestamp.now();
-        // int receivedDays = 5; // Duration of the trip in days
-        //
-        // // Create a list of Location objects
-        // List<Location> locationList = new ArrayList<>();
-        // locationList.add(new Location("1", "New York City", "City", 40.7128,
-        // -74.0060));
-        // locationList.add(new Location("2", "Los Angeles", "City", 34.0522,
-        // -118.2437));
-        // locationList.add(new Location("3", "Chicago", "City", 41.8781, -87.6298));
-        //
-        // FirebaseAuth mAuth = FirebaseAuth.getInstance();
-        // FirebaseUser currentUser = mAuth.getCurrentUser();
-        // String userId = currentUser.getUid();
-        //
-        // // Create Trip object
-        // Trip trip = new Trip(name, startDate, receivedDays, locationList, userId);
-        //
-        // // Create FirestoreDB instance and add trip to Firestore
-        // FirestoreDB firestore = new FirestoreDB();
-        //
-        // firestore.createTrip(userId, trip.convertTripToMap());
-
-        // FirestoreDB firestoreDB = new FirestoreDB();
-        // String tripId = "3Rt1mDAOhYzwLY4ouR7K";
-        //
-        // firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
-        // @Override
-        // public void onSuccess(Void aVoid) {
-        // // Handle successful deletion
-        // Log.d("PLAN", "Trip successfully deleted.");
-        // // Update UI or navigate back
-        // }
-        // }, new OnFailureListener() {
-        // @Override
-        // public void onFailure(@NonNull Exception e) {
-        // // Handle deletion failure
-        // Log.e("PLAN", "Error deleting trip", e);
-        // }
-        // });
     }
 
     @Override

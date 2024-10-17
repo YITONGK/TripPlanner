@@ -2,6 +2,7 @@ package com.example.tripplanner.utils;
 
 import android.util.Log;
 
+import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.squareup.okhttp.Call;
@@ -21,10 +22,9 @@ import java.util.List;
 
 public class RoutePlanner {
     private static final String API_KEY = "AIzaSyB6ERXJUvrKoEbEBTVt4Ofgg_3G3z6tFcQ";
-    private List<DistanceMatrixEntry> distanceMatrix;
+//    private List<DistanceMatrixEntry> distanceMatrix;
 
-
-    public void fetchDistanceMatrix(List<ActivityItem> activityItems, String mode, Callback callback) {
+    public static void fetchDistanceMatrix(List<ActivityItem> activityItems, String mode, DistanceMatrixCallback callback) {
         List<String> locations = new ArrayList<>();
         for (ActivityItem item : activityItems) {
             if (item.getLocation() != null) {
@@ -40,21 +40,24 @@ public class RoutePlanner {
                 @Override
                 public void onFailure(Request request, IOException e) {
                     Log.e("RoutePlannerUtil", "Error fetching distance matrix: " + e.getMessage());
+                    callback.onFailure(e);
                 }
 
                 @Override
                 public void onResponse(Response response) throws IOException {
                     if (response.isSuccessful()) {
                         String responseData = response.body().string();
-                        distanceMatrix = parseDistanceMatrixResponse(responseData, locations, mode);
-                        // Process the entries as needed
+                        List<DistanceMatrixEntry> distanceMatrix = parseDistanceMatrixResponse(responseData, locations, mode);
+                        callback.onSuccess(distanceMatrix);
                     } else {
                         Log.e("RoutePlannerUtil", "Error: " + response.code());
+                        callback.onFailure(new IOException("Error: " + response.code()));
                     }
                 }
             });
         } catch (Exception e) {
             Log.e("RoutePlannerUtil", "Error building URL: " + e.getMessage());
+            callback.onFailure(e);
         }
     }
 
@@ -103,7 +106,7 @@ public class RoutePlanner {
                 + "&key=" + API_KEY;
     }
 
-    public DistanceMatrixEntry getDistanceMatrixEntry(String from, String to) {
+    public static DistanceMatrixEntry getDistanceMatrixEntry(List<DistanceMatrixEntry> distanceMatrix, String from, String to) {
         for (DistanceMatrixEntry entry : distanceMatrix) {
             if (entry.getFrom().equals(from) && entry.getTo().equals(to)) {
                 return entry;
@@ -112,7 +115,7 @@ public class RoutePlanner {
         return null; //  if no matching entry is found
     }
 
-    public List<ActivityItem> calculateBestRoute(List<ActivityItem> activityItems) {
+    public static List<ActivityItem> calculateBestRoute(List<DistanceMatrixEntry> distanceMatrix, List<ActivityItem> activityItems) {
         List<ActivityItem> bestRoute = new ArrayList<>();
         if (activityItems.isEmpty() || distanceMatrix.isEmpty()) {
             return bestRoute;
@@ -130,6 +133,7 @@ public class RoutePlanner {
             for (int i = 0; i < activityItems.size(); i++) {
                 if (!visited[i]) {
                     DistanceMatrixEntry entry = getDistanceMatrixEntry(
+                            distanceMatrix,
                         activityItems.get(currentIndex).getLocationString(), 
                         activityItems.get(i).getLocationString());
 
