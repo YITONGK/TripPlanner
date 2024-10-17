@@ -4,11 +4,16 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.ActivityItem;
+import com.example.tripplanner.entity.DistanceMatrixEntry;
+import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
-import com.example.tripplanner.utils.WeatherTripPlanner;
+import com.example.tripplanner.utils.RoutePlanner;
+import com.example.tripplanner.utils.SensorDetector;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.net.PlacesClient;
@@ -36,6 +41,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration appBarConfiguration;
@@ -44,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private GoogleMap mMap;
     private PlacesClient placesClient;
 
-    private WeatherTripPlanner weatherTripPlanner;
+    private SensorDetector sensorDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         binding.navView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @SuppressLint("NonConstantResourceId")
             @Override
-            public boolean onNavigationItemSelected (@NonNull MenuItem item){
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
 
                 int id = item.getItemId();
 
@@ -118,7 +126,8 @@ public class MainActivity extends AppCompatActivity {
                         public void onClick(View view) {
                             bottomSheetDialog.dismiss();
                             BottomSheetDialog importPlanBottomSheet = new BottomSheetDialog(MainActivity.this);
-                            View importPlanView = LayoutInflater.from(MainActivity.this).inflate(R.layout.import_plan_bottom_sheet, null);
+                            View importPlanView = LayoutInflater.from(MainActivity.this)
+                                    .inflate(R.layout.import_plan_bottom_sheet, null);
                             importPlanBottomSheet.setContentView(importPlanView);
                             importPlanBottomSheet.show();
 
@@ -132,38 +141,43 @@ public class MainActivity extends AppCompatActivity {
                                     if (!tripID.isEmpty()) {
                                         Log.d("SHARE", tripID);
                                         // Validate the trip ID
-                                        FirestoreDB firestoreDB = new FirestoreDB();
+                                        FirestoreDB firestoreDB = FirestoreDB.getInstance();
                                         firestoreDB.getTripByTripId(tripID,
-                                            new OnSuccessListener<Trip>() {
-                                                @Override
-                                                public void onSuccess(Trip trip) {
-                                                    Log.d("IMPORT PLAN", "Trip ID Verified");
-                                                    // Ensure currentUser is not null
-                                                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                                                    if (currentUser != null) {
-                                                        String userId = currentUser.getUid();
+                                                new OnSuccessListener<Trip>() {
+                                                    @Override
+                                                    public void onSuccess(Trip trip) {
+                                                        Log.d("IMPORT PLAN", "Trip ID Verified");
+                                                        // Ensure currentUser is not null
+                                                        FirebaseUser currentUser = FirebaseAuth.getInstance()
+                                                                .getCurrentUser();
+                                                        if (currentUser != null) {
+                                                            String userId = currentUser.getUid();
 
-                                                        // Add user to the trip
-                                                        firestoreDB.addUserToTrip(tripID, userId, 
-                                                            (Void) -> {
-                                                                Log.d("IMPORT PLAN", "Successfully added user to trip");
-                                                                importPlanBottomSheet.dismiss();
-                                                                // Navigate to added trip details
-                                                                Intent i = new Intent(MainActivity.this, EditPlanActivity.class);
-                                                                i.putExtra("tripId", tripID);
-                                                                startActivity(i);
-                                                            },
-                                                            e -> Log.e("IMPORT PLAN", "Failed to add user to trip: " + e.getMessage())
-                                                        );
+                                                            // Add user to the trip
+                                                            firestoreDB.addUserToTrip(tripID, userId,
+                                                                    (Void) -> {
+                                                                        Log.d("IMPORT PLAN",
+                                                                                "Successfully added user to trip");
+                                                                        importPlanBottomSheet.dismiss();
+                                                                        // Navigate to added trip details
+                                                                        Intent i = new Intent(MainActivity.this,
+                                                                                EditPlanActivity.class);
+                                                                        i.putExtra("tripId", tripID);
+                                                                        startActivity(i);
+                                                                    },
+                                                                    e -> Log.e("IMPORT PLAN",
+                                                                            "Failed to add user to trip: "
+                                                                                    + e.getMessage()));
+                                                        }
                                                     }
-                                                }
-                                            },
-                                            e -> {
-                                                Log.d("IMPORT PLAN", "Trip ID Invalid: " + e.getMessage());
-                                                // Notify user of invalid trip ID
-                                                Toast.makeText(MainActivity.this, "Invalid Trip ID. Please try again.", Toast.LENGTH_SHORT).show();
-                                            }
-                                        );
+                                                },
+                                                e -> {
+                                                    Log.d("IMPORT PLAN", "Trip ID Invalid: " + e.getMessage());
+                                                    // Notify user of invalid trip ID
+                                                    Toast.makeText(MainActivity.this,
+                                                            "Invalid Trip ID. Please try again.", Toast.LENGTH_SHORT)
+                                                            .show();
+                                                });
                                     } else {
                                         Log.e("SHARE", "Trip ID is empty");
                                     }
@@ -190,65 +204,61 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Initialize WeatherTripPlanner
-        weatherTripPlanner = new WeatherTripPlanner(this);
+        sensorDetector = new SensorDetector(this);
 
         // Detect weather and plan trip
-        weatherTripPlanner.detectWeatherAndPlanTrip();
+        // weatherTripPlanner.detectWeatherAndPlanTrip();
 
-//          manually add a trip object
-//        String name = "My Awesome Trip";
-//        Timestamp startDate = Timestamp.now();
-//        int receivedDays = 5; // Duration of the trip in days
-//
-//        // Create a list of Location objects
-//        List<Location> locationList = new ArrayList<>();
-//        locationList.add(new Location("1", "New York City", "City", 40.7128, -74.0060));
-//        locationList.add(new Location("2", "Los Angeles", "City", 34.0522, -118.2437));
-//        locationList.add(new Location("3", "Chicago", "City", 41.8781, -87.6298));
-//
-//        FirebaseAuth mAuth = FirebaseAuth.getInstance();
-//        FirebaseUser currentUser = mAuth.getCurrentUser();
-//        String userId = currentUser.getUid();
-//
-//        // Create Trip object
-//        Trip trip = new Trip(name, startDate, receivedDays, locationList, userId);
-//
-//        // Create FirestoreDB instance and add trip to Firestore
-//        FirestoreDB firestore = new FirestoreDB();
-//
-//        firestore.createTrip(userId, trip.convertTripToMap());
+        // Example usage of Route Planner
+        List<ActivityItem> activityItems = new ArrayList<>();
+        // Create some sample ActivityItems
+        ActivityItem item1 = new ActivityItem("Visit NYU");
+        item1.setLocation(new Location("New York University", 40.779437, -73.963244));
 
-//        FirestoreDB firestoreDB = new FirestoreDB();
-//        String tripId = "3Rt1mDAOhYzwLY4ouR7K";
-//
-//        firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
-//            @Override
-//            public void onSuccess(Void aVoid) {
-//                // Handle successful deletion
-//                Log.d("PLAN", "Trip successfully deleted.");
-//                // Update UI or navigate back
-//            }
-//        }, new OnFailureListener() {
-//            @Override
-//            public void onFailure(@NonNull Exception e) {
-//                // Handle deletion failure
-//                Log.e("PLAN", "Error deleting trip", e);
-//            }
-//        });
+        ActivityItem item2 = new ActivityItem("Lunch at Central Park");
+        item2.setLocation(new Location("Central Park", 40.785091, -73.968285));
+
+        ActivityItem item3 = new ActivityItem("Empire State Building Tour");
+        item3.setLocation(new Location("Empire State Building", 40.748817, -73.985428));
+
+        // Add items to the list
+        activityItems.add(item1);
+        activityItems.add(item2);
+        activityItems.add(item3);
+
+        // Fetch the distance matrix
+        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
+            @Override
+            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+                // Handle the successful result
+                Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
+                List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItems);
+                Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
+
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                // Handle the error
+                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+            }
+
+        });
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         // Register sensor listeners when the activity is resumed
-        weatherTripPlanner.registerSensorListeners();
+        sensorDetector.registerSensorListeners();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         // Unregister sensor listeners when the activity is paused
-        weatherTripPlanner.unregisterSensorListeners();
+        sensorDetector.unregisterSensorListeners();
     }
 
     @Override
@@ -268,8 +278,6 @@ public class MainActivity extends AppCompatActivity {
                     .replace(R.id.fragmentContainerView, planFragment)
                     .commit();
         }
-     }
-
-
+    }
 
 }

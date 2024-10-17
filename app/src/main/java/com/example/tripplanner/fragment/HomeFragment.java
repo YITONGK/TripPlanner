@@ -89,7 +89,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
             String userId = currentUser.getUid();
-            FirestoreDB firestoreDB = new FirestoreDB();
+            FirestoreDB firestoreDB = FirestoreDB.getInstance();
             firestoreDB.getTripsByUserId(userId, trips -> {
                 // Handle the list of trips
                 Log.d("PLAN", "getting trips: " + trips.size());

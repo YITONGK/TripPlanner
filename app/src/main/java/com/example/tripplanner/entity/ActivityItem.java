@@ -117,4 +117,15 @@ public class ActivityItem {
         }
         return map;
     }
+
+    @Override
+    public String toString() {
+        return "ActivityItem{" +
+                "name='" + name + '\'' +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", location=" + location +
+                ", notes='" + notes + '\'' +
+                '}';
+    }
 }

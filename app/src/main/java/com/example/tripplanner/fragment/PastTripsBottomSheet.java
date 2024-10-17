@@ -1,6 +1,8 @@
 package com.example.tripplanner.fragment;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,8 +13,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.AllPlanAdapter;
+import com.example.tripplanner.adapter.AllPlanInterface;
 import com.example.tripplanner.adapter.SectionedPlanAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.Location;
@@ -27,7 +32,7 @@ import java.util.Map;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-public class PastTripsBottomSheet extends BottomSheetDialogFragment {
+public class PastTripsBottomSheet extends BottomSheetDialogFragment implements AllPlanInterface {
 
     // private AllPlanAdapter adapter;
     private SectionedPlanAdapter adapter;
@@ -56,17 +61,18 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
             String userId = currentUser.getUid();
-            FirestoreDB firestoreDB = new FirestoreDB();
+            FirestoreDB firestoreDB = FirestoreDB.getInstance();
             firestoreDB.getPastTripsByUserId(userId, new OnSuccessListener<List<Trip>>() {
                 @Override
                 public void onSuccess(List<Trip> trips) {
                     Map<String, List<Trip>> tripsByCountry = groupTripsByCountry(trips);
-                    adapter = new SectionedPlanAdapter(getContext(), tripsByCountry);
+                    Log.d("DEBUG", "Trips by country: " + tripsByCountry.size());
+                    adapter = new SectionedPlanAdapter(getContext(), tripsByCountry, PastTripsBottomSheet.this);
                     recyclerView.setAdapter(adapter);
 
-                    int totalLocations = trips.stream()
-                            .mapToInt(trip -> trip.getLocations().size())
-                            .sum();
+                    // int totalLocations = trips.stream()
+                    //         .mapToInt(trip -> trip.getLocations().size())
+                    //         .sum();
 
                     if (adapter != null) { // Check if adapter is initialized
                         pastTrips.clear();
@@ -89,7 +95,6 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment {
         for (Trip trip : trips) {
             for (Location location : trip.getLocations()) {
                 // String country = location.getType(); // Assuming Location has a getCountry()
-                // method
                 String country = "Country";
                 if (!tripsByCountry.containsKey(country)) {
                     tripsByCountry.put(country, new ArrayList<>());
@@ -98,5 +103,14 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment {
             }
         }
         return tripsByCountry;
+    }
+
+    @Override
+    public void onItemClick(int position) {
+        // Navigate to specific plan detail page
+        Trip clickedTrip = pastTrips.get(position-1);
+        Intent i = new Intent(getActivity(), EditPlanActivity.class);
+        i.putExtra("tripId", clickedTrip.getId());
+        startActivity(i);
     }
 }

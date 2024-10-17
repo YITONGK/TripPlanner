@@ -259,8 +259,7 @@ public class PlanDurationActivity extends AppCompatActivity
                                 tripDays = revivedCalendarDays;
                             }
                         } catch (ParseException e) {
-                            e.printStackTrace();
-                            return;
+                            Log.d("PLAN", "Failed to parse date: " + e);
                         }
                         Timestamp startDate = new Timestamp(parsedDate);
 
@@ -277,11 +276,14 @@ public class PlanDurationActivity extends AppCompatActivity
                         }
                         tripName.setLength(tripName.length() - 2);
 
+                        Log.d("PLAN", "Start Date: " + receivedStartDate);
+                        Log.d("PLAN", "Start Date: " + startDate);
+                        Log.d("PLAN", "Start Date: " + startDate.toDate());
                         // Create Trip object
                         Trip trip = new Trip(tripName.toString(), startDate, tripDays, locationList, userId);
 
                         // Create FirestoreDB instance and add trip to Firestore
-                        FirestoreDB firestore = new FirestoreDB();
+                        FirestoreDB firestore = FirestoreDB.getInstance();
                         // firestore.createTrip(userId, trip);
                         firestore.createTrip(userId, trip, new OnSuccessListener<Trip>() {
                             @Override
@@ -293,6 +295,9 @@ public class PlanDurationActivity extends AppCompatActivity
                                 intent.putExtra("tripId", tripId);
                                 startActivity(intent);
                                 // You can perform additional actions with the updated trip if needed
+                                Log.d("PLAN", "Trip created with ID: " + trip.getId());
+                                Log.d("PLAN", trip.toString());
+                                Log.d("PLAN", updatedTrip.toString());
                             }
                         }, new OnFailureListener() {
                             @Override

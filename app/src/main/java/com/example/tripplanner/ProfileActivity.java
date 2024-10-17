@@ -95,7 +95,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void fetchUserTripStatistics(String userId) {
-        FirestoreDB firestoreDB = new FirestoreDB();
+        FirestoreDB firestoreDB = FirestoreDB.getInstance();
 
         firestoreDB.getUserTripStatistics(userId, new OnSuccessListener<UserTripStatistics>() {
             @Override

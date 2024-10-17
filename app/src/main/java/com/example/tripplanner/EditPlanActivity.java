@@ -32,7 +32,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -86,7 +88,7 @@ public class EditPlanActivity extends AppCompatActivity {
     }
 
     private void fetchTripData(String tripId) {
-        FirestoreDB firestoreDB = new FirestoreDB();
+        FirestoreDB firestoreDB = FirestoreDB.getInstance();
         firestoreDB.getTripByTripId(tripId, this::onTripDataFetched, e -> {
             Log.d("PLAN", "Error getting trip by trip ID: " + e.getMessage());
             // Handle the error appropriately (e.g., show an error message to the user)
@@ -122,6 +124,11 @@ public class EditPlanActivity extends AppCompatActivity {
         selectedPlace = sb.toString();
         startDate = trip.getStartDate();
         days = trip.getNumDays();
+
+//        Timestamp startDateTimestamp = trip.getStartDate();
+//        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+//        Date date = new Date(Long.parseLong(startDateTimestamp.toString()));
+//        startDate = sf.format(date);
 
         // TODO: get activities of the plan
     }

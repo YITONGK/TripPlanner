@@ -129,7 +129,7 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
     }
 
     private void deleteTrip(String tripId) {
-        FirestoreDB firestoreDB = new FirestoreDB();
+        FirestoreDB firestoreDB = FirestoreDB.getInstance();
 
         // Perform the deletion in a background thread
         new Thread(new Runnable() {
