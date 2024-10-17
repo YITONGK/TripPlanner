@@ -3,6 +3,7 @@ package com.example.tripplanner.fragment;
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,7 +24,10 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import com.bumptech.glide.Glide;
+import com.example.tripplanner.MapActivity;
 import com.example.tripplanner.adapter.WeatherAdapter;
+import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
@@ -48,6 +52,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Collections;
 import java.util.List;
 
@@ -64,6 +69,7 @@ import com.google.firebase.Timestamp;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -87,7 +93,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     private AutocompleteAdapter autocompleteAdapter;
 
     private PlanViewModel viewModel;
-    private Trip trip;
+    public static Trip trip;
 
     // For specific day plan
     private TextView addActivityLocation;
@@ -102,7 +108,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     private ArrayList<Map<Integer, Weather>> allWeatherData = new ArrayList<>();
     private WeatherAdapter weatherAdapter;
     private WeatherAPIClient weatherAPIClient;
-
+    private String savedNotes;
     public interface OnPlaceFetchedListener {
         void onPlaceFetched(Location location);
     }
@@ -125,7 +131,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 }
             }
         });
-
         if (this.getArguments() != null) {
             this.layout = getArguments().getInt(LAYOUT_TYPE, OVERVIEW);
             if (this.layout == PLAN_SPECIFIC_DAY) {
@@ -223,18 +228,13 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 }
             });
 
-//            activityLocationList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//                @Override
-//                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//                    showEditActivityDialog(position);
-//                }
-//            });
 
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
             weatherAPIClient = new WeatherAPIClient();
 
             fetchAndDisplayWeatherData(rootView);
+            showTripNote(rootView);
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -545,6 +545,52 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         }
     }
 
+    //can not solve the bug
+    private void showTripNote(View rootView) {
+        //Handle noteinput
+        EditText noteInput = rootView.findViewById(R.id.noteInput);
+
+        if (trip != null) {
+            // Load saved note if exists
+            String savedNote = trip.getNote();
+            if (savedNote != null) {
+                noteInput.setText(savedNote);
+            }
+        }
+        else{
+            Log.d("noteinput", "showTripNote: trip is null");
+            return;
+        }
+
+        FirestoreDB firestoreDB = new FirestoreDB();
+
+        // Save note input when the user types
+        noteInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Do nothing before text changes
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                Log.d("NoteInput", "User input: " + s.toString());
+                trip.setNote(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+//                Log.d("trip note saved", "new trip: " + trip.toString());
+                firestoreDB.updateTrip(trip.getId(), trip, success -> {
+                    if (success) {
+                        Log.d("trip saved", "saveTripToDatabase: success");
+                    } else {
+                        Log.e("trip saved", "saveTripToDatabase: fail");
+                    }
+                });
+            }
+        });
+    }
+
     private Timestamp buildTimestamp(Timestamp startDate, int dayIndex, int hour, int minute) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(startDate.toDate());
@@ -562,9 +608,22 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+//        modify here
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
+//        Days : [lat, lon]
+        HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                Intent intent = new Intent(getActivity(), MapActivity.class);
+                intent.putExtra("daysAndLocationsMap", daysAndLocationsMap);
+                intent.putExtra("numDays",viewModel.getTrip().getNumDays());
+                startActivity(intent);
+            }
+        });
     }
 
     public void setLastingDays(int lastingDays) {
@@ -578,5 +637,28 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     public void setStartDate(String startDay) {
         this.startDay = startDay;
     }
+
+    public HashMap<String, List<Double[]>> getDaysAndLocations(){
+        HashMap<String, List<Double[]>> locationMap = new HashMap<>();
+
+        Set<String> keys = trip.getPlans().keySet();
+
+        for (String key : keys) {
+            List<ActivityItem> activityItems = trip.getPlans().get(key);
+            List<Double[]> latLngList = new ArrayList<>();
+
+            for (ActivityItem item : activityItems) {
+                Location location = item.getLocation();
+                if (location != null) {
+                    double latitude = location.getLatitude();
+                    double longitude = location.getLongitude();
+                    latLngList.add(new Double[] { latitude, longitude });
+                }
+            }
+            locationMap.put(key, latLngList);
+        }
+        return locationMap;
+    }
+
 
 }
