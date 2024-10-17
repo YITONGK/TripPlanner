@@ -261,12 +261,33 @@ public class MainActivity extends AppCompatActivity {
     ActivityResultLauncher<ScanOptions> barLauncher = registerForActivityResult(new ScanContract(), result -> {
         if (result.getContents() != null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-            builder.setTitle("Result");
-            builder.setMessage(result.getContents());
-            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            builder.setTitle("Plan ID");
+            String tripID = result.getContents();
+            builder.setMessage(tripID);
+            builder.setPositiveButton("Import", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     dialogInterface.dismiss();
+                    FirestoreDB firestoreDB = new FirestoreDB();
+                    // Ensure currentUser is not null
+                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                    if (currentUser != null) {
+                        String userId = currentUser.getUid();
+
+                        // Add user to the trip
+                        firestoreDB.addUserToTrip(tripID, userId,
+                            (Void) -> {
+                                Log.d("IMPORT PLAN", "Successfully added user to trip");
+                                // Navigate to added trip details
+                                Intent intent = new Intent(MainActivity.this, EditPlanActivity.class);
+                                intent.putExtra("tripId", tripID);
+                                startActivity(intent);
+                            },
+                            e -> Log.e("IMPORT PLAN", "Failed to add user to trip: " + e.getMessage())
+                        );
+                    }
+
+
                 }
             }).show();
         }
