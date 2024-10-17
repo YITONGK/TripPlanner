@@ -220,6 +220,12 @@ public class MainActivity extends AppCompatActivity {
         // Initialize WeatherTripPlanner
         weatherTripPlanner = new WeatherTripPlanner(this);
 
+        // Detect weather and plan trip
+        // weatherTripPlanner.detectWeatherAndPlanTrip();
+
+
+
+        // Example usage of Route Planner
         List<ActivityItem> activityItems = new ArrayList<>();
         // Create some sample ActivityItems
         ActivityItem item1 = new ActivityItem("Visit NYU");
@@ -235,8 +241,6 @@ public class MainActivity extends AppCompatActivity {
         activityItems.add(item1);
         activityItems.add(item2);
         activityItems.add(item3);
-
-
 
         // Fetch the distance matrix
         RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
@@ -256,9 +260,6 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
-
-        // Detect weather and plan trip
-        // weatherTripPlanner.detectWeatherAndPlanTrip();
 
     }
 
