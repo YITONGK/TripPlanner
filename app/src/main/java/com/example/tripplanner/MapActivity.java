@@ -69,7 +69,7 @@ public class MapActivity extends AppCompatActivity {
                     googleMap.clear();
                     return;
                 }
-                addMarkersForLatLngList(latLngList, "Key " + key, boundsBuilder); // 只添加指定 key 的标记
+                addMarkersForLatLngList(latLngList, "Key " + key, boundsBuilder);
             }
             int padding = 100;
             googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding));

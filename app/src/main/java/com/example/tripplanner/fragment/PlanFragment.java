@@ -96,7 +96,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     final String apiKey = BuildConfig.PLACES_API_KEY;
 
     private PlanViewModel viewModel;
-    private Trip trip;
+    public static Trip trip;
 
     // For specific day plan
     private TextView addActivityLocation;
@@ -111,7 +111,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
     private WeatherAdapter weatherAdapter;
 //    private LinearLayout weatherForecastContainer;
     private WeatherAPIClient weatherAPIClient;
-
+    private String savedNotes;
     public interface OnPlaceFetchedListener {
         void onPlaceFetched(Location location);
     }
@@ -138,7 +138,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
                 }
             }
         });
-
         if (this.getArguments() != null) {
             this.layout = getArguments().getInt(LAYOUT_TYPE, OVERVIEW);
             if (this.layout == PLAN_SPECIFIC_DAY) {
@@ -193,6 +192,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
             weatherAPIClient = new WeatherAPIClient();
 
             fetchAndDisplayWeatherData(rootView);
+            showTripNote(rootView);
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -200,6 +200,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
+
+
 
         return rootView;
     }
@@ -517,6 +519,41 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    //can not solve the bug
+    private void showTripNote(View rootView) {
+        //Handle noteinput
+        EditText noteInput = rootView.findViewById(R.id.noteInput);
+
+        if (trip != null) {
+            // Load saved note if exists
+            String savedNote = trip.getNote();
+            if (savedNote != null) {
+                noteInput.setText(savedNote);
+            }
+        }
+        else{
+            Log.d("noteinput", "showTripNote: trip is null");
+        }
+
+        // Save note input when the user types
+        noteInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Do nothing before text changes
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                Log.d("NoteInput", "User input: " + s.toString());
+                viewModel.getTrip().setNote(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
+    }
+
     private Timestamp buildTimestamp(Timestamp startDate, int dayIndex, int hour, int minute) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(startDate.toDate());
@@ -529,7 +566,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback {
         Date date = calendar.getTime();
         return new Timestamp(date);
     }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
