@@ -2,12 +2,24 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="28dp">
 
     <com.google.android.material.bottomsheet.BottomSheetDragHandleView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
+
+    <Button
+        android:id="@+id/scanBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:text="Scan"
+        android:textColor="@color/black"
+        android:background="@android:color/transparent"
+        android:drawableLeft="@drawable/baseline_qr_code_scanner_24"
+        app:backgroundTint="@color/darkblue"/>
 
     <EditText
         android:id="@+id/planID"
@@ -22,7 +34,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Confirm"
-        android:layout_gravity="center" />
+        android:layout_gravity="center"
+        app:backgroundTint="@color/darkblue" />
 
     <View
         android:layout_width="wrap_content"

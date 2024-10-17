@@ -1,7 +1,9 @@
 package com.example.tripplanner;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -13,6 +15,7 @@ import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
+import com.example.tripplanner.utils.CaptureAct;
 import com.example.tripplanner.utils.WeatherTripPlanner;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -21,6 +24,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -45,6 +49,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -130,6 +137,14 @@ public class MainActivity extends AppCompatActivity {
 
                             EditText tripIDView = importPlanBottomSheet.findViewById(R.id.planID);
                             Button confirmButton = importPlanView.findViewById(R.id.confirmButton);
+                            Button scanBtn = importPlanView.findViewById(R.id.scanBtn);
+
+                            scanBtn.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    scanCode();
+                                }
+                            });
 
                             confirmButton.setOnClickListener(new View.OnClickListener() {
                                 @Override
@@ -200,47 +215,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Detect weather and plan trip
         weatherTripPlanner.detectWeatherAndPlanTrip();
-
-//          manually add a trip object
-//        String name = "My Awesome Trip";
-//        Timestamp startDate = Timestamp.now();
-//        int receivedDays = 5; // Duration of the trip in days
-//
-//        // Create a list of Location objects
-//        List<Location> locationList = new ArrayList<>();
-//        locationList.add(new Location("1", "New York City", "City", 40.7128, -74.0060));
-//        locationList.add(new Location("2", "Los Angeles", "City", 34.0522, -118.2437));
-//        locationList.add(new Location("3", "Chicago", "City", 41.8781, -87.6298));
-//
-//        FirebaseAuth mAuth = FirebaseAuth.getInstance();
-//        FirebaseUser currentUser = mAuth.getCurrentUser();
-//        String userId = currentUser.getUid();
-//
-//        // Create Trip object
-//        Trip trip = new Trip(name, startDate, receivedDays, locationList, userId);
-//
-//        // Create FirestoreDB instance and add trip to Firestore
-//        FirestoreDB firestore = new FirestoreDB();
-//
-//        firestore.createTrip(userId, trip.convertTripToMap());
-
-//        FirestoreDB firestoreDB = new FirestoreDB();
-//        String tripId = "3Rt1mDAOhYzwLY4ouR7K";
-//
-//        firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
-//            @Override
-//            public void onSuccess(Void aVoid) {
-//                // Handle successful deletion
-//                Log.d("PLAN", "Trip successfully deleted.");
-//                // Update UI or navigate back
-//            }
-//        }, new OnFailureListener() {
-//            @Override
-//            public void onFailure(@NonNull Exception e) {
-//                // Handle deletion failure
-//                Log.e("PLAN", "Error deleting trip", e);
-//            }
-//        });
     }
 
     @Override
@@ -274,8 +248,29 @@ public class MainActivity extends AppCompatActivity {
                     .replace(R.id.fragmentContainerView, planFragment)
                     .commit();
         }
-     }
+    }
 
+    private void scanCode() {
+        ScanOptions options = new ScanOptions();
+        options.setBeepEnabled(true);
+        options.setOrientationLocked(true);
+        options.setCaptureActivity(CaptureAct.class);
+        barLauncher.launch(options);
+    }
+
+    ActivityResultLauncher<ScanOptions> barLauncher = registerForActivityResult(new ScanContract(), result -> {
+        if (result.getContents() != null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle("Result");
+            builder.setMessage(result.getContents());
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    dialogInterface.dismiss();
+                }
+            }).show();
+        }
+    });
 
 
 }
