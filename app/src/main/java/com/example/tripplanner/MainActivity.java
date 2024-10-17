@@ -45,12 +45,21 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
+import com.squareup.okhttp.Call;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -209,18 +218,15 @@ public class MainActivity extends AppCompatActivity {
         // Initialize WeatherTripPlanner
         weatherTripPlanner = new WeatherTripPlanner(this);
 
-        String origin = "New York, NY";
-        String destination = "Los Angeles, CA";
-        String[] modes = { "driving", "walking", "transit" };
-        String[] modes = { "driving", "walking", "transit" };
+        List<String> origins = Arrays.asList("New York, NY", "Boston, MA");
+        List<String> destinations = Arrays.asList("Los Angeles, CA", "San Francisco, CA");
+        String mode = "driving";
 
-        for (String mode : modes) {
-            try {
-                String url = buildDirectionsUrl(origin, destination, mode);
-                getDistanceMatrix(url);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
+        try {
+            String url = buildDirectionsUrl(origins, destinations, mode);
+            getDistanceMatrix(url);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
         }
 
         // Detect weather and plan trip
@@ -303,51 +309,64 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private String buildDirectionsUrl(String origin, String destination, String mode)
+        private String buildDirectionsUrl(List<String> origins, List<String> destinations, String mode)
             throws UnsupportedEncodingException {
-        String apiKey = "YOUR_API_KEY"; // Replace with your actual API key
-        String urlOrigin = URLEncoder.encode(origin, "UTF-8");
-        String urlDestination = URLEncoder.encode(destination, "UTF-8");
+        String apiKey = "AIzaSyB6ERXJUvrKoEbEBTVt4Ofgg_3G3z6tFcQ";
+        
+        // Encode and join origins
+        StringBuilder originBuilder = new StringBuilder();
+        for (String origin : origins) {
+            if (originBuilder.length() > 0) {
+                originBuilder.append("|");
+            }
+            originBuilder.append(URLEncoder.encode(origin, "UTF-8"));
+        }
+        
+        // Encode and join destinations
+        StringBuilder destinationBuilder = new StringBuilder();
+        for (String destination : destinations) {
+            if (destinationBuilder.length() > 0) {
+                destinationBuilder.append("|");
+            }
+            destinationBuilder.append(URLEncoder.encode(destination, "UTF-8"));
+        }
+
+        String urlOrigin = originBuilder.toString();
+        String urlDestination = destinationBuilder.toString();
         String urlMode = URLEncoder.encode(mode, "UTF-8");
 
-        return "https://maps.googleapis.com/maps/api/directions/json?"
-                + "origin=" + urlOrigin
-                + "&destination=" + urlDestination
+        return "https://maps.googleapis.com/maps/api/distancematrix/json?"
+                + "origins=" + urlOrigin
+                + "&destinations=" + urlDestination
                 + "&mode=" + urlMode
                 + "&key=" + apiKey;
     }
 
-    // New method to get distance matrix from Google Maps API
+        // New method to get distance matrix from Google Maps API using OkHttp
     private void getDistanceMatrix(String url) {
+        OkHttpClient client = new OkHttpClient();
 
-        // Make a network request to the Google Maps API
-        // You can use libraries like Retrofit or OkHttp for this
-        // For simplicity, this example uses a basic approach
-        new Thread(() -> {
-            try {
-                URL requestUrl = new URL(url);
-                HttpURLConnection connection = (HttpURLConnection) requestUrl.openConnection();
-                connection.setRequestMethod("GET");
-                connection.connect();
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
 
-                int responseCode = connection.getResponseCode();
-                if (responseCode == 200) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    reader.close();
-                    // Handle the response (parse JSON, etc.)
-                    Log.d("DistanceMatrix", response.toString());
-                } else {
-                    Log.e("DistanceMatrix", "Error: " + responseCode);
-                }
-            } catch (Exception e) {
+        client.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
                 Log.e("DistanceMatrix", "Exception: " + e.getMessage());
             }
-        }).start();
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseData = response.body().string();
+                    // Handle the response (parse JSON, etc.)
+                    Log.d("DistanceMatrix", responseData);
+                } else {
+                    Log.e("DistanceMatrix", "Error: " + response.code());
+                }
+            }
+        });
     }
 
 }
