@@ -264,8 +264,21 @@ public class PlanDurationActivity extends AppCompatActivity
                         }
                         Timestamp startDate = new Timestamp(parsedDate);
 
+                        StringBuilder tripName;
+
+                        if (tripDays == 1) {
+                            tripName = new StringBuilder("1 day trip to ");
+                        } else {
+                            tripName = new StringBuilder(tripDays + " days trip to ");
+                        }
+
+                        for (Location loc: locationList) {
+                            tripName.append(loc.getName()).append(", ");
+                        }
+                        tripName.setLength(tripName.length() - 2);
+
                         // Create Trip object
-                        Trip trip = new Trip("New Trip", startDate, tripDays, locationList, userId);
+                        Trip trip = new Trip(tripName.toString(), startDate, tripDays, locationList, userId);
 
                         // Create FirestoreDB instance and add trip to Firestore
                         FirestoreDB firestore = new FirestoreDB();

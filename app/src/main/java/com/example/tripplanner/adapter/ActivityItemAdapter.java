@@ -64,7 +64,6 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<ActivityItemAdapte
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        // 定义视图元素，例如 TextView
         public TextView activityName;
         public TextView activityDetails;
         public ImageView dragHandle;
@@ -82,7 +81,6 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<ActivityItemAdapte
                 return false;
             });
 
-            // 设置点击事件
             itemView.setOnClickListener(view -> {
                 if (onItemClickListener != null) {
                     int position = getAdapterPosition();
@@ -95,7 +93,6 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<ActivityItemAdapte
 
         public void bind(ActivityItem item) {
             activityName.setText(item.getName());
-            // 设置其他视图元素
             StringBuilder details = new StringBuilder();
             if (item.getStartTime() != null) {
                 details.append("Start Time: ").append(item.getStartTimeString()).append("\n");

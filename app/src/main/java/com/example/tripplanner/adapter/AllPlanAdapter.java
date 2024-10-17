@@ -53,7 +53,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         holder.locations.setText(sb.toString());
 
         // get duration of the trip
-        int days = allPlans.get(position).getLastingDays();
+        int days = allPlans.get(position).getNumDays();
         String dayAndNight;
         if (days == 1) {
             dayAndNight = "1 day";

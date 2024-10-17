@@ -34,6 +34,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class EditPlanActivity extends AppCompatActivity {
 
@@ -126,7 +127,8 @@ public class EditPlanActivity extends AppCompatActivity {
     }
 
     private void setupTripInfo() {
-        tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
+//        tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
+        tripName = trip.getName();
         TextView tripTo = findViewById(R.id.textViewSelectedPlace);
         tripTo.setText(tripName);
         updateDayAndNightText();
@@ -158,14 +160,21 @@ public class EditPlanActivity extends AppCompatActivity {
             TextView tripNameView = findViewById(R.id.textViewSelectedPlace);
             tripName = newTripName;
             tripNameView.setText(newTripName);
+            trip.setName(tripName);
             int newDays = data.getIntExtra("days", days);
             if (days != newDays) {
                 adjustFragmentsForNewDays(newDays);
                 days = newDays;
+                trip.setNumDays(days);
+                trip.setEndDate(new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(days), 0));
                 updateDayAndNightText();
                 refreshTabsAndFragments();
                 loadFragment(fragments.get(0));
             }
+            FirestoreDB firestoreDB = new FirestoreDB();
+            firestoreDB.updateTrip(tripId, trip, listener -> {
+                // Handle success
+            });
         }
     }
 

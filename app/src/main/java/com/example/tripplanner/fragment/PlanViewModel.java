@@ -90,13 +90,8 @@ public class PlanViewModel extends ViewModel {
     }
 
     public void updateActivityList(int dayIndex, ArrayList<ActivityItem> updatedList) {
-        // 更新 activitiesPerDay
         activitiesPerDay.put(dayIndex, updatedList);
-
-        // 更新 trip 的 plans
         updateTripPlans();
-
-        // 通知 LiveData 更新
         Trip currentTrip = tripLiveData.getValue();
         if (currentTrip != null) {
             tripLiveData.setValue(currentTrip);
