@@ -607,7 +607,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             return;
         }
 
-        FirestoreDB firestoreDB = new FirestoreDB();
+        FirestoreDB firestoreDB = FirestoreDB.getInstance();
 
         // Save note input when the user types
         noteInput.addTextChangedListener(new TextWatcher() {

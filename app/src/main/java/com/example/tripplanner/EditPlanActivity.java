@@ -178,7 +178,7 @@ public class EditPlanActivity extends AppCompatActivity {
                 refreshTabsAndFragments();
                 loadFragment(fragments.get(0));
             }
-            FirestoreDB firestoreDB = new FirestoreDB();
+            FirestoreDB firestoreDB = FirestoreDB.getInstance();
             firestoreDB.updateTrip(tripId, trip, listener -> {
                 // Handle success
             });
