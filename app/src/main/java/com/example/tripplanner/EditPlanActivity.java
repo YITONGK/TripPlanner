@@ -17,24 +17,31 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.tripplanner.databinding.ActivityEditPlanBinding;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanFragment;
+import com.example.tripplanner.fragment.PlanViewModel;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.Timestamp;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class EditPlanActivity extends AppCompatActivity {
 
     private String selectedPlace;
+    private Timestamp startDate;
     private int days;
     private String tripName;
     private ActivityEditPlanBinding binding;
@@ -55,23 +62,10 @@ public class EditPlanActivity extends AppCompatActivity {
 
         // Get intent extras
         String tripId = getIntent().getStringExtra("tripId");
-        String jsonString = getIntent().getStringExtra("planDetails");
 
         if (tripId != null && !tripId.isEmpty()) {
-            Log.d("TAG", "Trip ID: " + tripId);
             this.tripId = tripId;
             fetchTripData(tripId);
-        } else if (jsonString != null && !jsonString.isEmpty()) {
-            Log.d("TAG", "Plan Details JSON: " + jsonString);
-            parsePlanDetails(jsonString);
-
-            // Update the UI
-            runOnUiThread(() -> {
-                setupTripInfo();
-                initializeFragmentsAndTabs();
-                setupTabSelectedListener();
-                loadFragment(fragments.get(0));
-            });
         } else {
             // Handle the case where neither tripId nor planDetails are provided
             Log.d("TAG", "No trip ID or plan details provided.");
@@ -94,7 +88,7 @@ public class EditPlanActivity extends AppCompatActivity {
     }
 
     private void fetchTripData(String tripId) {
-        FirestoreDB firestoreDB = new FirestoreDB();
+        FirestoreDB firestoreDB = FirestoreDB.getInstance();
         firestoreDB.getTripByTripId(tripId, this::onTripDataFetched, e -> {
             Log.d("PLAN", "Error getting trip by trip ID: " + e.getMessage());
             // Handle the error appropriately (e.g., show an error message to the user)
@@ -102,9 +96,11 @@ public class EditPlanActivity extends AppCompatActivity {
     }
 
     private void onTripDataFetched(Trip trip) {
-        Log.d("PLAN", "Trip data fetched: " + trip.toString());
         this.trip = trip;
         extractDetailsFromTrip(trip);
+
+        PlanViewModel planViewModel = new ViewModelProvider(this).get(PlanViewModel.class);
+        planViewModel.setTrip(trip);
 
         runOnUiThread(() -> {
             setupTripInfo();
@@ -112,17 +108,6 @@ public class EditPlanActivity extends AppCompatActivity {
             setupTabSelectedListener();
             loadFragment(fragments.get(0));
         });
-    }
-
-    private void parsePlanDetails(String jsonString) {
-        try {
-            JSONObject tripPlan = new JSONObject(jsonString);
-            extractDetailsFromPlan(tripPlan);
-        } catch (JSONException e) {
-            e.printStackTrace();
-            // Handle JSON parsing error
-            Log.d("TAG", "Error parsing plan details: " + e.getMessage());
-        }
     }
 
     private void extractDetailsFromTrip(Trip trip) {
@@ -137,48 +122,20 @@ public class EditPlanActivity extends AppCompatActivity {
             sb.setLength(sb.length() - 2);
         }
         selectedPlace = sb.toString();
+        startDate = trip.getStartDate();
         days = trip.getNumDays();
+
+//        Timestamp startDateTimestamp = trip.getStartDate();
+//        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
+//        Date date = new Date(Long.parseLong(startDateTimestamp.toString()));
+//        startDate = sf.format(date);
 
         // TODO: get activities of the plan
     }
 
-    private void extractDetailsFromPlan(JSONObject tripPlan) {
-        try {
-            JSONArray locationArray = tripPlan.getJSONArray("location");
-            List<Location> locationList = new ArrayList<>();
-
-            for (int i = 0; i < locationArray.length(); i++) {
-                JSONObject locJson = locationArray.getJSONObject(i);
-                String id = locJson.getString("id");
-                String name = locJson.getString("name");
-                String type = locJson.getString("type");
-                double latitude = locJson.getDouble("latitude");
-                double longitude = locJson.getDouble("longitude");
-
-                Location loc = new Location(id, name, type, latitude, longitude);
-                locationList.add(loc);
-            }
-
-            StringBuilder sb = new StringBuilder();
-            for (Location loc : locationList) {
-                sb.append(loc.getName()).append(", ");
-            }
-            if (sb.length() > 0) {
-                sb.setLength(sb.length() - 2);
-            }
-            selectedPlace = sb.toString();
-            days = tripPlan.getInt("days");
-            tripId = tripPlan.getString("tripId");
-
-            // TODO: get activities of the plan
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Log.d("TAG", "Error extracting details from plan: " + e.getMessage());
-        }
-    }
-
     private void setupTripInfo() {
-        tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
+//        tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
+        tripName = trip.getName();
         TextView tripTo = findViewById(R.id.textViewSelectedPlace);
         tripTo.setText(tripName);
         updateDayAndNightText();
@@ -210,14 +167,21 @@ public class EditPlanActivity extends AppCompatActivity {
             TextView tripNameView = findViewById(R.id.textViewSelectedPlace);
             tripName = newTripName;
             tripNameView.setText(newTripName);
+            trip.setName(tripName);
             int newDays = data.getIntExtra("days", days);
             if (days != newDays) {
                 adjustFragmentsForNewDays(newDays);
                 days = newDays;
+                trip.setNumDays(days);
+                trip.setEndDate(new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(days), 0));
                 updateDayAndNightText();
                 refreshTabsAndFragments();
                 loadFragment(fragments.get(0));
             }
+            FirestoreDB firestoreDB = FirestoreDB.getInstance();
+            firestoreDB.updateTrip(tripId, trip, listener -> {
+                // Handle success
+            });
         }
     }
 
@@ -254,7 +218,7 @@ public class EditPlanActivity extends AppCompatActivity {
 
     private void addOverviewFragment(TabLayout tabLayout, FragmentTransaction transaction) {
         tabLayout.addTab(tabLayout.newTab().setText("Overview"));
-        PlanFragment overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, -1);
+        PlanFragment overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, startDate, -1);
         overviewFragment.setLocationList(trip.getLocations());
         overviewFragment.setStartDate(trip.getStartDate().toString());
         overviewFragment.setLastingDays(days);
@@ -266,7 +230,7 @@ public class EditPlanActivity extends AppCompatActivity {
         for (int i = 0; i < days; i++) {
             String tabTitle = "Day " + (i + 1);
             tabLayout.addTab(tabLayout.newTab().setText(tabTitle));
-            PlanFragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
+            PlanFragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, startDate, i);
             transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
             transaction.hide(dayFragment);
             fragments.add(dayFragment);
@@ -299,7 +263,7 @@ public class EditPlanActivity extends AppCompatActivity {
         for (int i = oldDays; i < newDays; i++) {
             String tabTitle = "Day " + (i + 1);
             tabLayout.addTab(tabLayout.newTab().setText(tabTitle));
-            Fragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, i);
+            Fragment dayFragment = PlanFragment.newInstance(PlanFragment.PLAN_SPECIFIC_DAY, startDate, i);
             transaction.add(R.id.fragmentContainerView, dayFragment, "fragment_day_" + i);
             transaction.hide(dayFragment);
             fragments.add(dayFragment);

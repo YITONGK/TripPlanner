@@ -51,7 +51,7 @@ public class Trip {
         
     }
 
-    public Trip(String name, Timestamp endDate, Timestamp startDate, List<Location> locations, String userId) {
+    public Trip(String name, Timestamp startDate, Timestamp endDate, List<Location> locations, String userId) {
         this.name = name;
         this.endDate = endDate;
         this.startDate = startDate;
@@ -85,8 +85,16 @@ public class Trip {
                                           .map(Location::convertLocationToMap)
                                           .collect(Collectors.toList()));
         map.put("note", note);
-        map.put("plans", plans);
         map.put("userIds", userIds);
+        Map<String, List<Map<String, Object>>> plansMap = new HashMap<>();
+        for (Map.Entry<String, List<ActivityItem>> entry : plans.entrySet()) {
+            List<Map<String, Object>> activityMaps = new ArrayList<>();
+            for (ActivityItem activity : entry.getValue()) {
+                activityMaps.add(activity.toMap());
+            }
+            plansMap.put(entry.getKey(), activityMaps);
+        }
+        map.put("plans", plansMap);
         return map;
     }
 
@@ -107,6 +115,9 @@ public class Trip {
     }
 
     public Map<String, List<ActivityItem>> getPlans() {
+        if (plans == null) {
+            plans = new HashMap<>();
+        }
         return plans;
     }
 
@@ -156,8 +167,7 @@ public class Trip {
     }
 
     public int getLastingDays() {
-        long daysBetween = TimeUnit.SECONDS.toDays(startDate.getSeconds() - endDate.getSeconds());
-        System.out.println("Days between: " + daysBetween);
+        long daysBetween = TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
         return (int) daysBetween;
     }
 

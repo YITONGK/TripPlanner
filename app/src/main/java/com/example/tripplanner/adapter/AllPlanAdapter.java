@@ -2,10 +2,10 @@ package com.example.tripplanner.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -13,9 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.tripplanner.MainActivity;
 import com.example.tripplanner.R;
-import com.example.tripplanner.SignupActivity;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
@@ -57,7 +55,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         holder.locations.setText(sb.toString());
 
         // get duration of the trip
-        int days = allPlans.get(position).getLastingDays();
+        int days = allPlans.get(position).getNumDays();
         String dayAndNight;
         if (days == 1) {
             dayAndNight = "1 day";
@@ -76,7 +74,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
             count += plan.size();
         }
         String countStr = count > 1 ? " activities" : " activity";
-        holder.numActivity.setText(countStr);
+        holder.numActivity.setText(count + countStr);
 
         //TODO: get the cover image of the trip
 //        holder.img.setImageResource(allPlans.get(position).getImage());
@@ -90,7 +88,9 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         private ImageView img;
-        private TextView locations, duration, numActivity;
+        TextView locations;
+        private TextView duration;
+        private TextView numActivity;
         private CardView plan;
 
         public ViewHolder(@NonNull View itemView, AllPlanInterface allPlanInterface) {
@@ -108,10 +108,49 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
                         int pos = getAdapterPosition();
                         if (pos != RecyclerView.NO_POSITION) {
                             allPlanInterface.onItemClick(pos);
+                            Log.d("DEBUG", "click on card: "+ pos);
                         }
+                    } else {
+                        Log.d("DEBUG", "interface is null");
                     }
                 }
             });
+        }
+        public void bind(Trip trip) {
+            List<Location> locationList = trip.getLocations();
+            StringBuilder sb = new StringBuilder();
+            for (Location location : locationList) {
+                sb.append(location.getName()).append(", ");
+            }
+            if (sb.length() > 0) {
+                sb.setLength(sb.length() - 2);
+            }
+            locations.setText(sb.toString());
+
+            // get duration of the trip
+            int days = trip.getLastingDays();
+            String dayAndNight;
+            if (days == 1) {
+                dayAndNight = "1 day";
+            }
+            else if (days == 2) {
+                dayAndNight = "2 days and 1 night";
+            } else {
+                dayAndNight = days + " days" + " and " + (days - 1) + " nights";
+            }
+            duration.setText(dayAndNight);
+
+            // get the number of activities of the trip
+            Map<String, List<ActivityItem>> plans = trip.getPlans();
+            int count = 0;
+            for (List<ActivityItem> plan: plans.values()) {
+                count += plan.size();
+            }
+            String countStr = count > 1 ? " activities" : " activity";
+            numActivity.setText(countStr);
+
+
+            // titleTextView.setText(trip.getTitle());
         }
     }
 }

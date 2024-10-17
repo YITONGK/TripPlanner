@@ -57,7 +57,7 @@ dependencies {
 //    implementation("com.google.android.libraries.maps:maps:4.0.0-beta")
     implementation("com.prolificinteractive:material-calendarview:1.4.3")
     implementation("io.github.ShawnLin013:number-picker:2.4.13")
-
+    implementation("com.google.code.gson:gson:2.8.8")
 
     // Import the BoM for the Firebase platform
     implementation(platform("com.google.firebase:firebase-bom:33.2.0"))
@@ -97,7 +97,6 @@ dependencies {
     implementation("androidx.camera:camera-view:1.1.0")
     implementation("com.github.bumptech.glide:glide:4.15.1")
     annotationProcessor("com.github.bumptech.glide:compiler:4.15.1")
-
 }
 
 secrets {

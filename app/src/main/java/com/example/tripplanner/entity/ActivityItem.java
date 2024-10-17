@@ -6,8 +6,11 @@ import com.google.firebase.Timestamp;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class ActivityItem {
     private String name;
@@ -18,18 +21,10 @@ public class ActivityItem {
 
     public ActivityItem (String name) {
         this.name = name;
-//        this.startTime = Timestamp.now();
-//        this.endTime = Timestamp.now();
-//        this.location = new Location("", 0, 0);
         this.notes = "";
     }
 
-    public ActivityItem(String name, Timestamp startTime, Timestamp endTime, String notes) {
-        this.name = name;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.notes = notes;
-    }
+    public ActivityItem () {}
 
     public void setName(String name) {
         this.name = name;
@@ -55,24 +50,20 @@ public class ActivityItem {
         this.startTime = startTime;
     }
 
-    public void setStartTime(String startTime) {
-        this.startTime = convertStringToTimestamp(startTime);
-    }
-
-    public void setEndTime(String endTime) {
-        this.endTime = convertStringToTimestamp(endTime);
-    }
-
     public String getStartTimeString() {
         if (startTime != null) {
-            return startTime.toDate().toString();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(startTime.toDate());
+            return String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
         }
         return "";
     }
 
     public String getEndTimeString() {
         if (endTime != null) {
-            return endTime.toDate().toString();
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(endTime.toDate());
+            return String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
         }
         return "";
     }
@@ -115,8 +106,26 @@ public class ActivityItem {
         this.location = location;
     }
 
-    public void setLocation(String location) {
-        this.location = new Location("", location, "", 0, 0);
-        Log.d("PLAN", "[ActivityItem] setLocation by String");
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", name);
+        map.put("startTime", startTime);
+        map.put("endTime", endTime);
+        map.put("notes", notes);
+        if (location != null) {
+            map.put("location", location.toMap());
+        }
+        return map;
+    }
+
+    @Override
+    public String toString() {
+        return "ActivityItem{" +
+                "name='" + name + '\'' +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", location=" + location +
+                ", notes='" + notes + '\'' +
+                '}';
     }
 }

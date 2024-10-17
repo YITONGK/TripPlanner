@@ -13,6 +13,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.time.LocalDateTime;
@@ -32,9 +33,19 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FirestoreDB {
 
     private FirebaseFirestore firestore;
+    private static FirestoreDB instance; // Singleton instance
 
-    public FirestoreDB() {
+    // Private constructor to prevent instantiation
+    private FirestoreDB() {
         this.firestore = FirebaseFirestore.getInstance();
+    }
+
+    // Public method to provide access to the singleton instance
+    public static synchronized FirestoreDB getInstance() {
+        if (instance == null) {
+            instance = new FirestoreDB();
+        }
+        return instance;
     }
 
     private Timestamp getCurrentDate() {
@@ -86,7 +97,8 @@ public class FirestoreDB {
                                         (String) locMap.get("name"),
                                         (String) locMap.get("type"),
                                         ((Number) locMap.get("latitude")).doubleValue(),
-                                        ((Number) locMap.get("longitude")).doubleValue());
+                                        ((Number) locMap.get("longitude")).doubleValue(),
+                                        (String) locMap.get("country"));
                                 locations.add(location);
                             }
                             String note = document.getString("note");
@@ -200,6 +212,14 @@ public class FirestoreDB {
 
     public void getTripByTripId(String tripId, OnSuccessListener<Trip> onSuccessListener,
             OnFailureListener onFailureListener) {
+        if (tripId == null || tripId.isEmpty()) {
+            Log.e("FirestoreDB", "Invalid trip ID: " + tripId);
+            if (onFailureListener != null) {
+                onFailureListener.onFailure(new IllegalArgumentException("Trip ID cannot be null or empty"));
+            }
+            return;
+        }
+        Log.d("FirestoreDB", tripId);
         firestore.collection("trips")
                 .document(tripId)
                 .get()
@@ -227,7 +247,8 @@ public class FirestoreDB {
                                             (String) locMap.get("name"),
                                             (String) locMap.get("type"),
                                             ((Number) locMap.get("latitude")).doubleValue(),
-                                            ((Number) locMap.get("longitude")).doubleValue());
+                                            ((Number) locMap.get("longitude")).doubleValue(),
+                                            (String) locMap.get("country"));
                                     locations.add(location);
                                 }
                             }
@@ -242,11 +263,24 @@ public class FirestoreDB {
                                             .getValue();
                                     List<ActivityItem> activityItems = new ArrayList<>();
                                     for (Map<String, Object> itemMap : activityItemsMap) {
-                                        ActivityItem item = new ActivityItem(
-                                                (String) itemMap.get("name"),
-                                                (Timestamp) itemMap.get("startTime"),
-                                                (Timestamp) itemMap.get("endTime"),
-                                                (String) itemMap.get("notes"));
+                                        ActivityItem item = new ActivityItem();
+                                        item.setName((String) itemMap.get("name"));
+                                        item.setStartTime((Timestamp) itemMap.get("startTime"));
+                                        item.setEndTime((Timestamp) itemMap.get("endTime"));
+                                        item.setNotes((String) itemMap.get("notes"));
+
+                                        // Reconstruct Location
+                                        Map<String, Object> locationMap = (Map<String, Object>) itemMap.get("location");
+                                        if (locationMap != null) {
+                                            Location location = new Location();
+                                            location.setId((String) locationMap.get("id"));
+                                            location.setName((String) locationMap.get("name"));
+                                            location.setType((String) locationMap.get("type"));
+                                            location.setLatitude(((Number) locationMap.get("latitude")).doubleValue());
+                                            location.setLongitude(
+                                                    ((Number) locationMap.get("longitude")).doubleValue());
+                                            item.setLocation(location);
+                                        }
                                         activityItems.add(item);
                                     }
                                     plans.put(day, activityItems);
@@ -339,6 +373,37 @@ public class FirestoreDB {
                     if (onFailureListener != null) {
                         onFailureListener.onFailure(e);
                     }
+                });
+    }
+
+    // Add new user into an existing trip
+    public void addUserToTrip(String tripId, String newUserId, OnSuccessListener<Void> onSuccessListener,
+            OnFailureListener onFailureListener) {
+        DocumentReference tripRef = firestore.collection("trips").document(tripId);
+
+        tripRef.update("userIds", FieldValue.arrayUnion(newUserId))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("PLAN", "User " + newUserId + " added to trip with ID: " + tripId);
+                    if (onSuccessListener != null) {
+                        onSuccessListener.onSuccess(aVoid);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("PLAN", "Error adding user to trip with ID: " + tripId, e);
+                    if (onFailureListener != null) {
+                        onFailureListener.onFailure(e);
+                    }
+                });
+    }
+
+    public void updateTrip(String tripId, Trip trip, OnSuccessListener<Boolean> listener) {
+        firestore.collection("trips").document(tripId)
+                .set(trip.convertTripToMap())
+                .addOnSuccessListener(aVoid -> {
+                    listener.onSuccess(true);
+                })
+                .addOnFailureListener(e -> {
+                    listener.onSuccess(false);
                 });
     }
 

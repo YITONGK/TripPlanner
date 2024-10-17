@@ -3,7 +3,6 @@ package com.example.tripplanner.utils;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -11,7 +10,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -20,9 +18,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import com.example.tripplanner.BuildConfig;
-import com.example.tripplanner.CreateNewPlanActivity;
-import com.example.tripplanner.PlanConfirmationActivity;
 import com.example.tripplanner.PlanSuggestionDialogFragment;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -36,16 +31,25 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class WeatherTripPlanner implements SensorEventListener {
+public class SensorDetector implements SensorEventListener {
 
     private Activity activity;
     private SensorManager sensorManager;
+
+    // Temperature and Humidity Sensors
     private Sensor temperatureSensor;
     private Sensor humiditySensor;
     private boolean isTemperatureSensorAvailable;
     private boolean isHumiditySensorAvailable;
     private float ambientTemperature;
     private float relativeHumidity;
+    
+    // Shake Sensor and Threshold
+    private Sensor accelerometer;
+    private static final float SHAKE_THRESHOLD = 12.0f; 
+    private static final int SHAKE_WAIT_TIME_MS = 250;
+    private long mShakeTime = 0;
+    private boolean isAccelerometerAvailable;
 
     // Initialize ExecutorService and Handler
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -53,7 +57,7 @@ public class WeatherTripPlanner implements SensorEventListener {
 
     private static final String WEATHER_API_KEY = "eacef29cbb687c3d27f59dd48cdbd5fb";
 
-    public WeatherTripPlanner(Activity activity) {
+    public SensorDetector(Activity activity) {
         this.activity = activity;
         initializeSensors();
     }
@@ -64,14 +68,16 @@ public class WeatherTripPlanner implements SensorEventListener {
         if (sensorManager != null) {
             temperatureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
             humiditySensor = sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
-
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            
             isTemperatureSensorAvailable = temperatureSensor != null;
             isHumiditySensorAvailable = humiditySensor != null;
-
-            Log.d("SENSOR", "Sensors available: " + isTemperatureSensorAvailable + ", " + isHumiditySensorAvailable);
+            isAccelerometerAvailable = accelerometer != null;
+            Log.d("SENSOR", "Sensors available: " + isTemperatureSensorAvailable + ", " + isHumiditySensorAvailable + ", " + isAccelerometerAvailable);
         } else {
             isTemperatureSensorAvailable = false;
             isHumiditySensorAvailable = false;
+            isAccelerometerAvailable = false;
         }
     }
 
@@ -264,12 +270,34 @@ public class WeatherTripPlanner implements SensorEventListener {
             ambientTemperature = event.values[0];
         } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
             relativeHumidity = event.values[0];
+        } else if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+
+            float gX = x / SensorManager.GRAVITY_EARTH;
+            float gY = y / SensorManager.GRAVITY_EARTH;
+            float gZ = z / SensorManager.GRAVITY_EARTH;
+
+            // gForce will be close to 1 when there is no movement.
+            float gForce = (float) Math.sqrt(gX * gX + gY * gY + gZ * gZ);
+
+            if (gForce > SHAKE_THRESHOLD) {
+                final long now = System.currentTimeMillis();
+                // Ignore shake events too close to each other (500ms)
+                if (mShakeTime + SHAKE_WAIT_TIME_MS > now) {
+                    return;
+                }
+                mShakeTime = now;
+
+                // Handle shake event here
+                onShake();
+            }
         }
 
-
-        if (isTemperatureSensorAvailable && isHumiditySensorAvailable) {
-            decideNotificationWithSensorData(ambientTemperature, relativeHumidity);
-        }
+//        if (isTemperatureSensorAvailable && isHumiditySensorAvailable) {
+//            decideNotificationWithSensorData(ambientTemperature, relativeHumidity);
+//        }
     }
 
     @Override
@@ -281,5 +309,8 @@ public class WeatherTripPlanner implements SensorEventListener {
         executorService.shutdown();
     }
 
+    private void onShake() {
+        Log.d("SENSOR", "Device shaken!");
+    }
 
 }
