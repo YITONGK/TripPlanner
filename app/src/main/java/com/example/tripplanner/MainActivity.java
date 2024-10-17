@@ -10,9 +10,11 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 
 import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
+import com.example.tripplanner.utils.RoutePlanner;
 import com.example.tripplanner.utils.WeatherTripPlanner;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -45,9 +47,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
-import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
@@ -218,16 +218,46 @@ public class MainActivity extends AppCompatActivity {
         // Initialize WeatherTripPlanner
         weatherTripPlanner = new WeatherTripPlanner(this);
 
-        List<String> origins = Arrays.asList("New York, NY", "Boston, MA");
-        List<String> destinations = Arrays.asList("Los Angeles, CA", "San Francisco, CA");
-        String mode = "driving";
+        List<ActivityItem> activityItems = new ArrayList<>();
+        // Create some sample ActivityItems
+        ActivityItem item1 = new ActivityItem("Visit Museum");
+        item1.setStartTime(Timestamp.now());
+        item1.setEndTime(Timestamp.now());
+        item1.setLocation(new Location("Museum of Art", 40.779437, -73.963244));
 
-        try {
-            String url = buildDirectionsUrl(origins, destinations, mode);
-            getDistanceMatrix(url);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        ActivityItem item2 = new ActivityItem("Lunch at Central Park");
+        item2.setStartTime(Timestamp.now());
+        item2.setEndTime(Timestamp.now());
+        item2.setLocation(new Location("Central Park", 40.785091, -73.968285));
+
+        ActivityItem item3 = new ActivityItem("Empire State Building Tour");
+        item3.setStartTime(Timestamp.now());
+        item3.setEndTime(Timestamp.now());
+        item3.setLocation(new Location("Empire State Building", 40.748817, -73.985428));
+
+        // Add items to the list
+        activityItems.add(item1);
+        activityItems.add(item2);
+        activityItems.add(item3);
+
+        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
+                Log.d("DistanceMatrix", "DistanceMatrix request failed: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    String responseData = response.body().string();
+                    Log.d("DistanceMatrix", responseData);
+//                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(responseData);
+                    // Use the bestRoute as needed
+                } else {
+                    Log.d("DistanceMatrix", "DistanceMatrix request error: " + response.code());
+                }
+            }
+        });
 
         // Detect weather and plan trip
         // weatherTripPlanner.detectWeatherAndPlanTrip();
@@ -309,64 +339,5 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-        private String buildDirectionsUrl(List<String> origins, List<String> destinations, String mode)
-            throws UnsupportedEncodingException {
-        String apiKey = "AIzaSyB6ERXJUvrKoEbEBTVt4Ofgg_3G3z6tFcQ";
-        
-        // Encode and join origins
-        StringBuilder originBuilder = new StringBuilder();
-        for (String origin : origins) {
-            if (originBuilder.length() > 0) {
-                originBuilder.append("|");
-            }
-            originBuilder.append(URLEncoder.encode(origin, "UTF-8"));
-        }
-        
-        // Encode and join destinations
-        StringBuilder destinationBuilder = new StringBuilder();
-        for (String destination : destinations) {
-            if (destinationBuilder.length() > 0) {
-                destinationBuilder.append("|");
-            }
-            destinationBuilder.append(URLEncoder.encode(destination, "UTF-8"));
-        }
-
-        String urlOrigin = originBuilder.toString();
-        String urlDestination = destinationBuilder.toString();
-        String urlMode = URLEncoder.encode(mode, "UTF-8");
-
-        return "https://maps.googleapis.com/maps/api/distancematrix/json?"
-                + "origins=" + urlOrigin
-                + "&destinations=" + urlDestination
-                + "&mode=" + urlMode
-                + "&key=" + apiKey;
-    }
-
-        // New method to get distance matrix from Google Maps API using OkHttp
-    private void getDistanceMatrix(String url) {
-        OkHttpClient client = new OkHttpClient();
-
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Request request, IOException e) {
-                Log.e("DistanceMatrix", "Exception: " + e.getMessage());
-            }
-
-            @Override
-            public void onResponse(Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    String responseData = response.body().string();
-                    // Handle the response (parse JSON, etc.)
-                    Log.d("DistanceMatrix", responseData);
-                } else {
-                    Log.e("DistanceMatrix", "Error: " + response.code());
-                }
-            }
-        });
-    }
 
 }
