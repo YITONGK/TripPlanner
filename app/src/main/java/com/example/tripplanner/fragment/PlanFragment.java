@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -18,6 +19,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -672,19 +674,55 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+        boolean hasPoints = false; // Variable to track if points are included
 
         HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
 
         for (String key : daysAndLocationsMap.keySet()) {
             List<Double[]> latLngList = daysAndLocationsMap.get(key);
-            String days = String.valueOf((Integer.parseInt(key)+1));
-            addMarkersForLatLngList(latLngList, "DAY"+days, boundsBuilder);
-            //Add route for all days
-            getRoutePoints(latLngList);
-        }
-        int padding = 100;
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding));
+            String days = String.valueOf((Integer.parseInt(key) + 1));
 
+            if (latLngList != null && !latLngList.isEmpty()) {
+                for (Double[] coords : latLngList) {
+                    if (coords != null && coords.length >= 2) {
+                        LatLng point = new LatLng(coords[0], coords[1]);
+                        mMap.addMarker(new MarkerOptions().position(point).title("DAY" + days));
+                        boundsBuilder.include(point); // Include point in bounds
+                        hasPoints = true; // Set to true since we've added a point
+                    }
+                }
+                // Add route for all days
+                getRoutePoints(latLngList);
+            }
+        }
+
+        int padding = 100;
+        if (hasPoints) {
+            final LatLngBounds bounds = boundsBuilder.build();
+            final View mapView = getView().findViewById(R.id.map); // Ensure this is the correct ID
+
+            if (mapView.getViewTreeObserver().isAlive()) {
+                mapView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @SuppressWarnings("deprecation")
+                    @Override
+                    public void onGlobalLayout() {
+                        // Remove the listener to prevent multiple calls
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                            mapView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                        } else {
+                            mapView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        }
+
+                        // Now that the layout has happened, move the camera
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding));
+                    }
+                });
+            }
+        } else {
+            // Handle the case where no points are included
+            LatLng defaultLocation = new LatLng(0, 0); // Replace with a meaningful default location
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 1));
+        }
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
