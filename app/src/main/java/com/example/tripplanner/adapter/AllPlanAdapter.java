@@ -117,6 +117,10 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
             });
         }
         public void bind(Trip trip) {
+            if (trip == null){
+                Log.d("MEMORY", "Trip is null");
+                return;
+            }
             List<Location> locationList = trip.getLocations();
             StringBuilder sb = new StringBuilder();
             for (Location location : locationList) {

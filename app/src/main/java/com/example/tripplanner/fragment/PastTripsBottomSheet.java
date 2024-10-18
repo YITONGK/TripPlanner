@@ -94,8 +94,9 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment implements A
         Map<String, List<Trip>> tripsByCountry = new HashMap<>();
         for (Trip trip : trips) {
             for (Location location : trip.getLocations()) {
-                // String country = location.getType(); // Assuming Location has a getCountry()
-                String country = "Country";
+                 String country = location.getCountry() == null ? "Others" : location.getCountry();
+                 Log.d("MEMORY", "Country: "+country);
+//                String country = "Country";
                 if (!tripsByCountry.containsKey(country)) {
                     tripsByCountry.put(country, new ArrayList<>());
                 }

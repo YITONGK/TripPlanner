@@ -164,6 +164,8 @@ public class CreateNewPlanActivity extends AppCompatActivity {
                 country
         );
 
+        Log.d("new_location", loc.toString());
+
         intent.putExtra("selectedPlace", loc);
 
         startActivity(intent);
