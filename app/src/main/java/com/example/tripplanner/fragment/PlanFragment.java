@@ -4,6 +4,10 @@ import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -25,6 +29,12 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
+import com.codebyashish.googledirectionapi.AbstractRouting;
+import com.codebyashish.googledirectionapi.ErrorHandling;
+import com.codebyashish.googledirectionapi.RouteDrawing;
+import com.codebyashish.googledirectionapi.RouteInfoModel;
+import com.codebyashish.googledirectionapi.RouteListener;
+import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.MapActivity;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.db.FirestoreDB;
@@ -40,7 +50,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import androidx.lifecycle.Observer;
@@ -62,6 +74,10 @@ import java.util.Collections;
 import java.util.List;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.maps.model.RoundCap;
+import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
@@ -74,6 +90,7 @@ import com.google.firebase.Timestamp;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -81,7 +98,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 
-public class PlanFragment extends Fragment implements OnMapReadyCallback, ActivityItemAdapter.OnStartDragListener {
+public class PlanFragment extends Fragment implements OnMapReadyCallback, ActivityItemAdapter.OnStartDragListener, RouteListener {
 
     public static final int OVERVIEW = 0;
     public static final int PLAN_SPECIFIC_DAY = 1;
@@ -114,7 +131,9 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     private ArrayList<Map<Integer, Weather>> allWeatherData = new ArrayList<>();
     private WeatherAdapter weatherAdapter;
     private WeatherAPIClient weatherAPIClient;
-    private String savedNotes;
+    private List<Polyline> polylines = new ArrayList<>();
+    private Random random = new Random(123);
+
     public interface OnPlaceFetchedListener {
         void onPlaceFetched(Location location);
     }
@@ -652,14 +671,20 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
 
-//        modify here
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-
-//        Days : [lat, lon]
         HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
+
+        for (String key : daysAndLocationsMap.keySet()) {
+            List<Double[]> latLngList = daysAndLocationsMap.get(key);
+            String days = String.valueOf((Integer.parseInt(key)+1));
+            addMarkersForLatLngList(latLngList, "DAY"+days, boundsBuilder);
+            //Add route for all days
+            getRoutePoints(latLngList);
+        }
+        int padding = 100;
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding));
+
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
@@ -669,6 +694,116 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 startActivity(intent);
             }
         });
+    }
+
+    private void getRoutePoints(List<Double[]> latLngList) {
+        if (latLngList == null || latLngList.size() < 2) {
+            Log.d("MapActivity", "Not enough waypoints to draw route");
+            return;
+        }
+
+        List<LatLng> waypoints = new ArrayList<>();
+        for (Double[] location : latLngList) {
+            waypoints.add(new LatLng(location[0], location[1]));
+            Log.d("location", "lat: "+location[0]+" lon: "+ location[1]);
+        }
+
+        Log.d("MapActivity", "Waypoints: " + waypoints);
+
+        try {
+            RouteDrawing routeDrawing = new RouteDrawing.Builder()
+                    .context(PlanFragment.this.getContext())
+                    .travelMode(AbstractRouting.TravelMode.DRIVING)
+                    .withListener(PlanFragment.this)
+                    .alternativeRoutes(true)
+                    .waypoints(waypoints)
+                    .build();
+            Log.d("MapActivity", "Executing RouteDrawing");
+            routeDrawing.execute();
+        } catch (Exception e) {
+            Log.e("MapActivity", "Error in RouteDrawing setup", e);
+        }
+    }
+
+    @Override
+    public void onRouteFailure(ErrorHandling e) {
+        Log.e("MapActivity", "Route calculation failed: " + e.getMessage());
+    }
+
+    @Override
+    public void onRouteStart() {
+        Log.d("TAG", "yes started");
+    }
+
+    @Override
+    public void onRouteSuccess(ArrayList<RouteInfoModel> routeInfoModelArrayList, int routeIndexing) {
+        Log.d("MapActivity", "onRouteSuccess called. Routes: " + routeInfoModelArrayList.size());
+
+//        if ( polylines != null) {
+//            for (Polyline line : polylines) {
+//                line.remove();
+//            }
+//            polylines.clear();
+//        }
+        PolylineOptions polylineOptions = new PolylineOptions();
+        // Generate a random color
+
+        int randomColor = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256));
+        for (int i = 0; i < routeInfoModelArrayList.size(); i++) {
+            if (i == routeIndexing) {
+                Log.e("TAG", "onRoutingSuccess: routeIndexing" + routeIndexing);
+                polylineOptions.color(randomColor);
+                polylineOptions.width(12);
+                polylineOptions.addAll(routeInfoModelArrayList.get(routeIndexing).getPoints());
+                polylineOptions.startCap(new RoundCap());
+                polylineOptions.endCap(new RoundCap());
+                Polyline polyline = mMap.addPolyline(polylineOptions);
+                polylines.add(polyline);
+            }
+        }
+    }
+
+    @Override
+    public void onRouteCancelled() {
+        Log.d("TAG", "route canceled");
+        // restart your route drawing
+    }
+
+    private void addMarkersForLatLngList(List<Double[]> latLngList, String title, LatLngBounds.Builder boundsBuilder) {
+        for (Double[] latLng : latLngList) {
+            double latitude = latLng[0];
+            double longitude = latLng[1];
+            LatLng location = new LatLng(latitude, longitude);
+
+            mMap.addMarker(new MarkerOptions()
+                    .position(location)
+                    .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(title))));
+            boundsBuilder.include(location);
+        }
+    }
+
+    private Bitmap createCustomMarker(String text) {
+
+        Bitmap bitmap = Bitmap.createBitmap(200, 100, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        //background
+        Paint backgroundPaint = new Paint();
+        backgroundPaint.setColor(Color.LTGRAY);
+        backgroundPaint.setStyle(Paint.Style.FILL);
+
+        //background size
+        canvas.drawRect(0, 0, 200, 100, backgroundPaint);
+
+        //text
+        Paint textPaint = new Paint();
+        textPaint.setTextSize(40);
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+
+        canvas.drawText(text, 100, 60, textPaint);
+
+        return bitmap;
     }
 
     public void setLastingDays(int lastingDays) {
