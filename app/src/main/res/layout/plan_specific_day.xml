@@ -4,6 +4,14 @@
     android:layout_height="wrap_content"
     android:padding="16dp">
 
+    <ImageButton
+        android:id="@+id/settingSuggest"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/baseline_settings_suggest_24"
+    />
+
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/activityLocationRecyclerView"
         android:layout_width="match_parent"
