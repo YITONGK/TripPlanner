@@ -1,6 +1,9 @@
 package com.example.tripplanner;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.content.Intent;
 import android.util.Log;
@@ -24,6 +27,7 @@ import com.example.tripplanner.databinding.ActivityMapBinding;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -74,7 +78,10 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
             if (tabPosition == 0) {
                 for (String key : receivedMap.keySet()) {
                     List<Double[]> latLngList = receivedMap.get(key);
-                    addMarkersForLatLngList(latLngList, key, boundsBuilder);
+                    String days = String.valueOf((Integer.parseInt(key)+1));
+                    addMarkersForLatLngList(latLngList, "DAY"+days, boundsBuilder);
+                    //Add route for all days
+                    getRoutePoints(latLngList);
                 }
             } else {
                 String key = String.valueOf(tabPosition - 1);
@@ -83,7 +90,8 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
                     googleMap.clear();
                     return;
                 }
-                addMarkersForLatLngList(latLngList, "Key " + key, boundsBuilder);
+                String days = String.valueOf((Integer.parseInt(key)+1));
+                addMarkersForLatLngList(latLngList, "DAY"+days, boundsBuilder);
                 // Add route drawing for specific day
                 getRoutePoints(latLngList);
             }
@@ -97,7 +105,10 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
             double latitude = latLng[0];
             double longitude = latLng[1];
             LatLng location = new LatLng(latitude, longitude);
-            googleMap.addMarker(new MarkerOptions().position(location).title(title));
+
+            googleMap.addMarker(new MarkerOptions()
+                    .position(location)
+                    .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(title))));
             boundsBuilder.include(location);
         }
     }
@@ -163,9 +174,6 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
             Log.d("location", "lat: "+location[0]+" lon: "+ location[1]);
         }
 
-//        waypoints.add(new LatLng( 37.5545979,  126.9722825)); // San Francisco
-//        waypoints.add(new LatLng(37.5454365,  127.0367054)); // Los Angeles
-
         Log.d("MapActivity", "Waypoints: " + waypoints);
 
         try {
@@ -194,11 +202,13 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
         Log.d("TAG", "yes started");
     }
 
-
     @Override
     public void onRouteSuccess(ArrayList<RouteInfoModel> routeInfoModelArrayList, int routeIndexing) {
         Log.d("MapActivity", "onRouteSuccess called. Routes: " + routeInfoModelArrayList.size());
-        if (polylines != null) {
+
+        boolean isOverviewMode = binding.tabLayoutOverview.getSelectedTabPosition() == 0;
+
+        if (!isOverviewMode && polylines != null) {
             for (Polyline line : polylines) {
                 line.remove();
             }
@@ -227,4 +237,29 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
         Log.d("TAG", "route canceled");
         // restart your route drawing
     }
+
+    private Bitmap createCustomMarker(String text) {
+
+        Bitmap bitmap = Bitmap.createBitmap(200, 100, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        //background
+        Paint backgroundPaint = new Paint();
+        backgroundPaint.setColor(Color.LTGRAY);
+        backgroundPaint.setStyle(Paint.Style.FILL);
+
+        //background size
+        canvas.drawRect(0, 0, 200, 100, backgroundPaint);
+
+        //text
+        Paint textPaint = new Paint();
+        textPaint.setTextSize(40);
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+
+        canvas.drawText(text, 100, 60, textPaint);
+
+        return bitmap;
+    }
+
 }
