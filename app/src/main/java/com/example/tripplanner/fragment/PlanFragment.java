@@ -4,6 +4,11 @@ import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,8 +19,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -25,22 +32,34 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
+import com.codebyashish.googledirectionapi.AbstractRouting;
+import com.codebyashish.googledirectionapi.ErrorHandling;
+import com.codebyashish.googledirectionapi.RouteDrawing;
+import com.codebyashish.googledirectionapi.RouteInfoModel;
+import com.codebyashish.googledirectionapi.RouteListener;
+import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.MapActivity;
+import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
+import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.utils.GptApiClient;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.utils.RoutePlanner;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import androidx.lifecycle.Observer;
@@ -62,6 +81,10 @@ import java.util.Collections;
 import java.util.List;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.maps.model.RoundCap;
+import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
@@ -74,6 +97,7 @@ import com.google.firebase.Timestamp;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -81,7 +105,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 
-public class PlanFragment extends Fragment implements OnMapReadyCallback, ActivityItemAdapter.OnStartDragListener {
+public class PlanFragment extends Fragment implements OnMapReadyCallback, ActivityItemAdapter.OnStartDragListener, RouteListener {
 
     public static final int OVERVIEW = 0;
     public static final int PLAN_SPECIFIC_DAY = 1;
@@ -114,7 +138,9 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     private ArrayList<Map<Integer, Weather>> allWeatherData = new ArrayList<>();
     private WeatherAdapter weatherAdapter;
     private WeatherAPIClient weatherAPIClient;
-    private String savedNotes;
+    private List<Polyline> polylines = new ArrayList<>();
+    private Random random = new Random(123);
+
     public interface OnPlaceFetchedListener {
         void onPlaceFetched(Location location);
     }
@@ -233,6 +259,81 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 public void onClick(View view) {
                     showAddActivityDialog();
                 }
+            });
+
+            // Find the planSuggest button
+            ImageButton planSuggestButton = rootView.findViewById(R.id.planSuggest);
+
+            // Set an OnClickListener for the planSuggest button
+            planSuggestButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // Call the recommendTripPlan method
+                    String destination = "Melbourne, Australia"; // Example destination
+                    String weatherForecast = "Sunny with a high of 25°C"; // Example weather forecast
+                    String userPreferences = "Enjoys coffee shops and outdoor activities"; // Example user preferences
+
+                    GptApiClient.recommendTripPlan(destination, weatherForecast, userPreferences, new GptApiClient.GptApiCallback() {
+                        @Override
+                        public void onSuccess(String response) {
+                            // Handle the successful response here
+                            Log.d("PlanFragment", "Trip plan recommended: " + response);
+
+                            // Parse the JSON response into a list of ActivityItem objects
+                            List<ActivityItem> recommendedActivities = GptApiClient.parseActivityItemsFromJson(response, placesClient);
+
+//                            // Update the activityItemArray with the new recommended activities
+//                            activityItemArray.clear();
+//                            activityItemArray.addAll(recommendedActivities);
+//
+//                            // Notify the adapter that the data has changed
+//                            adapter.notifyDataSetChanged();
+
+                            // Update in ViewModel and save
+                            for (ActivityItem activityItem: recommendedActivities){
+                                viewModel.addActivity(dayIndex, activityItem);
+                            }
+
+                            adapter.notifyDataSetChanged();
+                            viewModel.saveTripToDatabase();
+
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            // Handle the error here
+                            Log.e("PlanFragment", "Failed to recommend trip plan: " + error);
+                            Toast.makeText(getContext(), "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
+
+            // Fetch the distance matrix
+            RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
+                @Override
+                public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+                    // Handle the successful result
+                    Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
+                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItemArray);
+                    Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
+
+                    if (activityItemArray.size() > 1){
+                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
+                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
+                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
+                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
+                    }
+
+
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    // Handle the error
+                    Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+                }
+
             });
 
 
@@ -625,6 +726,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             @Override
             public void afterTextChanged(Editable s) {
 //                Log.d("trip note saved", "new trip: " + trip.toString());
+                Log.d("GPT", "ActivityItem: "+trip.getPlans());
                 firestoreDB.updateTrip(trip.getId(), trip, success -> {
                     if (success) {
                         Log.d("trip saved", "saveTripToDatabase: success");
@@ -652,14 +754,56 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+        boolean hasPoints = false; // Variable to track if points are included
 
-//        modify here
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-
-//        Days : [lat, lon]
         HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
+
+        for (String key : daysAndLocationsMap.keySet()) {
+            List<Double[]> latLngList = daysAndLocationsMap.get(key);
+            String days = String.valueOf((Integer.parseInt(key) + 1));
+
+            if (latLngList != null && !latLngList.isEmpty()) {
+                for (Double[] coords : latLngList) {
+                    if (coords != null && coords.length >= 2) {
+                        LatLng point = new LatLng(coords[0], coords[1]);
+                        mMap.addMarker(new MarkerOptions().position(point).title("DAY" + days));
+                        boundsBuilder.include(point); // Include point in bounds
+                        hasPoints = true; // Set to true since we've added a point
+                    }
+                }
+                // Add route for all days
+                getRoutePoints(latLngList);
+            }
+        }
+
+        int padding = 100;
+        if (hasPoints) {
+            final LatLngBounds bounds = boundsBuilder.build();
+            final View mapView = getView().findViewById(R.id.map); // Ensure this is the correct ID
+
+            if (mapView.getViewTreeObserver().isAlive()) {
+                mapView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @SuppressWarnings("deprecation")
+                    @Override
+                    public void onGlobalLayout() {
+                        // Remove the listener to prevent multiple calls
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+                            mapView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                        } else {
+                            mapView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        }
+
+                        // Now that the layout has happened, move the camera
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding));
+                    }
+                });
+            }
+        } else {
+            // Handle the case where no points are included
+            LatLng defaultLocation = new LatLng(0, 0); // Replace with a meaningful default location
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 1));
+        }
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
@@ -669,6 +813,116 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 startActivity(intent);
             }
         });
+    }
+
+    private void getRoutePoints(List<Double[]> latLngList) {
+        if (latLngList == null || latLngList.size() < 2) {
+            Log.d("MapActivity", "Not enough waypoints to draw route");
+            return;
+        }
+
+        List<LatLng> waypoints = new ArrayList<>();
+        for (Double[] location : latLngList) {
+            waypoints.add(new LatLng(location[0], location[1]));
+            Log.d("location", "lat: "+location[0]+" lon: "+ location[1]);
+        }
+
+        Log.d("MapActivity", "Waypoints: " + waypoints);
+
+        try {
+            RouteDrawing routeDrawing = new RouteDrawing.Builder()
+                    .context(PlanFragment.this.getContext())
+                    .travelMode(AbstractRouting.TravelMode.DRIVING)
+                    .withListener(PlanFragment.this)
+                    .alternativeRoutes(true)
+                    .waypoints(waypoints)
+                    .build();
+            Log.d("MapActivity", "Executing RouteDrawing");
+            routeDrawing.execute();
+        } catch (Exception e) {
+            Log.e("MapActivity", "Error in RouteDrawing setup", e);
+        }
+    }
+
+    @Override
+    public void onRouteFailure(ErrorHandling e) {
+        Log.e("MapActivity", "Route calculation failed: " + e.getMessage());
+    }
+
+    @Override
+    public void onRouteStart() {
+        Log.d("TAG", "yes started");
+    }
+
+    @Override
+    public void onRouteSuccess(ArrayList<RouteInfoModel> routeInfoModelArrayList, int routeIndexing) {
+        Log.d("MapActivity", "onRouteSuccess called. Routes: " + routeInfoModelArrayList.size());
+
+//        if ( polylines != null) {
+//            for (Polyline line : polylines) {
+//                line.remove();
+//            }
+//            polylines.clear();
+//        }
+        PolylineOptions polylineOptions = new PolylineOptions();
+        // Generate a random color
+
+        int randomColor = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256));
+        for (int i = 0; i < routeInfoModelArrayList.size(); i++) {
+            if (i == routeIndexing) {
+                Log.e("TAG", "onRoutingSuccess: routeIndexing" + routeIndexing);
+                polylineOptions.color(randomColor);
+                polylineOptions.width(12);
+                polylineOptions.addAll(routeInfoModelArrayList.get(routeIndexing).getPoints());
+                polylineOptions.startCap(new RoundCap());
+                polylineOptions.endCap(new RoundCap());
+                Polyline polyline = mMap.addPolyline(polylineOptions);
+                polylines.add(polyline);
+            }
+        }
+    }
+
+    @Override
+    public void onRouteCancelled() {
+        Log.d("TAG", "route canceled");
+        // restart your route drawing
+    }
+
+    private void addMarkersForLatLngList(List<Double[]> latLngList, String title, LatLngBounds.Builder boundsBuilder) {
+        for (Double[] latLng : latLngList) {
+            double latitude = latLng[0];
+            double longitude = latLng[1];
+            LatLng location = new LatLng(latitude, longitude);
+
+            mMap.addMarker(new MarkerOptions()
+                    .position(location)
+                    .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(title))));
+            boundsBuilder.include(location);
+        }
+    }
+
+    private Bitmap createCustomMarker(String text) {
+
+        Bitmap bitmap = Bitmap.createBitmap(200, 100, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        //background
+        Paint backgroundPaint = new Paint();
+        backgroundPaint.setColor(Color.LTGRAY);
+        backgroundPaint.setStyle(Paint.Style.FILL);
+
+        //background size
+        canvas.drawRect(0, 0, 200, 100, backgroundPaint);
+
+        //text
+        Paint textPaint = new Paint();
+        textPaint.setTextSize(40);
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+
+        canvas.drawText(text, 100, 60, textPaint);
+
+        return bitmap;
     }
 
     public void setLastingDays(int lastingDays) {

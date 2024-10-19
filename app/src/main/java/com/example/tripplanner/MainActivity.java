@@ -1,6 +1,9 @@
 package com.example.tripplanner;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -14,6 +17,7 @@ import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.RoutePlanner;
 import com.example.tripplanner.utils.SensorDetector;
+import com.example.tripplanner.utils.CaptureAct;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.net.PlacesClient;
@@ -22,6 +26,7 @@ import com.google.android.material.navigation.NavigationBarView;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -40,6 +45,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import com.google.firebase.Timestamp;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,6 +142,14 @@ public class MainActivity extends AppCompatActivity {
 
                             EditText tripIDView = importPlanBottomSheet.findViewById(R.id.planID);
                             Button confirmButton = importPlanView.findViewById(R.id.confirmButton);
+                            Button scanBtn = importPlanView.findViewById(R.id.scanBtn);
+
+                            scanBtn.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    scanCode();
+                                }
+                            });
 
                             confirmButton.setOnClickListener(new View.OnClickListener() {
                                 @Override
@@ -210,40 +227,40 @@ public class MainActivity extends AppCompatActivity {
         // weatherTripPlanner.detectWeatherAndPlanTrip();
 
         // Example usage of Route Planner
-        List<ActivityItem> activityItems = new ArrayList<>();
-        // Create some sample ActivityItems
-        ActivityItem item1 = new ActivityItem("Visit NYU");
-        item1.setLocation(new Location("New York University", 40.779437, -73.963244));
+//        List<ActivityItem> activityItems = new ArrayList<>();
+//        // Create some sample ActivityItems
+//        ActivityItem item1 = new ActivityItem("Visit NYU");
+//        item1.setLocation(new Location("New York University", 40.779437, -73.963244));
+//
+//        ActivityItem item2 = new ActivityItem("Lunch at Central Park");
+//        item2.setLocation(new Location("Central Park", 40.785091, -73.968285));
+//
+//        ActivityItem item3 = new ActivityItem("Empire State Building Tour");
+//        item3.setLocation(new Location("Empire State Building", 40.748817, -73.985428));
+//
+//        // Add items to the list
+//        activityItems.add(item1);
+//        activityItems.add(item2);
+//        activityItems.add(item3);
 
-        ActivityItem item2 = new ActivityItem("Lunch at Central Park");
-        item2.setLocation(new Location("Central Park", 40.785091, -73.968285));
-
-        ActivityItem item3 = new ActivityItem("Empire State Building Tour");
-        item3.setLocation(new Location("Empire State Building", 40.748817, -73.985428));
-
-        // Add items to the list
-        activityItems.add(item1);
-        activityItems.add(item2);
-        activityItems.add(item3);
-
-        // Fetch the distance matrix
-        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
-            @Override
-            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-                // Handle the successful result
-                Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
-                List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItems);
-                Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
-
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                // Handle the error
-                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
-            }
-
-        });
+//        // Fetch the distance matrix
+//        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
+//            @Override
+//            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+//                // Handle the successful result
+//                Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
+//                List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItems);
+//                Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
+//
+//            }
+//
+//            @Override
+//            public void onFailure(Exception e) {
+//                // Handle the error
+//                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+//            }
+//
+//        });
 
     }
 
@@ -279,5 +296,49 @@ public class MainActivity extends AppCompatActivity {
                     .commit();
         }
     }
+
+    private void scanCode() {
+        ScanOptions options = new ScanOptions();
+        options.setBeepEnabled(true);
+        options.setOrientationLocked(true);
+        options.setCaptureActivity(CaptureAct.class);
+        barLauncher.launch(options);
+    }
+
+    ActivityResultLauncher<ScanOptions> barLauncher = registerForActivityResult(new ScanContract(), result -> {
+        if (result.getContents() != null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle("Plan ID");
+            String tripID = result.getContents();
+            builder.setMessage(tripID);
+            builder.setPositiveButton("Import", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    dialogInterface.dismiss();
+                    FirestoreDB firestoreDB = FirestoreDB.getInstance();
+                    // Ensure currentUser is not null
+                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                    if (currentUser != null) {
+                        String userId = currentUser.getUid();
+
+                        // Add user to the trip
+                        firestoreDB.addUserToTrip(tripID, userId,
+                            (Void) -> {
+                                Log.d("IMPORT PLAN", "Successfully added user to trip");
+                                // Navigate to added trip details
+                                Intent intent = new Intent(MainActivity.this, EditPlanActivity.class);
+                                intent.putExtra("tripId", tripID);
+                                startActivity(intent);
+                            },
+                            e -> Log.e("IMPORT PLAN", "Failed to add user to trip: " + e.getMessage())
+                        );
+                    }
+
+
+                }
+            }).show();
+        }
+    });
+
 
 }
