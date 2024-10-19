@@ -301,6 +301,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     viewModel.addActivity(dayIndex, activityItem);
                     adapter.notifyDataSetChanged();
                     viewModel.saveTripToDatabase();
+                    showEditActivityDialog(activityItemArray.size() - 1);
                 } else {
                     Toast.makeText(getContext(), "Please enter something", Toast.LENGTH_SHORT).show();
                 }

@@ -328,6 +328,7 @@ public class MainActivity extends AppCompatActivity {
                                 // Navigate to added trip details
                                 Intent intent = new Intent(MainActivity.this, EditPlanActivity.class);
                                 intent.putExtra("tripId", tripID);
+                                intent.putExtra("From", "Main");
                                 startActivity(intent);
                             },
                             e -> Log.e("IMPORT PLAN", "Failed to add user to trip: " + e.getMessage())
