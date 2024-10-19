@@ -44,6 +44,10 @@ public class  Location implements Serializable {
         return id;
     }
 
+    public String getNonNullIdOrName() {
+        return id != null ? id : name;
+    }
+
     public void setId(String id) {
         this.id = id;
     }

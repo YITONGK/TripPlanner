@@ -5,6 +5,7 @@ import android.util.Log;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
+import com.example.tripplanner.entity.Location;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
@@ -25,15 +26,16 @@ public class RoutePlanner {
 //    private List<DistanceMatrixEntry> distanceMatrix;
 
     public static void fetchDistanceMatrix(List<ActivityItem> activityItems, String mode, DistanceMatrixCallback callback) {
-        List<String> locations = new ArrayList<>();
+        List<Location> locations = new ArrayList<>();
         for (ActivityItem item : activityItems) {
             if (item.getLocation() != null) {
-                locations.add(item.getLocation().getName());
+                locations.add(item.getLocation());
             }
         }
 
         try {
             String url = buildDirectionsUrl(locations, mode);
+            Log.d("RoutePlanner", url);
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder().url(url).build();
             client.newCall(request).enqueue(new Callback() {
@@ -61,7 +63,7 @@ public class RoutePlanner {
         }
     }
 
-     private static List<DistanceMatrixEntry> parseDistanceMatrixResponse(String jsonResponse, List<String> locations, String mode) {
+     private static List<DistanceMatrixEntry> parseDistanceMatrixResponse(String jsonResponse, List<Location> locations, String mode) {
         List<DistanceMatrixEntry> entries = new ArrayList<>();
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -75,8 +77,8 @@ public class RoutePlanner {
                     String duration = element.getJSONObject("duration").getString("text");
 
                     entries.add(new DistanceMatrixEntry(
-                            locations.get(i),
-                            locations.get(j),
+                            locations.get(i).getNonNullIdOrName(),
+                            locations.get(j).getNonNullIdOrName(),
                             mode,
                             distance,
                             duration
@@ -90,13 +92,27 @@ public class RoutePlanner {
     }
 
 
-    private static String buildDirectionsUrl(List<String> locations, String mode) throws Exception {
+    private static String buildDirectionsUrl(List<Location> locations, String mode) throws Exception {
         StringBuilder locationBuilder = new StringBuilder();
-        for (String location : locations) {
-            if (locationBuilder.length() > 0) {
-                locationBuilder.append("|");
+        for (Location location : locations) {
+            if (location.getId() != null && !location.getId().isEmpty()) {
+                if (locationBuilder.length() > 0) {
+                    locationBuilder.append("|");
+                }
+                locationBuilder.append("place_id:").append(URLEncoder.encode(location.getId(), "UTF-8"));
             }
-            locationBuilder.append(URLEncoder.encode(location, "UTF-8"));
+//            else if (location.getLatitude() != 0 && location.getLongitude() != 0) {
+//                if (locationBuilder.length() > 0) {
+//                    locationBuilder.append("|");
+//                }
+//                locationBuilder.append(location.getLatitude()).append(",").append(location.getLongitude());
+//            }
+            else if (location.getName() != null && !location.getName().isEmpty()) {
+                if (locationBuilder.length() > 0) {
+                    locationBuilder.append("|");
+                }
+                locationBuilder.append(URLEncoder.encode(location.getName(), "UTF-8"));
+            }
         }
 
         return "https://maps.googleapis.com/maps/api/distancematrix/json?"
