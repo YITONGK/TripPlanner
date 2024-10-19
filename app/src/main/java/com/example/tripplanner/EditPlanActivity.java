@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class EditPlanActivity extends AppCompatActivity {
@@ -49,6 +50,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private FragmentManager fragmentManager;
     private Trip trip;
     private String tripId;
+    private String from;
 
     private ActivityResultLauncher<Intent> planSettingsLauncher;
 
@@ -62,6 +64,7 @@ public class EditPlanActivity extends AppCompatActivity {
 
         // Get intent extras
         String tripId = getIntent().getStringExtra("tripId");
+        from = getIntent().getStringExtra("From");
 
         if (tripId != null && !tripId.isEmpty()) {
             this.tripId = tripId;
@@ -144,10 +147,15 @@ public class EditPlanActivity extends AppCompatActivity {
     private void setupCloseButton() {
         ImageButton closeButton = findViewById(R.id.closeButton);
         closeButton.setOnClickListener(view -> {
-            Intent intent = new Intent(EditPlanActivity.this, MainActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            intent.putExtra("select_navigation_plan", true);
-            startActivity(intent);
+            if (Objects.equals(from, "Main")) {
+                Intent intent = new Intent(EditPlanActivity.this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                intent.putExtra("select_navigation_plan", true);
+                startActivity(intent);
+            }
+            else {
+                finish();
+            }
         });
     }
 
