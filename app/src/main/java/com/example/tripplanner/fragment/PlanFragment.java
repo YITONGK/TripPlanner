@@ -280,22 +280,43 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                             Log.d("PlanFragment", "Trip plan recommended: " + response);
 
                             // Parse the JSON response into a list of ActivityItem objects
-                            List<ActivityItem> recommendedActivities = GptApiClient.parseActivityItemsFromJson(response, placesClient);
+                            GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
+                                @Override
+                                public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
+                                    Log.d("PlanFragment", "RecommendActivities: "+recommendedActivities);
 
-//                            // Update the activityItemArray with the new recommended activities
+//                                    // Update the activityItemArray with the new recommended activities
+//                                    activityItemArray.clear();
+//                                    activityItemArray.addAll(recommendedActivities);
+//
+
+
+                                    // Update in ViewModel and save
+                                    for (ActivityItem activityItem : recommendedActivities) {
+                                        viewModel.addActivity(dayIndex, activityItem);
+                                    }
+
+                                    viewModel.saveTripToDatabase();
+
+                                    // Notify the adapter that the data has changed
+                                    adapter.notifyDataSetChanged();
+                                }
+                            });
+
+////                            // Update the activityItemArray with the new recommended activities
 //                            activityItemArray.clear();
 //                            activityItemArray.addAll(recommendedActivities);
 //
 //                            // Notify the adapter that the data has changed
 //                            adapter.notifyDataSetChanged();
-
-                            // Update in ViewModel and save
-                            for (ActivityItem activityItem: recommendedActivities){
-                                viewModel.addActivity(dayIndex, activityItem);
-                            }
-
-                            adapter.notifyDataSetChanged();
-                            viewModel.saveTripToDatabase();
+//
+//                            // Update in ViewModel and save
+//                            for (ActivityItem activityItem: recommendedActivities){
+//                                viewModel.addActivity(dayIndex, activityItem);
+//                            }
+//
+//                            adapter.notifyDataSetChanged();
+//                            viewModel.saveTripToDatabase();
 
                         }
 
