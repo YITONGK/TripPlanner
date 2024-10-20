@@ -41,6 +41,12 @@ public class FirestoreDB {
         this.firestore = FirebaseFirestore.getInstance();
     }
 
+    public final static String getCurrentUserId() {
+        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+        String currentUserId = firebaseAuth.getCurrentUser().getUid();
+        return currentUserId;
+    }
+
     // Public method to provide access to the singleton instance
     public static synchronized FirestoreDB getInstance() {
         if (instance == null) {
@@ -74,7 +80,7 @@ public class FirestoreDB {
         Timestamp now = getCurrentDate();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
-                .whereGreaterThanOrEqualTo("endDate", now)
+                .whereGreaterThanOrEqualTo("startDate", now)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
 
@@ -126,7 +132,7 @@ public class FirestoreDB {
         Timestamp now = getCurrentDate();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
-                .whereLessThan("endDate", now)
+                .whereLessThan("startDate", now)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
 
@@ -363,7 +369,7 @@ public class FirestoreDB {
 
     public void deleteTripById(String tripId, OnSuccessListener<Void> onSuccessListener,
             OnFailureListener onFailureListener) {
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        String userId = getCurrentUserId();
         DocumentReference tripRef = firestore.collection("trips").document(tripId);
 
         tripRef.update("userIds", FieldValue.arrayRemove(userId))
