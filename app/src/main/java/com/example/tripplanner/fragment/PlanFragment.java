@@ -68,6 +68,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.sql.Time;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -116,6 +117,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     private GoogleMap mMap;
 
     public static List<Location> locationList;
+    public static Timestamp endDate;
     private String startDay;
     private int lastingDays;
 
@@ -161,6 +163,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     PlanFragment.this.trip = trip;
                     PlanFragment.this.locationList = trip.getLocations();
                     PlanFragment.this.startDate = trip.getStartDate();
+                    PlanFragment.this.endDate = trip.getEndDate();
                 }
             }
         });
@@ -361,9 +364,9 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
             weatherAPIClient = new WeatherAPIClient();
-
             fetchAndDisplayWeatherData(rootView);
             showTripNote(rootView);
+
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -402,6 +405,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     viewModel.addActivity(dayIndex, activityItem);
                     adapter.notifyDataSetChanged();
                     viewModel.saveTripToDatabase();
+                    showEditActivityDialog(activityItemArray.size() - 1);
                 } else {
                     Toast.makeText(getContext(), "Please enter something", Toast.LENGTH_SHORT).show();
                 }
@@ -644,6 +648,15 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         if (locationList == null) {
             return;
         }
+
+        if (endDate.compareTo(Timestamp.now()) < 0) {
+            TextView weatherForecastTitle = rootView.findViewById(R.id.weatherForecastTitle);
+            RecyclerView weatherRecyclerView = rootView.findViewById(R.id.weatherRecyclerView);
+            weatherForecastTitle.setVisibility(View.GONE);
+            weatherRecyclerView.setVisibility(View.GONE);
+            return;
+        }
+
 
         // request weather data for all locations in the trip
         for (Location location : locationList) {
