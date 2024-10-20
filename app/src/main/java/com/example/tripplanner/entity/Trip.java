@@ -223,5 +223,36 @@ public class Trip {
         }
         return R.drawable.default_image; // Fallback image if no locations
     }
+
+    public String getLocationsString() {
+        List<Location> locationList = getLocations();
+        StringBuilder sb = new StringBuilder();
+        for (Location location : locationList) {
+            sb.append(location.getName()).append(", ");
+        }
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 2);
+        }
+        return sb.toString();
+    }
+
+    public String getDurationString() {
+        int days = getNumDays();
+        if (days == 1) {
+            return "1 day";
+        } else if (days == 2) {
+            return "2 days and 1 night";
+        } else {
+            return days + " days and " + (days - 1) + " nights";
+        }
+    }
+
+    public String getActivityCountString() {
+        int count = 0;
+        for (List<ActivityItem> plan : getPlans().values()) {
+            count += plan.size();
+        }
+        return count + (count > 1 ? " activities" : " activity");
+    }
 }
 

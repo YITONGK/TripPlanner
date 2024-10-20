@@ -76,7 +76,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         String countStr = count > 1 ? " activities" : " activity";
         holder.numActivity.setText(count + countStr);
 
-        //TODO: get the cover image of the trip
+        // get the cover image of the trip
         holder.img.setImageResource(allPlans.get(position).getCityDrawable());
 
     }

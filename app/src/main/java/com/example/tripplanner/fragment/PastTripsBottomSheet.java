@@ -19,6 +19,7 @@ import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.AllPlanAdapter;
 import com.example.tripplanner.adapter.AllPlanInterface;
 import com.example.tripplanner.adapter.SectionedPlanAdapter;
+import com.example.tripplanner.adapter.SectionedPlanInterface;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
@@ -32,7 +33,7 @@ import java.util.Map;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-public class PastTripsBottomSheet extends BottomSheetDialogFragment implements AllPlanInterface {
+public class PastTripsBottomSheet extends BottomSheetDialogFragment implements SectionedPlanInterface {
 
     // private AllPlanAdapter adapter;
     private SectionedPlanAdapter adapter;
@@ -106,14 +107,23 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment implements A
         return tripsByCountry;
     }
 
+//    @Override
+//    public void onItemClick(int position) {
+//        // Navigate to specific plan detail page
+//        Log.d("MEMORY", "position: "+position);
+//        Log.d("MEMORY", "pastTrips: "+pastTrips);
+//        Trip clickedTrip = pastTrips.get(position-1);
+//        Log.d("MEMORY", "clicked trip: "+clickedTrip);
+//        Intent i = new Intent(getActivity(), EditPlanActivity.class);
+//        i.putExtra("tripId", clickedTrip.getId());
+//        startActivity(i);
+//    }
+
     @Override
-    public void onItemClick(int position) {
-        // Navigate to specific plan detail page
-        Log.d("MEMORY", "position: "+position);
-        Log.d("MEMORY", "pastTrips: "+pastTrips);
-        Trip clickedTrip = pastTrips.get(position-1);
-        Intent i = new Intent(getActivity(), EditPlanActivity.class);
-        i.putExtra("tripId", clickedTrip.getId());
-        startActivity(i);
+    public void onTripClick(Trip trip) {
+        // Handle the trip click event
+        Intent intent = new Intent(getActivity(), EditPlanActivity.class);
+        intent.putExtra("tripId", trip.getId());
+        startActivity(intent);
     }
 }
