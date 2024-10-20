@@ -124,6 +124,7 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment implements S
         // Handle the trip click event
         Intent intent = new Intent(getActivity(), EditPlanActivity.class);
         intent.putExtra("tripId", trip.getId());
+        intent.putExtra("From", "Memory");
         startActivity(intent);
     }
 }

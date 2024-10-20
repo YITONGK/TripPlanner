@@ -194,6 +194,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         if (this.layout == PLAN_SPECIFIC_DAY) {
             rootView = inflater.inflate(R.layout.plan_specific_day, container, false);
 
+            if (endDate != null && endDate.compareTo(Timestamp.now()) < 0) {
+                ImageButton planSuggest  = rootView.findViewById(R.id.planSuggest);
+                planSuggest.setVisibility(View.GONE);
+            }
+
             addActivityLocation = rootView.findViewById(R.id.addActivityLocation);
             activityLocationRecyclerView = rootView.findViewById(R.id.activityLocationRecyclerView);
 
@@ -813,6 +818,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
         HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
 
+        if (daysAndLocationsMap == null) {
+            return;
+        }
+
         for (String key : daysAndLocationsMap.keySet()) {
             List<Double[]> latLngList = daysAndLocationsMap.get(key);
             String days = String.valueOf((Integer.parseInt(key) + 1));
@@ -993,6 +1002,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
     public HashMap<String, List<Double[]>> getDaysAndLocations(){
         HashMap<String, List<Double[]>> locationMap = new HashMap<>();
+
+        if (trip == null) {
+            return null;
+        }
 
         Set<String> keys = trip.getPlans().keySet();
 
