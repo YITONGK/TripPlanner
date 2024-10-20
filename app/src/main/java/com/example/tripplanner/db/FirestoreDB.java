@@ -11,6 +11,7 @@ import com.example.tripplanner.entity.UserTripStatistics;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -38,6 +39,12 @@ public class FirestoreDB {
     // Private constructor to prevent instantiation
     private FirestoreDB() {
         this.firestore = FirebaseFirestore.getInstance();
+    }
+
+    public final static String getCurrentUserId() {
+        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+        String currentUserId = firebaseAuth.getCurrentUser().getUid();
+        return currentUserId;
     }
 
     // Public method to provide access to the singleton instance
@@ -145,9 +152,12 @@ public class FirestoreDB {
                             List<Location> locations = new ArrayList<>();
                             for (Map<String, Object> locMap : locationsMap) {
                                 Location location = new Location(
+                                        document.getId(),
                                         (String) locMap.get("name"),
+                                        (String) locMap.get("type"),
                                         ((Number) locMap.get("latitude")).doubleValue(),
-                                        ((Number) locMap.get("longitude")).doubleValue());
+                                        ((Number) locMap.get("longitude")).doubleValue(),
+                                        (String) locMap.get("country"));
                                 locations.add(location);
                             }
                             String note = document.getString("note");
@@ -359,17 +369,42 @@ public class FirestoreDB {
 
     public void deleteTripById(String tripId, OnSuccessListener<Void> onSuccessListener,
             OnFailureListener onFailureListener) {
-        firestore.collection("trips")
-                .document(tripId)
-                .delete()
+        String userId = getCurrentUserId();
+        DocumentReference tripRef = firestore.collection("trips").document(tripId);
+
+        tripRef.update("userIds", FieldValue.arrayRemove(userId))
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("PLAN", "Trip with ID: " + tripId + " has been successfully deleted.");
-                    if (onSuccessListener != null) {
-                        onSuccessListener.onSuccess(aVoid);
-                    }
+                    // Check if the userIds array is empty
+                    tripRef.get().addOnSuccessListener(documentSnapshot -> {
+                        List<String> userIds = (List<String>) documentSnapshot.get("userIds");
+                        if (userIds == null || userIds.isEmpty()) {
+                            // Delete the trip if no users are left
+                            tripRef.delete().addOnSuccessListener(aVoid2 -> {
+                                Log.d("PLAN", "Trip with ID: " + tripId + " has been successfully deleted.");
+                                if (onSuccessListener != null) {
+                                    onSuccessListener.onSuccess(aVoid2);
+                                }
+                            }).addOnFailureListener(e -> {
+                                Log.e("PLAN", "Error deleting trip with ID: " + tripId, e);
+                                if (onFailureListener != null) {
+                                    onFailureListener.onFailure(e);
+                                }
+                            });
+                        } else {
+                            Log.d("PLAN", "User " + userId + " removed from trip with ID: " + tripId);
+                            if (onSuccessListener != null) {
+                                onSuccessListener.onSuccess(aVoid);
+                            }
+                        }
+                    }).addOnFailureListener(e -> {
+                        Log.e("PLAN", "Error fetching trip with ID: " + tripId, e);
+                        if (onFailureListener != null) {
+                            onFailureListener.onFailure(e);
+                        }
+                    });
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("PLAN", "Error deleting trip with ID: " + tripId, e);
+                    Log.e("PLAN", "Error removing user from trip with ID: " + tripId, e);
                     if (onFailureListener != null) {
                         onFailureListener.onFailure(e);
                     }

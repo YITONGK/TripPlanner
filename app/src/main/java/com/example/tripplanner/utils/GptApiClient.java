@@ -1,5 +1,7 @@
 package com.example.tripplanner.utils;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.example.tripplanner.BuildConfig;
@@ -8,12 +10,13 @@ import com.example.tripplanner.entity.Location;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.libraries.places.api.model.AddressComponent;
+import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
 import com.google.android.libraries.places.api.net.FetchPlaceResponse;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.firebase.Timestamp;
-import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
@@ -29,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,20 +41,21 @@ public class GptApiClient {
     private static final String API_KEY = BuildConfig.GPT_API_KEY;
     private static final String DEFAULT_PROMPT = "Please plan the trip to ";
     private static final String REPLAN_PROMPT = "Re-plan the trip due to bad weather conditions. ";
-    private static final String RECOMMENDATION_PROMPT = "Generate a trip plan based on the following details:\n"+
+    private static final String RECOMMENDATION_PROMPT = "You are a trip planner generating no more 3 activity items for one day in a trip based on the following details which will be given by users:\n"+
         "- Destination\n" +
         "- Weather Forecast\n" +
-        "- User Preferences\n\n" +
-        "The response should be in the following JSON format:\n" +
-        "{\"activityItem\": [{\"name\": \"Activity Name\",\n" +
-        "      \"startTime\": \"YYYY-MM-DD HH:MM\",\n" +
-        "      \"endTime\": \"YYYY-MM-DD HH:MM\",\n" +
-        "      \"locationName\": \"Location Name\",\n" +
-        "      \"notes\": \"Notes\"}]}\n\n" +
+        "- User Preferences\n\n"+
+        "Please respond in the following JSON format:\n" +
+        "{\"activityItem\": [{\"name\": \"string\"," +
+        "      \"startTime\": \"yyyy-MM-dd HH:mm:ss\"," +
+        "      \"endTime\": \"yyyy-MM-dd HH:mm:ss\"," +
+        "      \"locationName\": \"Location Name\"," +
+        "      \"notes\": \"short string\"}]}\n"+
         "Guidelines:\n"+
             "- Please ensure that your response is a valid JSON format. \n"+
-            "- Please ensure that the returned data is wrapped in {}. \n" +
-            "- Please do not output any prompt words or markdown code format such as ```json. \n";
+            "- Please ensure that the location is real and exists. \n";
+//            "- Please ensure that the returned data is wrapped in {}. \n" +
+//            "- Please do not output any prompt words or markdown code format such as ```json. \n";
 
     public interface GptApiCallback {
         void onSuccess(String response);
@@ -63,8 +68,6 @@ public class GptApiClient {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("model", "gpt-4o-mini");
-            jsonObject.put("response_format", new JSONObject()
-                .put("type", "json_object"));
             jsonObject.put("messages", new JSONArray()
                 .put(new JSONObject()
                     .put("role", "system")
@@ -72,7 +75,6 @@ public class GptApiClient {
                 .put(new JSONObject()
                     .put("role", "user")
                     .put("content", userMessage)));
-            jsonObject.put("max_tokens", 150);
         } catch (Exception e) {
             callback.onFailure(e.getMessage());
             Log.d("PLAN", "[getChatCompletion]"+e.getMessage());
@@ -100,13 +102,50 @@ public class GptApiClient {
             @Override
             public void onResponse(Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    Log.d("PLAN", "[getChatCompletion] success");
-                    String result = cleanAndValidateJson(extractContentFromResponse(response.body().string())+"]}");
-                    if (result == null){
+                    Log.d("GptApiClient", "[getChatCompletion] success");
+                    String responseBody = response.body().string();
+                    Log.d("GptApiClient", "Response: " + responseBody);
+                    String content = extractContentFromResponse(responseBody);
+                    if (content == null){
                         callback.onFailure("Invalid response");
-                    }else {
-                        callback.onSuccess(result);
+                        return;
                     }
+
+                    try {
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+                        JSONArray choices = jsonResponse.getJSONArray("choices");
+                        JSONObject firstChoice = choices.getJSONObject(0);
+                        JSONObject message = firstChoice.getJSONObject("message");
+
+                        String finishReason = firstChoice.optString("finish_reason", "");
+                        if ("length".equals(finishReason)) {
+                            // Handle incomplete JSON due to context length
+                            callback.onFailure("Response was too long and incomplete.");
+                            return;
+                        }
+
+//                        if (message.has("refusal")) {
+//                            // Handle refusal
+//                            String refusalReason = message.getString("refusal");
+//                            callback.onFailure("Request refused: " + refusalReason);
+//                            return;
+//                        }
+
+                        if ("content_filter".equals(finishReason)) {
+                            // Handle content filter
+                            callback.onFailure("Response was filtered due to restricted content.");
+                            return;
+                        }
+
+                        if ("stop".equals(finishReason)) {
+                            callback.onSuccess(content);
+                        } else {
+                            callback.onFailure("Unexpected finish reason: " + finishReason);
+                        }
+                    } catch (JSONException e) {
+                        callback.onFailure("Failed to parse JSON: " + e.getMessage());
+                    }
+
 
                 } else {
                     Log.d("PLAN", "[getChatCompletion] failed: "+response.message());
@@ -126,7 +165,7 @@ public class GptApiClient {
                 return messageObject.getString("content");
             }
         } catch (JSONException e) {
-            Log.d("GPT", "Error in parsing error in extractContentFromResponse()");
+            Log.e("GptApiClient", "Error in parsing error in extractContentFromResponse()");
         }
         return null;
     }
@@ -182,93 +221,154 @@ public class GptApiClient {
         getChatCompletion(REPLAN_PROMPT, tripData, callback);
     }
 
-    public static List<ActivityItem> parseActivityItemsFromJson(String jsonResponse, PlacesClient placesClient) {
-        List<ActivityItem> activityItems = new ArrayList<>();
+    public static List<ActivityItem> parseActivityItemsFromJson(String jsonResponse, PlacesClient placesClient, OnActivityItemsParsedListener listener) {
+    List<ActivityItem> activityItems = new ArrayList<>();
 
-        try {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray activityArray = jsonObject.getJSONArray("activityItem");
+    try {
+        JSONObject jsonObject = new JSONObject(jsonResponse);
+        JSONArray activityArray = jsonObject.getJSONArray("activityItem");
 
-            for (int i = 0; i < activityArray.length(); i++) {
-                JSONObject activityObject = activityArray.getJSONObject(i);
-
-                String name = activityObject.getString("name");
-                String startTimeStr = activityObject.getString("startTime");
-                String endTimeStr = activityObject.getString("endTime");
-                String locationName = activityObject.getString("locationName");
-                String notes = activityObject.optString("notes", "");
-
-                // Convert startTime and endTime from String to Timestamp
-                Timestamp startTime = ActivityItem.convertStringToTimestamp(startTimeStr.replace("T", " "));
-                Timestamp endTime = ActivityItem.convertStringToTimestamp(endTimeStr.replace("T", " "));
-
-                ActivityItem activityItem = new ActivityItem(name);
-                activityItem.setStartTime(startTime);
-                activityItem.setEndTime(endTime);
-                activityItem.setNotes(notes);
-
-                // Fetch location details from Google Places API
-                fetchLocationFromGooglePlaces(locationName, placesClient, new OnPlaceFetchedListener() {
-                    @Override
-                    public void onPlaceFetched(Location location) {
-                        activityItem.setLocation(location);
-                        activityItems.add(activityItem);
-                    }
-                });
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            // Handle JSON parsing error
+        if (activityArray.length() == 0) {
+            listener.onActivityItemsParsed(activityItems);
+            return activityItems;
         }
 
+        AtomicInteger remainingItems = new AtomicInteger(activityArray.length());
+
+        for (int i = 0; i < activityArray.length(); i++) {
+            JSONObject activityObject = activityArray.getJSONObject(i);
+
+            String name = activityObject.getString("name");
+            String startTimeStr = activityObject.getString("startTime");
+            String endTimeStr = activityObject.getString("endTime");
+            String locationName = activityObject.getString("locationName");
+            String notes = activityObject.optString("notes", "");
+
+            // Convert startTime and endTime from String to Timestamp
+            Timestamp startTime = ActivityItem.convertStringToTimestamp(startTimeStr);
+            Timestamp endTime = ActivityItem.convertStringToTimestamp(endTimeStr);
+
+            ActivityItem activityItem = new ActivityItem(name);
+            activityItem.setStartTime(startTime);
+            activityItem.setEndTime(endTime);
+            activityItem.setNotes(notes);
+
+            // Fetch location details from Google Places API
+            fetchLocationFromGooglePlaces(locationName, placesClient, new OnPlaceFetchedListener() {
+                @Override
+                public void onPlaceFetched(Location location) {
+                    activityItem.setLocation(location);
+                    activityItems.add(activityItem);
+                    Log.d("GptApiClient", "Add into activity: " + activityItem);
+
+                    if (remainingItems.decrementAndGet() == 0) {
+                        listener.onActivityItemsParsed(activityItems);
+                    }
+                }
+
+                @Override
+                public void onError(String errorMessage) {
+                    Log.d("GptApiClient", "Error in finding location generated by gpt: " + locationName);
+
+                    if (remainingItems.decrementAndGet() == 0) {
+                        listener.onActivityItemsParsed(activityItems);
+                    }
+                }
+            });
+        }
+    } catch (JSONException e) {
+        Log.d("GptApiClient", "Error in parseActivityItemsFromJson: " + e.getMessage());
+        listener.onActivityItemsParsed(activityItems);
+    }
         return activityItems;
     }
 
     private static void fetchLocationFromGooglePlaces(String locationName, PlacesClient placesClient, OnPlaceFetchedListener listener) {
-        List<Place.Field> placeFields = Arrays.asList(
-                Place.Field.ID,
-                Place.Field.NAME,
-                Place.Field.LAT_LNG,
-                Place.Field.ADDRESS_COMPONENTS
-        );
+        // Create a request for autocomplete predictions based on the location name
+        FindAutocompletePredictionsRequest predictionsRequest = FindAutocompletePredictionsRequest.builder()
+                .setQuery(locationName)
+                .build();
 
-        FetchPlaceRequest request = FetchPlaceRequest.builder(locationName, placeFields).build();
+        // Use the PlacesClient to find autocomplete predictions
+        placesClient.findAutocompletePredictions(predictionsRequest)
+                .addOnSuccessListener(response -> {
+                    if (!response.getAutocompletePredictions().isEmpty()) {
+                        // Get the first prediction from the list
+                        AutocompletePrediction prediction = response.getAutocompletePredictions().get(0);
+                        String placeId = prediction.getPlaceId();
 
-        placesClient.fetchPlace(request).addOnSuccessListener(new OnSuccessListener<FetchPlaceResponse>() {
-            @Override
-            public void onSuccess(FetchPlaceResponse response) {
-                Place place = response.getPlace();
-                String country = null;
-                if (place.getAddressComponents() != null) {
-                    for (AddressComponent component : place.getAddressComponents().asList()) {
-                        if (component.getTypes().contains("country")) {
-                            country = component.getName();
-                            break;
-                        }
+                        // Specify the fields to return (ID, Name, LatLng, Address Components, Types)
+                        List<Place.Field> placeFields = Arrays.asList(
+                                Place.Field.ID,
+                                Place.Field.NAME,
+                                Place.Field.LAT_LNG,
+                                Place.Field.ADDRESS_COMPONENTS,
+                                Place.Field.TYPES
+                        );
+
+                        // Create a FetchPlaceRequest using the place ID
+                        FetchPlaceRequest fetchPlaceRequest = FetchPlaceRequest.builder(placeId, placeFields).build();
+
+                        // Fetch the place details
+                        placesClient.fetchPlace(fetchPlaceRequest)
+                                .addOnSuccessListener(fetchPlaceResponse -> {
+                                    Place place = fetchPlaceResponse.getPlace();
+                                    String country = null;
+
+                                    // Extract the country from the address components
+                                    if (place.getAddressComponents() != null) {
+                                        for (AddressComponent component : place.getAddressComponents().asList()) {
+                                            if (component.getTypes().contains("country")) {
+                                                country = component.getName();
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    // Get the primary place type
+                                    String placeType = null;
+                                    if (place.getTypes() != null && !place.getTypes().isEmpty()) {
+                                        placeType = place.getTypes().get(0).toString();
+                                    }
+
+                                    // Create a new Location object with the fetched details
+                                    Location location = new Location(
+                                            place.getId(),
+                                            place.getName(),
+                                            placeType,
+                                            place.getLatLng().latitude,
+                                            place.getLatLng().longitude,
+                                            country
+                                    );
+
+                                    // Notify the listener that the place has been fetched
+                                    listener.onPlaceFetched(location);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.d("GptApiClient", "Error fetching place details for ID: " + placeId);
+                                    listener.onPlaceFetched(null); // Notify listener of failure
+                                });
+                    } else {
+                        Log.d("GptApiClient", "No autocomplete predictions found for: " + locationName);
+                        listener.onPlaceFetched(null); // Notify listener of failure
                     }
-                }
-                Location location = new Location(
-                        place.getId(),
-                        place.getName(),
-                        place.getPlaceTypes().get(0).toString(),
-                        place.getLatLng().latitude,
-                        place.getLatLng().longitude,
-                        country
-                );
-                listener.onPlaceFetched(location);
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(Exception e) {
-                Log.d("PlanFragment", "Error in finding location generated by gpt.");
-            }
-        });
+                })
+                .addOnFailureListener(e -> {
+                    Log.d("GptApiClient", "Error finding autocomplete predictions for: " + locationName);
+                    listener.onPlaceFetched(null); // Notify listener of failure
+                });
     }
+
 
     public interface OnPlaceFetchedListener {
         void onPlaceFetched(Location location);
+        void onError(String errorMessage);
     }
 
-   
-       
+    public interface OnActivityItemsParsedListener {
+        void onActivityItemsParsed(List<ActivityItem> activityItems);
+    }
+
+
+
 }

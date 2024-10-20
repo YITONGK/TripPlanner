@@ -1,5 +1,6 @@
 package com.example.tripplanner.entity;
 
+import com.example.tripplanner.R;
 import com.example.tripplanner.db.DatabaseInterface;
 import com.google.firebase.Timestamp;
 
@@ -193,6 +194,65 @@ public class Trip {
                 ", database=" + database +
                 ", userIds=" + userIds +
                 '}';
+    }
+
+    // Method to get the drawable resource ID based on the first location's city name
+    public int getCityDrawable() {
+        if (locations != null && !locations.isEmpty()) {
+            String cityName = locations.get(0).getName(); // Assuming Location class has a getName() method
+            switch (cityName.toLowerCase()) {
+                case "melbourne":
+                    return R.drawable.mel; // Replace with your actual drawable resource
+                case "sydney":
+                    return R.drawable.sydney; // Replace with your actual drawable resource
+                case "singapore":
+                    return R.drawable.singapore; // Replace with your actual drawable resource
+                case "tokyo":
+                    return R.drawable.tokyo;
+                case "newyork":
+                    return R.drawable.newyork;
+                case "shanghai":
+                    return R.drawable.shanghai;
+                case "paris":
+                    return R.drawable.paris;
+                case "florence":
+                    return R.drawable.florence;
+                default:
+                    return R.drawable.default_image; // Fallback image if city not found
+            }
+        }
+        return R.drawable.default_image; // Fallback image if no locations
+    }
+
+    public String getLocationsString() {
+        List<Location> locationList = getLocations();
+        StringBuilder sb = new StringBuilder();
+        for (Location location : locationList) {
+            sb.append(location.getName()).append(", ");
+        }
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 2);
+        }
+        return sb.toString();
+    }
+
+    public String getDurationString() {
+        int days = getNumDays();
+        if (days == 1) {
+            return "1 day";
+        } else if (days == 2) {
+            return "2 days and 1 night";
+        } else {
+            return days + " days and " + (days - 1) + " nights";
+        }
+    }
+
+    public String getActivityCountString() {
+        int count = 0;
+        for (List<ActivityItem> plan : getPlans().values()) {
+            count += plan.size();
+        }
+        return count + (count > 1 ? " activities" : " activity");
     }
 }
 

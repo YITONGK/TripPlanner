@@ -36,6 +36,7 @@ public class  Location implements Serializable {
         locationMap.put("type", type);
         locationMap.put("latitude", latitude);
         locationMap.put("longitude", longitude);
+        locationMap.put("country", country);
         return locationMap;
     }
 

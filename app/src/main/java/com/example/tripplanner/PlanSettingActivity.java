@@ -28,6 +28,7 @@ import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.fragment.NumberPickerFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
 import com.shawnlin.numberpicker.NumberPicker;
 
 import com.example.tripplanner.databinding.ActivityPlanSettingBinding;
