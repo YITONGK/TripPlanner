@@ -74,7 +74,7 @@ public class FirestoreDB {
         Timestamp now = getCurrentDate();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
-                .whereGreaterThanOrEqualTo("startDate", now)
+                .whereGreaterThanOrEqualTo("endDate", now)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
 
@@ -126,7 +126,7 @@ public class FirestoreDB {
         Timestamp now = getCurrentDate();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
-                .whereLessThan("startDate", now)
+                .whereLessThan("endDate", now)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
 
