@@ -41,6 +41,7 @@ import com.google.firebase.auth.FirebaseUser;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
 public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPlanInterface {
 
@@ -52,6 +53,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
     private GoogleMap mMap;
 
     private ArrayList<Trip> allPlans = new ArrayList<>();;
+    private List<LatLng> pointList = new ArrayList<>();
     private AllPlanAdapter adapter;
 
     @Override
@@ -69,6 +71,23 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
             if (mapFragment != null) {
                 mapFragment.getMapAsync(this);
             }
+
+            // Get all the LatLng in past trips
+            FirebaseAuth mAuth = FirebaseAuth.getInstance();
+            FirebaseUser currentUser = mAuth.getCurrentUser();
+            FirestoreDB firestoreDB = FirestoreDB.getInstance();
+            firestoreDB.getPastTripsByUserId(currentUser.getUid(), trips -> {
+                Log.d("DEBUG", "Trips: " + trips.size());
+                for (Trip trip : trips) {
+                    for (com.example.tripplanner.entity.Location location : trip.getLocations()) {
+                        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                        pointList.add(latLng);
+                    }
+                }
+            }, e -> {
+                Log.d("DEBUG", "Error in getting past trips");
+                    }
+            );
         } else {
             rootView = inflater.inflate(R.layout.home_fragment_layout_plan, container, false);
             displayAllPlans(rootView);

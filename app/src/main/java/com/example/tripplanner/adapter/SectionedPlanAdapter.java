@@ -6,10 +6,12 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tripplanner.EditPlanActivity;
@@ -26,13 +28,13 @@ public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.View
     private static final int VIEW_TYPE_ITEM = 1;
 
     private final Context context;
-    private final List<Object> items;
-    private final AllPlanInterface allPlanInterface;
+    private static List<Object> items;
+    private static SectionedPlanInterface sectionedPlanInterface;
 
-    public SectionedPlanAdapter(Context context,  Map<String, List<Trip>> tripsByCountry, AllPlanInterface allPlanInterface) {
+    public SectionedPlanAdapter(Context context,  Map<String, List<Trip>> tripsByCountry, SectionedPlanInterface planInterface) {
         this.context = context;
         this.items = new ArrayList<>();
-        this.allPlanInterface = allPlanInterface;
+        this.sectionedPlanInterface = planInterface;
         prepareItems(tripsByCountry);
     }
 
@@ -60,21 +62,33 @@ public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.View
             return new SectionViewHolder(view);
         } else {
             View view = inflater.inflate(R.layout.all_plan_row, parent, false);
-            return new AllPlanAdapter.ViewHolder(view, allPlanInterface); 
+            return new TripViewHolder(view);
         }
     }
-
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof SectionViewHolder) {
             Log.d("DEBUG", "[SectionedPlanAdaptor] Bind item to SectionViewHolder");
             ((SectionViewHolder) holder).sectionTitle.setText((String) items.get(position));
-        } else if (holder instanceof AllPlanAdapter.ViewHolder) {
+        } else if (holder instanceof TripViewHolder) {
             Log.d("DEBUG", "[SectionedPlanAdaptor] Bind trip to all plan");
             Trip trip = (Trip) items.get(position);
-            ((AllPlanAdapter.ViewHolder) holder).bind(trip); // Ensure bind method is used
+            ((TripViewHolder) holder).bind(trip);
         }
     }
+
+
+//    @Override
+//    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+//        if (holder instanceof SectionViewHolder) {
+//            Log.d("DEBUG", "[SectionedPlanAdaptor] Bind item to SectionViewHolder");
+//            ((SectionViewHolder) holder).sectionTitle.setText((String) items.get(position));
+//        } else if (holder instanceof AllPlanAdapter.ViewHolder) {
+//            Log.d("DEBUG", "[SectionedPlanAdaptor] Bind trip to all plan");
+////            Trip trip = (Trip) items.get(position);
+////            ((AllPlanAdapter.ViewHolder) holder).bind(trip); // Ensure bind method is used
+//        }
+//    }
 //     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 //         // if (getItemViewType(position) == VIEW_TYPE_SECTION) {
 //         //     Log.d("DEBUG", "[SectionedPlanAdaptor] Bind item to SectionViewHolder");
@@ -114,4 +128,51 @@ public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.View
         }
     }
 
+    static class TripViewHolder extends RecyclerView.ViewHolder {
+        private ImageView img;
+        TextView locations;
+        private TextView duration;
+        private TextView numActivity;
+        private CardView plan;
+
+        public TripViewHolder(@NonNull View itemView) {
+            super(itemView);
+            img = itemView.findViewById(R.id.image);
+            locations = itemView.findViewById(R.id.locations);
+            duration = itemView.findViewById(R.id.duration);
+            numActivity = itemView.findViewById(R.id.numActivity);
+            plan = itemView.findViewById(R.id.plan);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (sectionedPlanInterface != null) {
+                        int pos = getAdapterPosition();
+                        if (pos != RecyclerView.NO_POSITION) {
+                            Trip trip = (Trip) items.get(pos);
+                            sectionedPlanInterface.onTripClick(trip);
+                            Log.d("DEBUG", "Clicked on trip: " + trip.getName());
+                        }
+                    } else {
+                        Log.d("DEBUG", "sectionedPlanInterface is null");
+                    }
+                }
+            });
+        }
+
+        public void bind(Trip trip) {
+            if (trip == null){
+                Log.d("MEMORY", "Trip is null");
+                return;
+            }
+            // Bind data to views here (similar to AllPlanAdapter.ViewHolder.bind(trip))
+            // Example:
+            locations.setText(trip.getLocationsString());
+            duration.setText(trip.getDurationString());
+            numActivity.setText(trip.getActivityCountString());
+            img.setImageResource(trip.getCityDrawable());
+        }
+    }
+
 }
+

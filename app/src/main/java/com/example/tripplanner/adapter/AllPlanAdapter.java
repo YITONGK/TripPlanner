@@ -76,8 +76,8 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         String countStr = count > 1 ? " activities" : " activity";
         holder.numActivity.setText(count + countStr);
 
-        //TODO: get the cover image of the trip
-//        holder.img.setImageResource(allPlans.get(position).getImage());
+        // get the cover image of the trip
+        holder.img.setImageResource(allPlans.get(position).getCityDrawable());
 
     }
 
@@ -117,6 +117,10 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
             });
         }
         public void bind(Trip trip) {
+            if (trip == null){
+                Log.d("MEMORY", "Trip is null");
+                return;
+            }
             List<Location> locationList = trip.getLocations();
             StringBuilder sb = new StringBuilder();
             for (Location location : locationList) {

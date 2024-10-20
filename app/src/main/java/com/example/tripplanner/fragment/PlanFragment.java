@@ -22,6 +22,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -38,15 +39,19 @@ import com.codebyashish.googledirectionapi.RouteInfoModel;
 import com.codebyashish.googledirectionapi.RouteListener;
 import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.MapActivity;
+import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
+import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.utils.GptApiClient;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.utils.RoutePlanner;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -63,6 +68,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.sql.Time;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -111,6 +117,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     private GoogleMap mMap;
 
     public static List<Location> locationList;
+    public static Timestamp endDate;
     private String startDay;
     private int lastingDays;
 
@@ -156,6 +163,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     PlanFragment.this.trip = trip;
                     PlanFragment.this.locationList = trip.getLocations();
                     PlanFragment.this.startDate = trip.getStartDate();
+                    PlanFragment.this.endDate = trip.getEndDate();
                 }
             }
         });
@@ -256,13 +264,129 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 }
             });
 
+            // Find the planSuggest button
+            ImageButton planSuggestButton = rootView.findViewById(R.id.planSuggest);
+
+            // Set an OnClickListener for the planSuggest button
+            planSuggestButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+//                    String destination = "Unknown Destination";
+//                    if (locationList != null && !locationList.isEmpty()) {
+//                        destination = locationList.get(0).getName();
+//                    }
+//
+//                    Log.d("PlanFragment", "Destination: "+ destination);
+//                    Log.d("PlanFragment", "Weather: "+allWeatherData);
+
+                    // Get the weather forecast for the destination
+//                    String weatherForecast = "Unknown weather forecast";
+//                    if (allWeatherData != null && !allWeatherData.isEmpty()) {
+//                        // Get the weather for the first day (assuming day index 0)
+//                        Weather weather = allWeatherData.get(0);
+//                        if (weather != null) {
+//                            weatherForecast = String.format("Weather is %s with a high of %.1f°C", weather.getDescription(), weather.getTemperature());
+//                        }
+//                    }
+
+
+                    // Call the recommendTripPlan method
+                    String destination = "Melbourne, Australia"; // Example destination
+                    String weatherForecast = "Sunny with a high of 25°C"; // Example weather forecast
+                    String userPreferences = "Enjoys coffee shops and outdoor activities"; // Example user preferences
+
+                    GptApiClient.recommendTripPlan(destination, weatherForecast, userPreferences, new GptApiClient.GptApiCallback() {
+                        @Override
+                        public void onSuccess(String response) {
+                            // Handle the successful response here
+                            Log.d("PlanFragment", "Trip plan recommended: " + response);
+
+                            // Parse the JSON response into a list of ActivityItem objects
+                            GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
+                                @Override
+                                public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
+                                    Log.d("PlanFragment", "RecommendActivities: "+recommendedActivities);
+
+//                                    // Update the activityItemArray with the new recommended activities
+//                                    activityItemArray.clear();
+//                                    activityItemArray.addAll(recommendedActivities);
+//
+
+
+                                    // Update in ViewModel and save
+                                    for (ActivityItem activityItem : recommendedActivities) {
+                                        viewModel.addActivity(dayIndex, activityItem);
+                                    }
+
+                                    viewModel.saveTripToDatabase();
+
+                                    // Notify the adapter that the data has changed
+                                    adapter.notifyDataSetChanged();
+                                }
+                            });
+
+////                            // Update the activityItemArray with the new recommended activities
+//                            activityItemArray.clear();
+//                            activityItemArray.addAll(recommendedActivities);
+//
+//                            // Notify the adapter that the data has changed
+//                            adapter.notifyDataSetChanged();
+//
+//                            // Update in ViewModel and save
+//                            for (ActivityItem activityItem: recommendedActivities){
+//                                viewModel.addActivity(dayIndex, activityItem);
+//                            }
+//
+//                            adapter.notifyDataSetChanged();
+//                            viewModel.saveTripToDatabase();
+
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            // Handle the error here
+                            Log.e("PlanFragment", "Failed to recommend trip plan: " + error);
+                            Toast.makeText(getContext(), "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            });
+
+            // Fetch the distance matrix
+            RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
+                @Override
+                public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+                    // Handle the successful result
+                    Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
+                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItemArray);
+                    Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
+
+                    if (activityItemArray.size() > 1){
+                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
+                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
+                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
+                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
+                    }
+
+
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    // Handle the error
+                    Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+                }
+
+            });
+
 
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
             weatherAPIClient = new WeatherAPIClient();
-
             fetchAndDisplayWeatherData(rootView);
             showTripNote(rootView);
+
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -301,6 +425,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     viewModel.addActivity(dayIndex, activityItem);
                     adapter.notifyDataSetChanged();
                     viewModel.saveTripToDatabase();
+                    showEditActivityDialog(activityItemArray.size() - 1);
                 } else {
                     Toast.makeText(getContext(), "Please enter something", Toast.LENGTH_SHORT).show();
                 }
@@ -544,6 +669,15 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             return;
         }
 
+        if (endDate.compareTo(Timestamp.now()) < 0) {
+            TextView weatherForecastTitle = rootView.findViewById(R.id.weatherForecastTitle);
+            RecyclerView weatherRecyclerView = rootView.findViewById(R.id.weatherRecyclerView);
+            weatherForecastTitle.setVisibility(View.GONE);
+            weatherRecyclerView.setVisibility(View.GONE);
+            return;
+        }
+
+
         // request weather data for all locations in the trip
         for (Location location : locationList) {
             double latitude = location.getLatitude();
@@ -646,6 +780,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             @Override
             public void afterTextChanged(Editable s) {
 //                Log.d("trip note saved", "new trip: " + trip.toString());
+                Log.d("GPT", "ActivityItem: "+trip.getPlans());
                 firestoreDB.updateTrip(trip.getId(), trip, success -> {
                     if (success) {
                         Log.d("trip saved", "saveTripToDatabase: success");

@@ -36,12 +36,17 @@ public class  Location implements Serializable {
         locationMap.put("type", type);
         locationMap.put("latitude", latitude);
         locationMap.put("longitude", longitude);
+        locationMap.put("country", country);
         return locationMap;
     }
 
     // Getters and Setters
     public String getId() {
         return id;
+    }
+
+    public String getNonNullIdOrName() {
+        return id != null ? id : name;
     }
 
     public void setId(String id) {

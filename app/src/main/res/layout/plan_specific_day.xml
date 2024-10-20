@@ -5,9 +5,11 @@
     android:padding="16dp">
 
     <ImageButton
-        android:id="@+id/settingSuggest"
+        android:id="@+id/planSuggest"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="#ffd3c2"
+        android:text="➕ Add activity or location"
         android:src="@drawable/baseline_settings_suggest_24"
     />
 

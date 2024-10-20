@@ -34,4 +34,15 @@ public class Weather {
     public String getLocationName() {
         return locationName;
     }
+
+    @Override
+    public String toString() {
+        return "Weather{" +
+                "locationName='" + locationName + '\'' +
+                ", minTemp=" + minTemp +
+                ", maxTemp=" + maxTemp +
+                ", description='" + description + '\'' +
+                ", icon='" + icon + '\'' +
+                '}';
+    }
 }

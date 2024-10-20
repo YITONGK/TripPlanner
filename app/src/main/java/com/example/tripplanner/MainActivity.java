@@ -227,40 +227,40 @@ public class MainActivity extends AppCompatActivity {
         // weatherTripPlanner.detectWeatherAndPlanTrip();
 
         // Example usage of Route Planner
-        List<ActivityItem> activityItems = new ArrayList<>();
-        // Create some sample ActivityItems
-        ActivityItem item1 = new ActivityItem("Visit NYU");
-        item1.setLocation(new Location("New York University", 40.779437, -73.963244));
+//        List<ActivityItem> activityItems = new ArrayList<>();
+//        // Create some sample ActivityItems
+//        ActivityItem item1 = new ActivityItem("Visit NYU");
+//        item1.setLocation(new Location("New York University", 40.779437, -73.963244));
+//
+//        ActivityItem item2 = new ActivityItem("Lunch at Central Park");
+//        item2.setLocation(new Location("Central Park", 40.785091, -73.968285));
+//
+//        ActivityItem item3 = new ActivityItem("Empire State Building Tour");
+//        item3.setLocation(new Location("Empire State Building", 40.748817, -73.985428));
+//
+//        // Add items to the list
+//        activityItems.add(item1);
+//        activityItems.add(item2);
+//        activityItems.add(item3);
 
-        ActivityItem item2 = new ActivityItem("Lunch at Central Park");
-        item2.setLocation(new Location("Central Park", 40.785091, -73.968285));
-
-        ActivityItem item3 = new ActivityItem("Empire State Building Tour");
-        item3.setLocation(new Location("Empire State Building", 40.748817, -73.985428));
-
-        // Add items to the list
-        activityItems.add(item1);
-        activityItems.add(item2);
-        activityItems.add(item3);
-
-        // Fetch the distance matrix
-        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
-            @Override
-            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-                // Handle the successful result
-                Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
-                List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItems);
-                Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
-
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                // Handle the error
-                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
-            }
-
-        });
+//        // Fetch the distance matrix
+//        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
+//            @Override
+//            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+//                // Handle the successful result
+//                Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
+//                List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItems);
+//                Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
+//
+//            }
+//
+//            @Override
+//            public void onFailure(Exception e) {
+//                // Handle the error
+//                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+//            }
+//
+//        });
 
     }
 
@@ -328,6 +328,7 @@ public class MainActivity extends AppCompatActivity {
                                 // Navigate to added trip details
                                 Intent intent = new Intent(MainActivity.this, EditPlanActivity.class);
                                 intent.putExtra("tripId", tripID);
+                                intent.putExtra("From", "Main");
                                 startActivity(intent);
                             },
                             e -> Log.e("IMPORT PLAN", "Failed to add user to trip: " + e.getMessage())
