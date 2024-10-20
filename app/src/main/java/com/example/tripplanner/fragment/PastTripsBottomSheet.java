@@ -110,6 +110,7 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment implements A
     public void onItemClick(int position) {
         // Navigate to specific plan detail page
         Log.d("MEMORY", "position: "+position);
+        Log.d("MEMORY", "pastTrips: "+pastTrips);
         Trip clickedTrip = pastTrips.get(position-1);
         Intent i = new Intent(getActivity(), EditPlanActivity.class);
         i.putExtra("tripId", clickedTrip.getId());

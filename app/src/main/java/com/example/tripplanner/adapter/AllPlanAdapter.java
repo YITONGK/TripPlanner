@@ -77,7 +77,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         holder.numActivity.setText(count + countStr);
 
         //TODO: get the cover image of the trip
-//        holder.img.setImageResource(allPlans.get(position).getImage());
+        holder.img.setImageResource(allPlans.get(position).getCityDrawable());
 
     }
 
