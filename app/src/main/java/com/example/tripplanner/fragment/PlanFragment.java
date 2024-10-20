@@ -272,13 +272,13 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 @Override
                 public void onClick(View v) {
 
-                    String destination = "Unknown Destination";
-                    if (locationList != null && !locationList.isEmpty()) {
-                        destination = locationList.get(0).getName();
-                    }
-
-                    Log.d("PlanFragment", "Destination: "+ destination);
-                    Log.d("PlanFragment", "Weather: "+allWeatherData);
+//                    String destination = "Unknown Destination";
+//                    if (locationList != null && !locationList.isEmpty()) {
+//                        destination = locationList.get(0).getName();
+//                    }
+//
+//                    Log.d("PlanFragment", "Destination: "+ destination);
+//                    Log.d("PlanFragment", "Weather: "+allWeatherData);
 
                     // Get the weather forecast for the destination
 //                    String weatherForecast = "Unknown weather forecast";
@@ -292,7 +292,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
 
                     // Call the recommendTripPlan method
-//                    String destination = "Melbourne, Australia"; // Example destination
+                    String destination = "Melbourne, Australia"; // Example destination
                     String weatherForecast = "Sunny with a high of 25°C"; // Example weather forecast
                     String userPreferences = "Enjoys coffee shops and outdoor activities"; // Example user preferences
 
