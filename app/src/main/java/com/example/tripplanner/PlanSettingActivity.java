@@ -32,6 +32,8 @@ import com.shawnlin.numberpicker.NumberPicker;
 
 import com.example.tripplanner.databinding.ActivityPlanSettingBinding;
 
+import java.util.Objects;
+
 public class PlanSettingActivity extends AppCompatActivity implements NumberPickerFragment.OnNumberSelectedListener {
 
     private ActivityPlanSettingBinding binding;
@@ -146,11 +148,21 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
                             @Override
                             public void run() {
                                 Toast.makeText(PlanSettingActivity.this, "Trip deleted", Toast.LENGTH_SHORT).show();
-                                // Return to MainActivity
-                                Intent intent = new Intent(PlanSettingActivity.this, MainActivity.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                startActivity(intent);
-                                finish(); // Close the current activity
+                                String from = getIntent().getStringExtra("From");
+                                if (Objects.equals(from, "Memory")) {
+                                    Intent intent = new Intent(PlanSettingActivity.this, MainActivity.class);
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                                    intent.putExtra("select_navigation_plan", false);
+                                    startActivity(intent);
+                                    finish();
+                                }
+                                else {
+                                    Intent intent = new Intent(PlanSettingActivity.this, MainActivity.class);
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                                    intent.putExtra("select_navigation_plan", true);
+                                    startActivity(intent);
+                                    finish();
+                                }
                             }
                         });
                     }

@@ -147,14 +147,17 @@ public class EditPlanActivity extends AppCompatActivity {
     private void setupCloseButton() {
         ImageButton closeButton = findViewById(R.id.closeButton);
         closeButton.setOnClickListener(view -> {
-            if (Objects.equals(from, "Main")) {
+            if (Objects.equals(from, "Memory")) {
+                Intent intent = new Intent(EditPlanActivity.this, MainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                intent.putExtra("select_navigation_plan", false);
+                startActivity(intent);
+            }
+            else {
                 Intent intent = new Intent(EditPlanActivity.this, MainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 intent.putExtra("select_navigation_plan", true);
                 startActivity(intent);
-            }
-            else {
-                finish();
             }
         });
     }
@@ -208,6 +211,7 @@ public class EditPlanActivity extends AppCompatActivity {
             intent.putExtra("tripName", tripName);
             intent.putExtra("days", days);
             intent.putExtra("tripId", tripId);
+            intent.putExtra("From", from);
             planSettingsLauncher.launch(intent);
         });
     }

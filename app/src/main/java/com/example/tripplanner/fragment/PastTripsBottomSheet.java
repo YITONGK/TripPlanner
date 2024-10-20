@@ -112,6 +112,7 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment implements A
         Trip clickedTrip = pastTrips.get(position-1);
         Intent i = new Intent(getActivity(), EditPlanActivity.class);
         i.putExtra("tripId", clickedTrip.getId());
+        i.putExtra("From", "Memory");
         startActivity(i);
     }
 }

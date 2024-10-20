@@ -180,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
                                                                         Intent i = new Intent(MainActivity.this,
                                                                                 EditPlanActivity.class);
                                                                         i.putExtra("tripId", tripID);
+                                                                        i.putExtra("From", "Main");
                                                                         startActivity(i);
                                                                     },
                                                                     e -> Log.e("IMPORT PLAN",
@@ -287,9 +288,21 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleIntent(Intent intent) {
         if (intent != null && intent.getBooleanExtra("select_navigation_plan", false)) {
+
+            Log.d("go back to", "all plan");
+
             binding.navView.setSelectedItemId(R.id.navigation_plan);
 
             Fragment planFragment = HomeFragment.newInstance(HomeFragment.PLAN);
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainerView, planFragment)
+                    .commit();
+        } else {
+            Log.d("go back to", "memory");
+            binding.navView.setSelectedItemId(R.id.navigation_map);
+
+            Fragment planFragment = HomeFragment.newInstance(HomeFragment.LOCATION);
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragmentContainerView, planFragment)

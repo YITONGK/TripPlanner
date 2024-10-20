@@ -56,6 +56,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
     private List<LatLng> pointList = new ArrayList<>();
     private AllPlanAdapter adapter;
 
+    private boolean shouldShowPastTripsBottomSheet = false;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
@@ -161,9 +163,9 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         // .position(PERTH)
         // .title("Perth"));
         // markerPerth.setTag(0);
-
+        shouldShowPastTripsBottomSheet = true;
         // Show the bottom sheet when the map is ready
-        showPastTripsBottomSheet();
+        showPastTripsBottomSheetIfPossible();
     }
 
     // Recommended method to generate new LayoutDemoFragment
@@ -183,6 +185,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         Log.d("TAG", getActivity().toString());
         Intent i = new Intent(getActivity(), EditPlanActivity.class);
         i.putExtra("tripId", allPlans.get(position).getId());
+        i.putExtra("From", "Main");
         startActivity(i);
     }
 
@@ -210,5 +213,17 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         bottomSheet.show(getChildFragmentManager(), bottomSheet.getTag());
     }
 
+    private void showPastTripsBottomSheetIfPossible() {
+        if (shouldShowPastTripsBottomSheet && isAdded() && !isStateSaved()) {
+            showPastTripsBottomSheet();
+            shouldShowPastTripsBottomSheet = false;
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        showPastTripsBottomSheetIfPossible();
+    }
 
 }
