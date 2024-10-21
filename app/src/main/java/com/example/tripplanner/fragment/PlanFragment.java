@@ -277,13 +277,13 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 @Override
                 public void onClick(View v) {
 
-//                    String destination = "Unknown Destination";
-//                    if (locationList != null && !locationList.isEmpty()) {
-//                        destination = locationList.get(0).getName();
-//                    }
-//
-//                    Log.d("PlanFragment", "Destination: "+ destination);
-//                    Log.d("PlanFragment", "Weather: "+allWeatherData);
+                    String destination = "Unknown Destination";
+                    if (locationList != null && !locationList.isEmpty()) {
+                        destination = locationList.get(0).getName();
+                    }
+
+                    Log.d("PlanFragment", "Destination: "+ destination);
+                    Log.d("PlanFragment", "Weather: "+allWeatherData);
 
                     // Get the weather forecast for the destination
 //                    String weatherForecast = "Unknown weather forecast";
@@ -291,13 +291,13 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 //                        // Get the weather for the first day (assuming day index 0)
 //                        Weather weather = allWeatherData.get(0);
 //                        if (weather != null) {
-//                            weatherForecast = String.format("Weather is %s with a high of %.1f°C", weather.getDescription(), weather.getTemperature());
+ //                            weatherForecast = String.format("Weather is %s with a high of %.1f°C", weather.getDescription(), weather.getTemperature());
 //                        }
 //                    }
 
 
                     // Call the recommendTripPlan method
-                    String destination = "Melbourne, Australia"; // Example destination
+//                    String destination = "Melbourne, Australia"; // Example destination
                     String weatherForecast = "Sunny with a high of 25°C"; // Example weather forecast
                     String userPreferences = "Enjoys coffee shops and outdoor activities"; // Example user preferences
 
@@ -359,31 +359,31 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             });
 
             // Fetch the distance matrix
-            RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
-                @Override
-                public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-                    // Handle the successful result
-                    Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
-                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItemArray);
-                    Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
-
-                    if (activityItemArray.size() > 1){
-                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
-                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
-                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
-                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
-                    }
-
-
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    // Handle the error
-                    Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
-                }
-
-            });
+//            RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
+//                @Override
+//                public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+//                    // Handle the successful result
+//                    Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
+//                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItemArray);
+//                    Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
+//
+//                    if (activityItemArray.size() > 1){
+//                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
+//                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
+//                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
+//                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
+//                    }
+//
+//
+//                }
+//
+//                @Override
+//                public void onFailure(Exception e) {
+//                    // Handle the error
+//                    Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+//                }
+//
+//            });
 
 
         } else {

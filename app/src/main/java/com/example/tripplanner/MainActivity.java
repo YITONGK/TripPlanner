@@ -221,8 +221,18 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Initialize WeatherTripPlanner
+        if (!Places.isInitialized()) {
+            Places.initialize(getApplicationContext(), BuildConfig.PLACES_API_KEY);
+        }
+        placesClient = Places.createClient(this);
+
+        // Initialize sensors
         sensorDetector = new SensorDetector(this);
+        sensorDetector.setOnShakeListener(() -> {
+            sensorDetector.getCurrentLocation(location -> {
+                Log.d("SHAKE", "Location: " + location);
+            });
+        });
 
         // Detect weather and plan trip
         // weatherTripPlanner.detectWeatherAndPlanTrip();
@@ -284,6 +294,41 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         setIntent(intent); // Update the intent
         handleIntent(intent);
+    }
+    
+    private void searchNearbyPlaces(Location location, OnSuccessListener<List<Place>> listener) {
+        LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+        // Define the place fields to return
+        List<Place.Field> placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG);
+
+        // Create a request object
+        FindCurrentPlaceRequest request = FindCurrentPlaceRequest.newInstance(placeFields);
+
+        // Call findCurrentPlace and handle the response
+        Task<FindCurrentPlaceResponse> placeResponse = placesClient.findCurrentPlace(request);
+        placeResponse.addOnCompleteListener(new OnCompleteListener<FindCurrentPlaceResponse>() {
+            @Override
+            public void onComplete(@NonNull Task<FindCurrentPlaceResponse> task) {
+                if (task.isSuccessful()) {
+                    FindCurrentPlaceResponse response = task.getResult();
+                    List<Place> places = new ArrayList<>();
+                    for (PlaceLikelihood placeLikelihood : response.getPlaceLikelihoods()) {
+                        places.add(placeLikelihood.getPlace());
+                        Log.i("PLACES", String.format("Place '%s' has likelihood: %f",
+                                placeLikelihood.getPlace().getName(),
+                                placeLikelihood.getLikelihood()));
+                    }
+                    listener.onSuccess(places);
+                } else {
+                    Exception exception = task.getException();
+                    if (exception instanceof ApiException) {
+                        ApiException apiException = (ApiException) exception;
+                        Log.e("PLACES", "Place not found: " + apiException.getStatusCode());
+                    }
+                }
+            }
+        });
     }
 
     private void handleIntent(Intent intent) {
