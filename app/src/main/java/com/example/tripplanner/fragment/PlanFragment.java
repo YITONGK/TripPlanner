@@ -20,7 +20,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -37,13 +36,11 @@ import com.codebyashish.googledirectionapi.ErrorHandling;
 import com.codebyashish.googledirectionapi.RouteDrawing;
 import com.codebyashish.googledirectionapi.RouteInfoModel;
 import com.codebyashish.googledirectionapi.RouteListener;
-import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.MapActivity;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
-import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
@@ -70,7 +67,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.sql.Time;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -80,14 +76,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Collections;
 import java.util.List;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
-import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
@@ -104,7 +98,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -165,10 +158,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             @Override
             public void onChanged(Trip trip) {
                 if (trip != null) {
-                    PlanFragment.this.trip = trip;
-                    PlanFragment.this.locationList = trip.getLocations();
-                    PlanFragment.this.startDate = trip.getStartDate();
-                    PlanFragment.this.endDate = trip.getEndDate();
+                    PlanFragment.trip = trip;
+                    PlanFragment.locationList = trip.getLocations();
+                    PlanFragment.startDate = trip.getStartDate();
+                    PlanFragment.endDate = trip.getEndDate();
                 }
             }
         });
@@ -177,7 +170,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             if (this.layout == PLAN_SPECIFIC_DAY) {
                 this.dayIndex = getArguments().getInt("dayIndex", -1);
                 long startDateMillis = getArguments().getLong("startDateMillis");
-                this.startDate = new Timestamp(new Date(startDateMillis));
+                startDate = new Timestamp(new Date(startDateMillis));
             }
         }
     }
@@ -235,18 +228,18 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     int toPosition = target.getAdapterPosition();
 
                     PlanItem fromItem = planItems.get(fromPosition);
-                    PlanItem toItem = planItems.get(toPosition);
-
-                    if (fromItem.getType() == PlanItem.TYPE_ACTIVITY && toItem.getType() == PlanItem.TYPE_ACTIVITY) {
+                    if (fromItem.getType() == PlanItem.TYPE_ACTIVITY) {
                         int fromActivityIndex = getActivityItemIndex(fromPosition);
-                        int toActivityIndex = getActivityItemIndex(toPosition);
+                        int toActivityIndex = getActivityItemIndexForMove(toPosition);
 
-                        Collections.swap(activityItemArray, fromActivityIndex, toActivityIndex);
-                        viewModel.updateActivityList(dayIndex, activityItemArray);
-                        viewModel.saveTripToDatabase();
-                        preparePlanItems();
-                        adapter.notifyDataSetChanged();
-
+                        if (toActivityIndex == -1) {
+                            toActivityIndex = 0;
+                        }
+                        ActivityItem movedActivityItem = activityItemArray.remove(fromActivityIndex);
+                        activityItemArray.add(toActivityIndex, movedActivityItem);
+                        PlanItem movedPlanItem = planItems.remove(fromPosition);
+                        planItems.add(toPosition, movedPlanItem);
+                        adapter.notifyItemMoved(fromPosition, toPosition);
                         return true;
                     }
                     return false;
@@ -259,6 +252,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 @Override
                 public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                     super.clearView(recyclerView, viewHolder);
+                    preparePlanItems();
+                    adapter.notifyDataSetChanged();
                     viewModel.updateActivityList(dayIndex, activityItemArray);
                     viewModel.saveTripToDatabase();
                 }
@@ -299,25 +294,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 @Override
                 public void onClick(View v) {
 
-//                    String destination = "Unknown Destination";
-//                    if (locationList != null && !locationList.isEmpty()) {
-//                        destination = locationList.get(0).getName();
-//                    }
-//
-//                    Log.d("PlanFragment", "Destination: "+ destination);
-//                    Log.d("PlanFragment", "Weather: "+allWeatherData);
-
-                    // Get the weather forecast for the destination
-//                    String weatherForecast = "Unknown weather forecast";
-//                    if (allWeatherData != null && !allWeatherData.isEmpty()) {
-//                        // Get the weather for the first day (assuming day index 0)
-//                        Weather weather = allWeatherData.get(0);
-//                        if (weather != null) {
-//                            weatherForecast = String.format("Weather is %s with a high of %.1f°C", weather.getDescription(), weather.getTemperature());
-//                        }
-//                    }
-
-
                     // Call the recommendTripPlan method
                     String destination = "Melbourne, Australia"; // Example destination
                     String weatherForecast = "Sunny with a high of 25°C"; // Example weather forecast
@@ -338,8 +314,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 //                                    // Update the activityItemArray with the new recommended activities
 //                                    activityItemArray.clear();
 //                                    activityItemArray.addAll(recommendedActivities);
-//
-
 
                                     // Update in ViewModel and save
                                     for (ActivityItem activityItem : recommendedActivities) {
@@ -353,21 +327,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                                 }
                             });
 
-////                            // Update the activityItemArray with the new recommended activities
-//                            activityItemArray.clear();
-//                            activityItemArray.addAll(recommendedActivities);
-//
-//                            // Notify the adapter that the data has changed
-//                            adapter.notifyDataSetChanged();
-//
-//                            // Update in ViewModel and save
-//                            for (ActivityItem activityItem: recommendedActivities){
-//                                viewModel.addActivity(dayIndex, activityItem);
-//                            }
-//
-//                            adapter.notifyDataSetChanged();
-//                            viewModel.saveTripToDatabase();
-
                         }
 
                         @Override
@@ -379,8 +338,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     });
                 }
             });
-
-
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
             weatherAPIClient = new WeatherAPIClient();
@@ -571,11 +528,15 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     Timestamp endTimestamp = buildTimestamp(startDate, dayIndex, endHour[0], endMinute[0]);
                     activityItem.setEndTime(endTimestamp);
                 }
-                if (activityLocation.get() != null) {
-                    activityItem.setLocation(activityLocation.get());
-                } else if (activityItem.getLocation() == null && !inputLocation.getText().toString().isEmpty()) {
-                    // Handle manual input
-                    activityItem.setLocation(new Location("", inputLocation.getText().toString(), "", 0, 0, ""));
+                String locationText = inputLocation.getText().toString().trim();
+                if (!locationText.isEmpty()) {
+                    if (activityLocation.get() != null) {
+                        activityItem.setLocation(activityLocation.get());
+                    } else {
+                        activityItem.setLocation(new Location("", locationText, "", 0, 0, ""));
+                    }
+                } else {
+                    activityItem.setLocation(null);
                 }
                 activityItem.setNotes(inputNotes.getText().toString());
                 preparePlanItems();
@@ -1070,7 +1031,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     routePlanItem = new PlanItem(routeInfo);
                     planItems.set(routeInfoPosition, routePlanItem);
 
-                    // 使用 Handler 切换到主线程
                     mainHandler.post(() -> {
                         if (isAdded()) {
                             adapter.notifyItemChanged(routeInfoPosition);
@@ -1079,16 +1039,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                         }
                     });
                 } else {
-                    // 处理没有可用路线信息的情况
                     Log.d("PlanFragment", "No route information available between " + origin.getNonNullIdOrName() + " and " + destination.getNonNullIdOrName());
-
-                    // 可以创建一个表示无可用路线的 RouteInfo
                     RouteInfo routeInfo = new RouteInfo("No route available", "");
                     PlanItem routePlanItem = planItems.get(routeInfoPosition);
                     routePlanItem = new PlanItem(routeInfo);
                     planItems.set(routeInfoPosition, routePlanItem);
 
-                    // 更新 UI
                     mainHandler.post(() -> {
                         if (isAdded()) {
                             adapter.notifyItemChanged(routeInfoPosition);
@@ -1101,7 +1057,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
             @Override
             public void onFailure(Exception e) {
-                // 处理错误
                 Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
             }
         });
@@ -1117,5 +1072,27 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         }
         return activityIndex;
     }
+
+    private int getActivityItemIndexForMove(int planItemPosition) {
+        int activityIndex = 0;
+        for (int i = 0; i < planItemPosition; i++) {
+            PlanItem item = planItems.get(i);
+            if (item.getType() == PlanItem.TYPE_ACTIVITY) {
+                activityIndex++;
+            }
+        }
+        return activityIndex;
+    }
+
+    private void removeConnectedRouteItems(int activityPosition) {
+        if (activityPosition > 0 && planItems.get(activityPosition - 1).getType() == PlanItem.TYPE_ROUTE_INFO) {
+            planItems.remove(activityPosition - 1);
+            activityPosition--;
+        }
+        if (activityPosition < planItems.size() - 1 && planItems.get(activityPosition + 1).getType() == PlanItem.TYPE_ROUTE_INFO) {
+            planItems.remove(activityPosition + 1);
+        }
+    }
+
 
 }

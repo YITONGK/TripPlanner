@@ -34,7 +34,6 @@ public class RoutePlanner {
         }
 
         if (locations.size() < 2) {
-            // 位置数量不足，无法计算距离矩阵
             callback.onFailure(new IllegalArgumentException("Not enough locations to compute distance matrix."));
             return;
         }
@@ -134,7 +133,6 @@ public class RoutePlanner {
                 locationBuilder.append(URLEncoder.encode(location.getName(), "UTF-8"));
             }
             else {
-                // 如果位置既没有 ID 也没有名称，跳过该位置
                 Log.w("RoutePlannerUtil", "Invalid location with no ID or name, skipping.");
                 continue;
             }
