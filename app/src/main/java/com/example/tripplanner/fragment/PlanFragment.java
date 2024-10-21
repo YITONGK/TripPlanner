@@ -209,6 +209,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
             // Get the activity items list for this day from the ViewModel
             activityItemArray = viewModel.getActivityItemArray(dayIndex);
+            planItems = new ArrayList<>();
             preparePlanItems();
             adapter = new ActivityItemAdapter(getContext(), planItems);
 
@@ -275,8 +276,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
             adapter.setOnItemClickListener(new ActivityItemAdapter.OnItemClickListener() {
                 @Override
-                public void onItemClick(int position) {
-                    showEditActivityDialog(position);
+                public void onItemClick(int position, PlanItem planItem) {
+                    if (planItem.getType() == PlanItem.TYPE_ACTIVITY) {
+                        int activityIndex = getActivityItemIndex(position);
+                        showEditActivityDialog(activityIndex);
+                    }
                 }
             });
 
@@ -1022,7 +1026,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     }
 
     private void preparePlanItems() {
-        planItems = new ArrayList<>();
+        if (planItems == null) {
+            planItems = new ArrayList<>();
+        } else {
+            planItems.clear();
+        }
+
         for (int i = 0; i < activityItemArray.size(); i++) {
             planItems.add(new PlanItem(activityItemArray.get(i)));
 
@@ -1054,19 +1063,40 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
                         origin.getNonNullIdOrName(),
                         destination.getNonNullIdOrName());
-                RouteInfo routeInfo = new RouteInfo(entry.getDuration(), entry.getDistance());
-                PlanItem routePlanItem = planItems.get(routeInfoPosition);
-                routePlanItem = new PlanItem(routeInfo);
-                planItems.set(routeInfoPosition, routePlanItem);
 
-                // 使用 Handler 切换到主线程
-                mainHandler.post(() -> {
-                    if (isAdded()) {
-                        adapter.notifyItemChanged(routeInfoPosition);
-                    } else {
-                        Log.d("PlanFragment", "Fragment not attached, cannot update UI");
-                    }
-                });
+                if (entry != null && entry.getDuration() != null && entry.getDistance() != null) {
+                    RouteInfo routeInfo = new RouteInfo(entry.getDuration(), entry.getDistance());
+                    PlanItem routePlanItem = planItems.get(routeInfoPosition);
+                    routePlanItem = new PlanItem(routeInfo);
+                    planItems.set(routeInfoPosition, routePlanItem);
+
+                    // 使用 Handler 切换到主线程
+                    mainHandler.post(() -> {
+                        if (isAdded()) {
+                            adapter.notifyItemChanged(routeInfoPosition);
+                        } else {
+                            Log.d("PlanFragment", "Fragment not attached, cannot update UI");
+                        }
+                    });
+                } else {
+                    // 处理没有可用路线信息的情况
+                    Log.d("PlanFragment", "No route information available between " + origin.getNonNullIdOrName() + " and " + destination.getNonNullIdOrName());
+
+                    // 可以创建一个表示无可用路线的 RouteInfo
+                    RouteInfo routeInfo = new RouteInfo("No route available", "");
+                    PlanItem routePlanItem = planItems.get(routeInfoPosition);
+                    routePlanItem = new PlanItem(routeInfo);
+                    planItems.set(routeInfoPosition, routePlanItem);
+
+                    // 更新 UI
+                    mainHandler.post(() -> {
+                        if (isAdded()) {
+                            adapter.notifyItemChanged(routeInfoPosition);
+                        } else {
+                            Log.d("PlanFragment", "Fragment not attached, cannot update UI");
+                        }
+                    });
+                }
             }
 
             @Override

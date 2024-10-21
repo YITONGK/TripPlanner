@@ -33,6 +33,12 @@ public class RoutePlanner {
             }
         }
 
+        if (locations.size() < 2) {
+            // 位置数量不足，无法计算距离矩阵
+            callback.onFailure(new IllegalArgumentException("Not enough locations to compute distance matrix."));
+            return;
+        }
+
         try {
             String url = buildDirectionsUrl(locations, mode);
             Log.d("RoutePlanner", url);
@@ -63,7 +69,7 @@ public class RoutePlanner {
         }
     }
 
-     private static List<DistanceMatrixEntry> parseDistanceMatrixResponse(String jsonResponse, List<Location> locations, String mode) {
+    private static List<DistanceMatrixEntry> parseDistanceMatrixResponse(String jsonResponse, List<Location> locations, String mode) {
         List<DistanceMatrixEntry> entries = new ArrayList<>();
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -73,16 +79,29 @@ public class RoutePlanner {
                 JSONArray elements = rows.getJSONObject(i).getJSONArray("elements");
                 for (int j = 0; j < elements.length(); j++) {
                     JSONObject element = elements.getJSONObject(j);
-                    String distance = element.getJSONObject("distance").getString("text");
-                    String duration = element.getJSONObject("duration").getString("text");
+                    String status = element.getString("status");
 
-                    entries.add(new DistanceMatrixEntry(
-                            locations.get(i).getNonNullIdOrName(),
-                            locations.get(j).getNonNullIdOrName(),
-                            mode,
-                            distance,
-                            duration
-                    ));
+                    if (status.equals("OK")) {
+                        String distance = element.getJSONObject("distance").getString("text");
+                        String duration = element.getJSONObject("duration").getString("text");
+
+                        entries.add(new DistanceMatrixEntry(
+                                locations.get(i).getNonNullIdOrName(),
+                                locations.get(j).getNonNullIdOrName(),
+                                mode,
+                                distance,
+                                duration
+                        ));
+                    } else {
+                        Log.w("RoutePlannerUtil", "No route found between " + locations.get(i).getNonNullIdOrName() + " and " + locations.get(j).getNonNullIdOrName() + ". Status: " + status);
+                        entries.add(new DistanceMatrixEntry(
+                                locations.get(i).getNonNullIdOrName(),
+                                locations.get(j).getNonNullIdOrName(),
+                                mode,
+                                null,
+                                null
+                        ));
+                    }
                 }
             }
         } catch (Exception e) {
@@ -90,6 +109,7 @@ public class RoutePlanner {
         }
         return entries;
     }
+
 
 
     private static String buildDirectionsUrl(List<Location> locations, String mode) throws Exception {
@@ -113,6 +133,15 @@ public class RoutePlanner {
                 }
                 locationBuilder.append(URLEncoder.encode(location.getName(), "UTF-8"));
             }
+            else {
+                // 如果位置既没有 ID 也没有名称，跳过该位置
+                Log.w("RoutePlannerUtil", "Invalid location with no ID or name, skipping.");
+                continue;
+            }
+        }
+
+        if (locationBuilder.length() == 0) {
+            throw new Exception("No valid locations to build URL.");
         }
 
         return "https://maps.googleapis.com/maps/api/distancematrix/json?"

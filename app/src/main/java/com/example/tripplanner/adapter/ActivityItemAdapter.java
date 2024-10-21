@@ -40,7 +40,7 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public interface OnItemClickListener {
-        void onItemClick(int position);
+        void onItemClick(int position, PlanItem planItem);
     }
 
     public ActivityItemAdapter(Context context, List<PlanItem> planItems) {
@@ -106,7 +106,7 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
                 if (onItemClickListener != null) {
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
-                        onItemClickListener.onItemClick(position);
+                        onItemClickListener.onItemClick(position, planItems.get(position));
                     }
                 }
             });
