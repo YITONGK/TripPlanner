@@ -359,31 +359,31 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             });
 
             // Fetch the distance matrix
-            RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
-                @Override
-                public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-                    // Handle the successful result
-                    Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
-                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItemArray);
-                    Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
-
-                    if (activityItemArray.size() > 1){
-                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
-                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
-                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
-                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
-                    }
-
-
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    // Handle the error
-                    Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
-                }
-
-            });
+//            RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
+//                @Override
+//                public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+//                    // Handle the successful result
+//                    Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
+//                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItemArray);
+//                    Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
+//
+//                    if (activityItemArray.size() > 1){
+//                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
+//                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
+//                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
+//                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
+//                    }
+//
+//
+//                }
+//
+//                @Override
+//                public void onFailure(Exception e) {
+//                    // Handle the error
+//                    Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+//                }
+//
+//            });
 
 
         } else {
@@ -818,6 +818,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
         HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
 
+        HashMap<String, List<String>> locationNames = getLocationNames();
+
         if (daysAndLocationsMap == null) {
             return;
         }
@@ -872,6 +874,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             public void onMapClick(LatLng latLng) {
                 Intent intent = new Intent(getActivity(), MapActivity.class);
                 intent.putExtra("daysAndLocationsMap", daysAndLocationsMap);
+                intent.putExtra("locationNames", locationNames);
                 intent.putExtra("numDays",viewModel.getTrip().getNumDays());
                 startActivity(intent);
             }
@@ -1026,5 +1029,28 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         return locationMap;
     }
 
+    public HashMap<String, List<String>> getLocationNames() {
+        HashMap<String, List<String>> locationName = new HashMap<>();
+
+        if (trip == null) {
+            return null;
+        }
+
+        Set<String> keys = trip.getPlans().keySet();
+
+        for (String key : keys) {
+            List<ActivityItem> activityItems = trip.getPlans().get(key);
+            List<String> nameList = new ArrayList<>();
+
+            for (ActivityItem item : activityItems) {
+                String name = item.getName();
+                if (name != null && !name.isEmpty()) {
+                    nameList.add(name);
+                }
+            }
+            locationName.put(key, nameList);
+        }
+        return locationName;
+    }
 
 }
