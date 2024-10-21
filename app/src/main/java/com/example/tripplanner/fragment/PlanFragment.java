@@ -48,6 +48,8 @@ import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.PlanItem;
+import com.example.tripplanner.entity.RouteInfo;
 import com.example.tripplanner.utils.GptApiClient;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
@@ -131,6 +133,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     private TextView addActivityLocation;
     private RecyclerView activityLocationRecyclerView;
     private ArrayList<ActivityItem> activityItemArray;
+    private List<PlanItem> planItems;
     private ActivityItemAdapter adapter;
     private AtomicReference<Location> activityLocation = new AtomicReference<>();
 
@@ -142,6 +145,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     private WeatherAPIClient weatherAPIClient;
     private List<Polyline> polylines = new ArrayList<>();
     private Random random = new Random(123);
+
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public interface OnPlaceFetchedListener {
         void onPlaceFetched(Location location);
@@ -204,7 +209,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
             // Get the activity items list for this day from the ViewModel
             activityItemArray = viewModel.getActivityItemArray(dayIndex);
-            adapter = new ActivityItemAdapter(getContext(), activityItemArray);
+            preparePlanItems();
+            adapter = new ActivityItemAdapter(getContext(), planItems);
 
             ItemTouchHelper.Callback callback = new ItemTouchHelper.Callback() {
 
@@ -227,10 +233,22 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     int fromPosition = viewHolder.getAdapterPosition();
                     int toPosition = target.getAdapterPosition();
 
-                    Collections.swap(activityItemArray, fromPosition, toPosition);
-                    adapter.notifyItemMoved(fromPosition, toPosition);
+                    PlanItem fromItem = planItems.get(fromPosition);
+                    PlanItem toItem = planItems.get(toPosition);
 
-                    return true;
+                    if (fromItem.getType() == PlanItem.TYPE_ACTIVITY && toItem.getType() == PlanItem.TYPE_ACTIVITY) {
+                        int fromActivityIndex = getActivityItemIndex(fromPosition);
+                        int toActivityIndex = getActivityItemIndex(toPosition);
+
+                        Collections.swap(activityItemArray, fromActivityIndex, toActivityIndex);
+                        viewModel.updateActivityList(dayIndex, activityItemArray);
+                        viewModel.saveTripToDatabase();
+                        preparePlanItems();
+                        adapter.notifyDataSetChanged();
+
+                        return true;
+                    }
+                    return false;
                 }
 
                 @Override
@@ -358,33 +376,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 }
             });
 
-            // Fetch the distance matrix
-            RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
-                @Override
-                public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-                    // Handle the successful result
-                    Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
-                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItemArray);
-                    Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
-
-                    if (activityItemArray.size() > 1){
-                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
-                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
-                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
-                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
-                    }
-
-
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    // Handle the error
-                    Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
-                }
-
-            });
-
 
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
@@ -428,8 +419,9 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     ActivityItem activityItem = new ActivityItem(activityName);
                     // Update in ViewModel and save
                     viewModel.addActivity(dayIndex, activityItem);
-                    adapter.notifyDataSetChanged();
                     viewModel.saveTripToDatabase();
+                    preparePlanItems();
+                    adapter.notifyDataSetChanged();
                     showEditActivityDialog(activityItemArray.size() - 1);
                 } else {
                     Toast.makeText(getContext(), "Please enter something", Toast.LENGTH_SHORT).show();
@@ -582,6 +574,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     activityItem.setLocation(new Location("", inputLocation.getText().toString(), "", 0, 0, ""));
                 }
                 activityItem.setNotes(inputNotes.getText().toString());
+                preparePlanItems();
                 adapter.notifyDataSetChanged();
 
                 // Update in ViewModel and save
@@ -603,8 +596,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                             public void onClick(DialogInterface confirmDialog, int whichButton) {
                                 // Update in ViewModel and save
                                 viewModel.removeActivity(dayIndex, position);
-                                adapter.notifyDataSetChanged();
                                 viewModel.saveTripToDatabase();
+                                preparePlanItems();
+                                adapter.notifyDataSetChanged();
+
 
                                 confirmDialog.dismiss();
                                 dialogInterface.dismiss();
@@ -1026,5 +1021,71 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         return locationMap;
     }
 
+    private void preparePlanItems() {
+        planItems = new ArrayList<>();
+        for (int i = 0; i < activityItemArray.size(); i++) {
+            planItems.add(new PlanItem(activityItemArray.get(i)));
+
+            if (i < activityItemArray.size() - 1) {
+                ActivityItem currentItem = activityItemArray.get(i);
+                ActivityItem nextItem = activityItemArray.get(i + 1);
+
+                if (currentItem.getLocation() != null && nextItem.getLocation() != null) {
+                    planItems.add(new PlanItem((RouteInfo) null));
+                    int routeInfoPosition = planItems.size() - 1;
+                    fetchRouteInfo(currentItem.getLocation(), nextItem.getLocation(), routeInfoPosition);
+                }
+            }
+        }
+    }
+
+    private void fetchRouteInfo(Location origin, Location destination, int routeInfoPosition) {
+        List<ActivityItem> activityItems = new ArrayList<>();
+        ActivityItem originItem = new ActivityItem("Origin");
+        originItem.setLocation(origin);
+        ActivityItem destinationItem = new ActivityItem("Destination");
+        destinationItem.setLocation(destination);
+        activityItems.add(originItem);
+        activityItems.add(destinationItem);
+
+        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
+            @Override
+            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+                DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
+                        origin.getNonNullIdOrName(),
+                        destination.getNonNullIdOrName());
+                RouteInfo routeInfo = new RouteInfo(entry.getDuration(), entry.getDistance());
+                PlanItem routePlanItem = planItems.get(routeInfoPosition);
+                routePlanItem = new PlanItem(routeInfo);
+                planItems.set(routeInfoPosition, routePlanItem);
+
+                // 使用 Handler 切换到主线程
+                mainHandler.post(() -> {
+                    if (isAdded()) {
+                        adapter.notifyItemChanged(routeInfoPosition);
+                    } else {
+                        Log.d("PlanFragment", "Fragment not attached, cannot update UI");
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                // 处理错误
+                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+            }
+        });
+    }
+
+    private int getActivityItemIndex(int planItemPosition) {
+        int activityIndex = -1;
+        for (int i = 0; i <= planItemPosition; i++) {
+            PlanItem item = planItems.get(i);
+            if (item.getType() == PlanItem.TYPE_ACTIVITY) {
+                activityIndex++;
+            }
+        }
+        return activityIndex;
+    }
 
 }
