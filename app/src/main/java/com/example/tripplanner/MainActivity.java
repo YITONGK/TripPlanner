@@ -13,6 +13,7 @@ import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.utils.GptApiClient;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
@@ -245,14 +246,38 @@ public class MainActivity extends AppCompatActivity {
             sensorDetector.getCurrentLocation(location -> {
                 Log.d("SENSOR", "Location: " + location);
                 searchNearbyPlaces(location, places -> {
-                    // Handle the list of nearby places
-                    for (Place place : places) {
-                        Log.d("SENSOR", "Place: " + place.getName() + ", ID: " + place.getId());
-                    }
+
                     // Access temperature and humidity
                     float temperature = sensorDetector.getAmbientTemperature();
                     float humidity = sensorDetector.getRelativeHumidity();
-                    Log.d("SENSOR", "Temperature: " + temperature + ", Humidity: " + humidity);
+                    String sensorData = "Temperature: " + temperature + ", Humidity: " + humidity;
+                    Log.d("SENSOR", sensorData);
+
+                    String userPreferences = "Enjoy cafe and bakery";
+
+                    GptApiClient.generateOneDayTripPlan(sensorData, places, userPreferences, new GptApiClient.GptApiCallback() {
+                        @Override
+                        public void onSuccess(String response) {
+                            // Handle the successful response here
+                            Log.d("SENSOR", "Trip plan recommended: " + response);
+
+                            // Parse the JSON response into a list of ActivityItem objects
+                            GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
+                                @Override
+                                public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
+                                    Log.d("SENSOR", "RecommendActivities: "+recommendedActivities);
+
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            // Handle the error here
+                            Log.e("PlanFragment", "Failed to recommend trip plan: " + error);
+                            Toast.makeText(MainActivity.this, "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
+                        }
+                        });
                 });
             });
         });

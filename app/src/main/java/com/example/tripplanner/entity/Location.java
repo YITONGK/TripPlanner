@@ -1,5 +1,8 @@
 package com.example.tripplanner.entity;
 
+import com.google.android.libraries.places.api.model.AddressComponent;
+import com.google.android.libraries.places.api.model.Place;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -116,5 +119,38 @@ public class  Location implements Serializable {
                 ", country='" + country + '\'' +
                 '}';
     }
+
+    public static Location getInstanceFromPlace(Place place){
+        String country = null;
+
+        // Extract the country from the address components
+        if (place.getAddressComponents() != null) {
+            for (AddressComponent component : place.getAddressComponents().asList()) {
+                if (component.getTypes().contains("country")) {
+                    country = component.getName();
+                    break;
+                }
+            }
+        }
+
+        // Get the primary place type
+        String placeType = null;
+        if (place.getTypes() != null && !place.getTypes().isEmpty()) {
+            placeType = place.getTypes().get(0).toString();
+        }
+
+        // Create a new Location object with the fetched details
+        Location location = new Location(
+                place.getId(),
+                place.getName(),
+                placeType,
+                place.getLatLng().latitude,
+                place.getLatLng().longitude,
+                country
+        );
+
+        return location;
+    }
+
 }
 
