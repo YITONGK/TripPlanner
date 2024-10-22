@@ -245,59 +245,72 @@ public class MainActivity extends AppCompatActivity {
         // Initialize sensors
         sensorDetector = new SensorDetector(this);
         sensorDetector.setOnShakeListener(() -> {
-            // Get current location and search nearby places
-            Log.d("SENSOR", "Shake event detected");
-            sensorDetector.getCurrentLocation(location -> {
-                Log.d("SENSOR", "Location: " + location);
-                searchNearbyPlaces(location, places -> {
+            // Show confirmation dialog
+            new AlertDialog.Builder(MainActivity.this)
+                .setTitle("One-Day Trip Plan")
+                .setMessage("Do you want to generate a one-day trip plan?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Get current location and search nearby places
+                        Log.d("SENSOR", "Shake event detected");
+                        sensorDetector.getCurrentLocation(location -> {
+                            Log.d("SENSOR", "Location: " + location);
+                            searchNearbyPlaces(location, places -> {
 
-                    // Access temperature and humidity
-                    float temperature = sensorDetector.getAmbientTemperature();
-                    float humidity = sensorDetector.getRelativeHumidity();
-                    String sensorData = "Temperature: " + temperature + ", Humidity: " + humidity;
-                    Log.d("SENSOR", sensorData);
+                                // Access temperature and humidity
+                                float temperature = sensorDetector.getAmbientTemperature();
+                                float humidity = sensorDetector.getRelativeHumidity();
+                                String sensorData = "Temperature: " + temperature + ", Humidity: " + humidity;
+                                Log.d("SENSOR", sensorData);
 
-                    String userPreferences = "Enjoy cafe and bakery";
+                                String userPreferences = "Enjoy cafe and bakery";
 
-                    GptApiClient.generateOneDayTripPlan(sensorData, places, userPreferences, new GptApiClient.GptApiCallback() {
-                        @Override
-                        public void onSuccess(String response) {
-                            // Handle the successful response here
-                            Log.d("SENSOR", "Trip plan recommended: " + response);
+                                GptApiClient.generateOneDayTripPlan(sensorData, places, userPreferences, new GptApiClient.GptApiCallback() {
+                                    @Override
+                                    public void onSuccess(String response) {
+                                        // Handle the successful response here
+                                        Log.d("SENSOR", "Trip plan recommended: " + response);
 
-                            String tripName = GptApiClient.getStringFromJsonResponse(response, "tripName");
-                            // Parse the JSON response into a list of ActivityItem objects
-                            GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
-                                @Override
-                                public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
-                                    Log.d("SENSOR", "RecommendActivities: "+recommendedActivities);
-                                    Trip trip = new Trip();
-                                    trip.setName(tripName);
-                                    trip.setNumDays(1);
-                                    trip.setStartDate(Timestamp.now());
-                                    trip.setEndDate(Timestamp.now());
-                                    trip.addUser(FirestoreDB.getCurrentUserId());
-                                    trip.addLocation(recommendedActivities.get(0).getLocation());
+                                        String tripName = GptApiClient.getStringFromJsonResponse(response, "tripName");
+                                        
+                                        // Parse the JSON response into a list of ActivityItem objects
+                                        GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
+                                            @Override
+                                            public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
+                                                Log.d("SENSOR", "RecommendActivities: "+recommendedActivities);
+                                                Trip trip = new Trip();
+                                                trip.setName(tripName);
+                                                trip.setNumDays(1);
+                                                trip.setStartDate(Timestamp.now());
+                                                trip.setEndDate(Timestamp.now());
+                                                trip.addUser(FirestoreDB.getCurrentUserId());
+                                                trip.addLocation(recommendedActivities.get(0).getLocation());
 
-                                    Map<String, List<ActivityItem>> newPlans = new HashMap<>();
-                                    newPlans.put("0", recommendedActivities);
-                                    trip.setPlans(newPlans);
+                                                Map<String, List<ActivityItem>> newPlans = new HashMap<>();
+                                                newPlans.put("0", recommendedActivities);
+                                                trip.setPlans(newPlans);
 
-//                                    FirestoreDB db = FirestoreDB.getInstance();
-//                                    db.createTrip(FirestoreDB.getCurrentUserId(), trip.convertTripToMap());
-                                }
+            //                                    FirestoreDB db = FirestoreDB.getInstance();
+            //                                    db.createTrip(FirestoreDB.getCurrentUserId(), trip.convertTripToMap());
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onFailure(String error) {
+                                        // Handle the error here
+                                        Log.e("SENSOR", "Failed to recommend trip plan: " + error);
+                                        Toast.makeText(MainActivity.this, "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
+                                    }
+                                    });
                             });
-                        }
-
-                        @Override
-                        public void onFailure(String error) {
-                            // Handle the error here
-                            Log.e("SENSOR", "Failed to recommend trip plan: " + error);
-//                            Toast.makeText(MainActivity.this, "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
-                        }
                         });
-                });
-            });
+                    }
+                })
+                .setNegativeButton("No", null)
+                .show();
+
         });
 //        sensorDetector.simulateShakeEvent();
 
