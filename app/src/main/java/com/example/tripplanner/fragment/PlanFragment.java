@@ -312,8 +312,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 //                                    activityItemArray.addAll(recommendedActivities);
 
 
-                                    //TODO: show a popup window, let users select which activities to add to plan
-                                    // Create a ListView and set the adapter
+                                    // Show a popup window to let users select which activities to add to plan
                                     ListView listView = new ListView(getContext());
                                     RecommentActivityAdapter recommentActivityAdapter = new RecommentActivityAdapter(getContext(), recommendedActivities);
                                     listView.setAdapter(recommentActivityAdapter);
@@ -353,21 +352,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                                     builder.create().show();
                                 }
                             });
-
-////                            // Update the activityItemArray with the new recommended activities
-//                            activityItemArray.clear();
-//                            activityItemArray.addAll(recommendedActivities);
-//
-//                            // Notify the adapter that the data has changed
-//                            adapter.notifyDataSetChanged();
-//
-//                            // Update in ViewModel and save
-//                            for (ActivityItem activityItem: recommendedActivities){
-//                                viewModel.addActivity(dayIndex, activityItem);
-//                            }
-//
-//                            adapter.notifyDataSetChanged();
-//                            viewModel.saveTripToDatabase();
 
                         }
 

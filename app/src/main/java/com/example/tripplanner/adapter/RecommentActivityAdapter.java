@@ -16,14 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RecommentActivityAdapter extends ArrayAdapter<ActivityItem> {
-    private Context context;
-    private List<ActivityItem> activityItems;
     private List<ActivityItem> selectedItems;  // To track the checked state of each item
 
     public RecommentActivityAdapter(Context context, List<ActivityItem> items) {
         super(context, 0, items);
-        this.context = context;
-        this.activityItems = items;
         this.selectedItems = new ArrayList<>();
     }
 
