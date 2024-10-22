@@ -1,6 +1,7 @@
 package com.example.tripplanner.fragment;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -8,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,6 +22,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -90,7 +95,9 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 
 import com.example.tripplanner.entity.Weather;
 import com.example.tripplanner.utils.WeatherAPIClient;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
 
 import java.util.Date;
@@ -366,17 +373,25 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     }
 
     private void showAddActivityDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Add activity");
+        final Dialog dialog = new Dialog(getContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_add_activity);
 
-        final EditText input = new EditText(getContext());
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        builder.setView(input);
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        lp.copyFrom(dialog.getWindow().getAttributes());
+        lp.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+        dialog.getWindow().setAttributes(lp);
 
-        builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+        TextInputEditText activityNameEditText = dialog.findViewById(R.id.activityNameEditText);
+        MaterialButton addButton = dialog.findViewById(R.id.addButton);
+        MaterialButton cancelButton = dialog.findViewById(R.id.cancelButton);
+
+        addButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int which) {
-                String activityName = input.getText().toString();
+            public void onClick(View v) {
+                String activityName = activityNameEditText.getText().toString().trim();
                 if (!activityName.isEmpty()) {
                     ActivityItem activityItem = new ActivityItem(activityName);
                     // Update in ViewModel and save
@@ -384,31 +399,47 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     viewModel.saveTripToDatabase();
                     preparePlanItems();
                     adapter.notifyDataSetChanged();
+                    dialog.dismiss();
                     showEditActivityDialog(activityItemArray.size() - 1);
                 } else {
-                    Toast.makeText(getContext(), "Please enter something", Toast.LENGTH_SHORT).show();
+                    activityNameEditText.setError("Please enter activity name");
                 }
             }
         });
-        builder.setNegativeButton("Cancel", null);
 
-        builder.show();
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
     }
 
     private void showEditActivityDialog(int position) {
         ActivityItem activityItem = activityItemArray.get(position);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Edit activity");
+        final Dialog dialog = new Dialog(getContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_edit_activity);
 
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_activity, null);
-        builder.setView(dialogView);
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 
-        EditText startTime = dialogView.findViewById(R.id.startTime);
-        EditText endTime = dialogView.findViewById(R.id.endTime);
-        EditText inputLocation = dialogView.findViewById(R.id.inputLocation);
-        EditText inputNotes = dialogView.findViewById(R.id.inputNotes);
-        ListView autocompleteListView = dialogView.findViewById(R.id.autocompleteListView);
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        lp.copyFrom(dialog.getWindow().getAttributes());
+        lp.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+        dialog.getWindow().setAttributes(lp);
+
+        TextInputEditText activityName = dialog.findViewById(R.id.activityName);
+        TextInputEditText startTime = dialog.findViewById(R.id.startTime);
+        TextInputEditText endTime = dialog.findViewById(R.id.endTime);
+        TextInputEditText inputLocation = dialog.findViewById(R.id.inputLocation);
+        TextInputEditText inputNotes = dialog.findViewById(R.id.inputNotes);
+        ListView autocompleteListView = dialog.findViewById(R.id.autocompleteListView);
+        Button saveButton = dialog.findViewById(R.id.saveButton);
+        Button cancelButton = dialog.findViewById(R.id.cancelButton);
+        Button deleteButton = dialog.findViewById(R.id.deleteButton);
 
         autocompleteAdapter = new AutocompleteAdapter(getContext(), new ArrayList<>());
         autocompleteListView.setAdapter(autocompleteAdapter);
@@ -422,6 +453,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
         activityLocation = new AtomicReference<>();
 
+        activityName.setText(activityItem.getName());
         if (activityItem.getLocation() != null) {
             activityLocation.set(activityItem.getLocation());
             inputLocation.setText(activityItem.getLocationString());
@@ -442,13 +474,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             endMinute[0] = calendar.get(Calendar.MINUTE);
             endTime.setText(String.format("%02d:%02d", endHour[0], endMinute[0]));
         }
-        inputLocation.setText(activityItem.getLocationString());
         inputNotes.setText(activityItem.getNotes());
 
         startTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 int hour = startHour[0] != 0 ? startHour[0] : Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
                 int minute = startMinute[0] != 0 ? startMinute[0] : Calendar.getInstance().get(Calendar.MINUTE);
 
@@ -469,7 +499,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         endTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 int hour = endHour[0] != 0 ? endHour[0] : Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
                 int minute = endMinute[0] != 0 ? endMinute[0] : Calendar.getInstance().get(Calendar.MINUTE);
 
@@ -486,6 +515,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 timePickerDialog.show();
             }
         });
+
         inputLocation.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
@@ -518,9 +548,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             });
         });
 
-        builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+        saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int which) {
+            public void onClick(View v) {
+                String newActivityName = activityName.getText().toString().trim();
+                activityItem.setName(newActivityName);
                 if (isStartTimeSelected[0]) {
                     Timestamp startTimestamp = buildTimestamp(startDate, dayIndex, startHour[0], startMinute[0]);
                     activityItem.setStartTime(startTimestamp);
@@ -546,14 +578,21 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 // Update in ViewModel and save
                 viewModel.updateActivity(dayIndex, position, activityItem);
                 viewModel.saveTripToDatabase();
+
+                dialog.dismiss();
             }
         });
 
-        builder.setNegativeButton("Cancel", null);
-
-        builder.setNeutralButton("Delete", new DialogInterface.OnClickListener() {
+        cancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int which) {
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
                 // Show a confirmation dialog
                 new AlertDialog.Builder(getContext())
                         .setTitle("Delete Activity")
@@ -566,9 +605,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                                 preparePlanItems();
                                 adapter.notifyDataSetChanged();
 
-
                                 confirmDialog.dismiss();
-                                dialogInterface.dismiss();
+                                dialog.dismiss();
                             }
                         })
                         .setNegativeButton("No", null)
@@ -576,7 +614,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             }
         });
 
-        builder.show();
+        dialog.show();
     }
 
     private void fetchPlaceFromPlaceId(String placeId, EditText inputLocation, ListView autocompleteListView, OnPlaceFetchedListener listener) {
