@@ -91,6 +91,12 @@ public class SensorDetector implements SensorEventListener {
             isHumiditySensorAvailable = false;
             isAccelerometerAvailable = false;
         }
+
+
+        // For testing ShakeEvnet
+        if (onShakeListener != null) {
+            onShakeListener.onShake();
+        }
     }
 
     public void setOnShakeListener(OnShakeListener listener) {
@@ -107,7 +113,7 @@ public class SensorDetector implements SensorEventListener {
             Log.d("SENSOR", "Sensors unavailable. Fetching data from Weather API.");
             Location location = getCurrentLocation();
             if (location != null) {
-                fetchWeatherData(location);
+//                fetchWeatherData(location);
                 Log.d("SENSOR", "fallback to weather api");
             } else {
                 Log.d("SENSOR", "Unable to retrieve current location.");
@@ -149,7 +155,7 @@ public class SensorDetector implements SensorEventListener {
         return location;
     }
 
-    private void getCurrentLocation(OnSuccessListener<Location> listener) {
+    public void getCurrentLocation(OnSuccessListener<Location> listener) {
         if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             return;
@@ -157,6 +163,12 @@ public class SensorDetector implements SensorEventListener {
         fusedLocationClient.getLastLocation()
             .addOnSuccessListener(activity, listener)
             .addOnFailureListener(e -> Log.e("LOCATION", "Failed to get location: " + e.getMessage()));
+    }
+
+    public void simulateShakeEvent() {
+        if (onShakeListener != null) {
+            onShakeListener.onShake();
+        }
     }
 
 
@@ -272,6 +284,7 @@ public class SensorDetector implements SensorEventListener {
     // SensorEventListener methods
     @Override
     public void onSensorChanged(SensorEvent event) {
+
         if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
             ambientTemperature = event.values[0];
         } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
@@ -306,6 +319,14 @@ public class SensorDetector implements SensorEventListener {
 //        if (isTemperatureSensorAvailable && isHumiditySensorAvailable) {
 //            decideNotificationWithSensorData(ambientTemperature, relativeHumidity);
 //        }
+    }
+
+    public float getAmbientTemperature() {
+        return ambientTemperature;
+    }
+
+    public float getRelativeHumidity() {
+        return relativeHumidity;
     }
 
     @Override

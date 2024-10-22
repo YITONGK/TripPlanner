@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
@@ -18,8 +19,16 @@ import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.RoutePlanner;
 import com.example.tripplanner.utils.SensorDetector;
 import com.example.tripplanner.utils.CaptureAct;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.model.PlaceLikelihood;
+import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
+import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.navigation.NavigationBarView;
@@ -31,6 +40,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import androidx.cardview.widget.CardView;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.ui.AppBarConfiguration;
 
@@ -51,6 +61,7 @@ import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -229,49 +240,27 @@ public class MainActivity extends AppCompatActivity {
         // Initialize sensors
         sensorDetector = new SensorDetector(this);
         sensorDetector.setOnShakeListener(() -> {
+            // Get current location and search nearby places
+            Log.d("SENSOR", "Shake event detected");
             sensorDetector.getCurrentLocation(location -> {
-                Log.d("SHAKE", "Location: " + location);
+                Log.d("SENSOR", "Location: " + location);
+                searchNearbyPlaces(location, places -> {
+                    // Handle the list of nearby places
+                    for (Place place : places) {
+                        Log.d("SENSOR", "Place: " + place.getName() + ", ID: " + place.getId());
+                    }
+                    // Access temperature and humidity
+                    float temperature = sensorDetector.getAmbientTemperature();
+                    float humidity = sensorDetector.getRelativeHumidity();
+                    Log.d("SENSOR", "Temperature: " + temperature + ", Humidity: " + humidity);
+                });
             });
         });
+        sensorDetector.simulateShakeEvent();
+
 
         // Detect weather and plan trip
         // weatherTripPlanner.detectWeatherAndPlanTrip();
-
-        // Example usage of Route Planner
-//        List<ActivityItem> activityItems = new ArrayList<>();
-//        // Create some sample ActivityItems
-//        ActivityItem item1 = new ActivityItem("Visit NYU");
-//        item1.setLocation(new Location("New York University", 40.779437, -73.963244));
-//
-//        ActivityItem item2 = new ActivityItem("Lunch at Central Park");
-//        item2.setLocation(new Location("Central Park", 40.785091, -73.968285));
-//
-//        ActivityItem item3 = new ActivityItem("Empire State Building Tour");
-//        item3.setLocation(new Location("Empire State Building", 40.748817, -73.985428));
-//
-//        // Add items to the list
-//        activityItems.add(item1);
-//        activityItems.add(item2);
-//        activityItems.add(item3);
-
-//        // Fetch the distance matrix
-//        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
-//            @Override
-//            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-//                // Handle the successful result
-//                Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
-//                List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItems);
-//                Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
-//
-//            }
-//
-//            @Override
-//            public void onFailure(Exception e) {
-//                // Handle the error
-//                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
-//            }
-//
-//        });
 
     }
 
@@ -295,8 +284,9 @@ public class MainActivity extends AppCompatActivity {
         setIntent(intent); // Update the intent
         handleIntent(intent);
     }
-    
-    private void searchNearbyPlaces(Location location, OnSuccessListener<List<Place>> listener) {
+
+    private void searchNearbyPlaces( android.location.Location location, OnSuccessListener<List<Place>> listener) {
+        Log.d("SENSOR", "searchNearbyPlaces start");
         LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         // Define the place fields to return
@@ -305,7 +295,11 @@ public class MainActivity extends AppCompatActivity {
         // Create a request object
         FindCurrentPlaceRequest request = FindCurrentPlaceRequest.newInstance(placeFields);
 
-        // Call findCurrentPlace and handle the response
+        // Check for location permissions
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            return;
+        }
         Task<FindCurrentPlaceResponse> placeResponse = placesClient.findCurrentPlace(request);
         placeResponse.addOnCompleteListener(new OnCompleteListener<FindCurrentPlaceResponse>() {
             @Override
