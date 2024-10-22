@@ -63,7 +63,8 @@ public class GptApiClient {
             "- Environment (Temperature and Humidity) \n" +
             "- User Preferences\n\n"+
             "Please respond in the following JSON format:\n" +
-            "{\"activityItem\": [{\"name\": \"string\"," +
+            "{\"tripName\": \"string\", " +
+            "activityItem\": [{\"name\": \"string\"," +
             "      \"startTime\": \"yyyy-MM-dd HH:mm:ss\"," +
             "      \"endTime\": \"yyyy-MM-dd HH:mm:ss\"," +
             "      \"locationName\": \"Location Name\"," +
@@ -196,24 +197,41 @@ public class GptApiClient {
         getChatCompletion(SHAKE_PROMPT, userMessage, callback);
     }
 
-    public static String cleanAndValidateJson(String response) {
-        String jsonContent = extractJsonContent(response);
-        if (jsonContent == null) {
-            return null;
-        }
+//    public static String cleanAndValidateJson(String response) {
+//        String jsonContent = extractJsonContent(response);
+//        if (jsonContent == null) {
+//            return null;
+//        }
+//
+//        // Attempt to parse the JSON to check if it's valid
+//        try {
+//            new JSONObject(jsonContent);
+//            return jsonContent; // Return if valid
+//        } catch (JSONException e) {
+//            // Log the error and retry if needed
+//            Log.d("GptApiClient", "Invalid json: " + jsonContent);
+//            Log.e("GptApiClient", "Invalid JSON, retrying...");
+//            // Implement retry logic here if necessary
+//        }
+//
+//        return null;
+//    }
 
-        // Attempt to parse the JSON to check if it's valid
-        try {
-            new JSONObject(jsonContent);
-            return jsonContent; // Return if valid
-        } catch (JSONException e) {
-            // Log the error and retry if needed
-            Log.d("GptApiClient", "Invalid json: " + jsonContent);
-            Log.e("GptApiClient", "Invalid JSON, retrying...");
-            // Implement retry logic here if necessary
-        }
+    public static String cleanJsonResponse(String response){
+        response = response.replace("```json", "");
+        response = response.replace("```", "");
+        return response;
+    }
 
-        return null;
+    public static String getStringFromJsonResponse(String response, String key){
+        String value = null;
+        try{
+            response = cleanJsonResponse(response);
+            value = new JSONObject(response).optString(key, "New");
+        } catch (JSONException e){
+            Log.d("GptApiClient", "[getStringFromJsonResponse] Invalid json");
+        }
+        return value;
     }
 
     private static String extractJsonContent(String response) {
@@ -239,8 +257,7 @@ public class GptApiClient {
 
     public static List<ActivityItem> parseActivityItemsFromJson(String jsonResponse, PlacesClient placesClient, OnActivityItemsParsedListener listener) {
         // Clean the response
-        jsonResponse = jsonResponse.replace("```json", "");
-        jsonResponse = jsonResponse.replace("```", "");
+        jsonResponse = cleanJsonResponse(jsonResponse);
 
         List<ActivityItem> activityItems = new ArrayList<>();
 

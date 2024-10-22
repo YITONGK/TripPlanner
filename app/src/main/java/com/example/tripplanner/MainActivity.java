@@ -61,9 +61,13 @@ import com.google.firebase.Timestamp;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -261,12 +265,26 @@ public class MainActivity extends AppCompatActivity {
                             // Handle the successful response here
                             Log.d("SENSOR", "Trip plan recommended: " + response);
 
+                            String tripName = GptApiClient.getStringFromJsonResponse(response, "tripName");
                             // Parse the JSON response into a list of ActivityItem objects
                             GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
                                 @Override
                                 public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
                                     Log.d("SENSOR", "RecommendActivities: "+recommendedActivities);
+                                    Trip trip = new Trip();
+                                    trip.setName(tripName);
+                                    trip.setNumDays(1);
+                                    trip.setStartDate(Timestamp.now());
+                                    trip.setEndDate(Timestamp.now());
+                                    trip.addUser(FirestoreDB.getCurrentUserId());
+                                    trip.addLocation(recommendedActivities.get(0).getLocation());
 
+                                    Map<String, List<ActivityItem>> newPlans = new HashMap<>();
+                                    newPlans.put("0", recommendedActivities);
+                                    trip.setPlans(newPlans);
+
+//                                    FirestoreDB db = FirestoreDB.getInstance();
+//                                    db.createTrip(FirestoreDB.getCurrentUserId(), trip.convertTripToMap());
                                 }
                             });
                         }
@@ -274,14 +292,14 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onFailure(String error) {
                             // Handle the error here
-                            Log.e("PlanFragment", "Failed to recommend trip plan: " + error);
-                            Toast.makeText(MainActivity.this, "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
+                            Log.e("SENSOR", "Failed to recommend trip plan: " + error);
+//                            Toast.makeText(MainActivity.this, "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
                         }
                         });
                 });
             });
         });
-        sensorDetector.simulateShakeEvent();
+//        sensorDetector.simulateShakeEvent();
 
 
         // Detect weather and plan trip
