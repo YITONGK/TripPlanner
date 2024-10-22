@@ -3,7 +3,6 @@ package com.example.tripplanner.entity;
 public class User {
     private String username;
     private String email;
-    private String profileImagePath; // URI or path to the profile image
 
     public User(String username, String email) {
         this.username = username;

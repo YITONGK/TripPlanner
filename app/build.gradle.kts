@@ -76,6 +76,10 @@ dependencies {
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-firestore")
 
+    implementation("com.google.firebase:firebase-storage:20.2.1")
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+
+
 //    implementation("androidx.credentials:credentials:1.5.0-alpha05")
 
     // optional - needed for credentials support from play services, for devices running
