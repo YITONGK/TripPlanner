@@ -51,4 +51,9 @@
     <string name="plan">Plan</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="add_activity">Add Activity</string>
+    <string name="ask_ai_for_suggestions">Ask AI for Suggestions</string>
+    <string name="back">Back</string>
+
 </resources>

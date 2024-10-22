@@ -21,6 +21,7 @@ import com.example.tripplanner.entity.RouteInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ActivityItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context context;
@@ -142,7 +143,12 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
         public void bind(RouteInfo routeInfo) {
             if (routeInfo != null) {
-                routeInfoText.setText("Duration: " + routeInfo.getDuration() + ", Distance: " + routeInfo.getDistance());
+                if (Objects.equals(routeInfo.getDuration(), "No route available")) {
+                    routeInfoText.setText(routeInfo.getDuration());
+                } else {
+                    routeInfoText.setText("Duration: " + routeInfo.getDuration() + ", Distance: " + routeInfo.getDistance());
+                }
+
             } else {
                 routeInfoText.setText("Calculating route...");
             }

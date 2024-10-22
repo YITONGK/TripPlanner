@@ -90,6 +90,7 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 
 import com.example.tripplanner.entity.Weather;
 import com.example.tripplanner.utils.WeatherAPIClient;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.Timestamp;
 
 import java.util.Date;
@@ -123,7 +124,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     public static Trip trip;
 
     // For specific day plan
-    private TextView addActivityLocation;
+    private FloatingActionButton addActivityLocation;
     private RecyclerView activityLocationRecyclerView;
     private ArrayList<ActivityItem> activityItemArray;
     private List<PlanItem> planItems;

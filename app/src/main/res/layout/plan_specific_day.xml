@@ -1,32 +1,41 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/plan_specific_day_layout"
     android:layout_width="match_parent"
-    android:orientation="vertical"
-    android:layout_height="match_parent"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <ImageButton
-        android:id="@+id/planSuggest"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#ffd3c2"
-        android:text="➕ Add activity or location"
-        android:src="@drawable/baseline_settings_suggest_24" />
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/activityLocationRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/activityLocationRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp" />
+    </LinearLayout>
 
-    <TextView
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/addActivityLocation"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="➕ Add activity or location"
-        android:textSize="18sp"
-        android:padding="16dp"
-        android:background="?attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true" />
+        android:contentDescription="@string/add_activity"
+        android:src="@drawable/baseline_add_box_24"
+        app:layout_anchor="@id/activityLocationRecyclerView"
+        app:layout_anchorGravity="bottom|end"
+        android:layout_margin="16dp"
+        app:backgroundTint="#b8d2e4"/>
 
-</LinearLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/planSuggest"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/ask_ai_for_suggestions"
+        android:src="@drawable/baseline_settings_suggest_24"
+        app:layout_anchor="@id/activityLocationRecyclerView"
+        app:layout_anchorGravity="bottom|start"
+        android:layout_margin="16dp"
+        app:backgroundTint="#b8d2e4"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
