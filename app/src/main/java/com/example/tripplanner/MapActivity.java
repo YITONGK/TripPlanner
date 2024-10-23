@@ -1,10 +1,15 @@
 package com.example.tripplanner;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.content.Intent;
 import android.util.Log;
@@ -19,6 +24,7 @@ import java.util.Map;
 import java.util.Random;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.codebyashish.googledirectionapi.AbstractRouting;
 import com.codebyashish.googledirectionapi.ErrorHandling;
@@ -327,5 +333,26 @@ public class MapActivity extends AppCompatActivity  {
 
         return bitmap;
     }
+
+
+
+//    private android.location.Location getCurrentLocation() {
+//        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Activity.LOCATION_SERVICE);
+//        if (ActivityCompat.checkSelfPermission(getActivity(),
+//                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            // Request location permission
+//            ActivityCompat.requestPermissions(getActivity(), new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+//                    1);
+//            return null;
+//        }
+//        // Location location =
+//        // locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//        // if (location != null) {
+//        // return location;
+//        // }
+//        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+//        Log.d("SENSOR", "location: " + location);
+//        return location;
+//    }
 
 }
