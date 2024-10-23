@@ -2,23 +2,20 @@ package com.example.tripplanner;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.content.Context;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 import com.bumptech.glide.Glide;
-import com.example.tripplanner.adapter.DistanceMatrixCallback;
+import com.example.tripplanner.adapter.RecommentActivityAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
-import com.example.tripplanner.entity.DistanceMatrixEntry;
-import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.utils.GptApiClient;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
-import com.example.tripplanner.utils.RoutePlanner;
 import com.example.tripplanner.utils.SensorDetector;
 import com.example.tripplanner.utils.CaptureAct;
 import com.google.android.gms.common.api.ApiException;
@@ -27,6 +24,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.model.PlaceLikelihood;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
@@ -57,6 +55,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
@@ -65,13 +64,14 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -270,6 +270,12 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        // Show loading dialog
+                        ProgressDialog loadingDialog = new ProgressDialog(MainActivity.this);
+                        loadingDialog.setMessage("Loading...");
+                        loadingDialog.setCancelable(false);
+                        loadingDialog.show();
+
                         // Get current location and search nearby places
                         Log.d("SENSOR", "Shake event detected");
                         sensorDetector.getCurrentLocation(location -> {
@@ -282,35 +288,96 @@ public class MainActivity extends AppCompatActivity {
                                 String sensorData = "Temperature: " + temperature + ", Humidity: " + humidity;
                                 Log.d("SENSOR", sensorData);
 
-                                String userPreferences = "Enjoy cafe and bakery";
+                                AtomicReference<String> userPreferences = new AtomicReference<>("Enjoy cafe and bakery");
+                                FirestoreDB.getInstance().getUserById(FirestoreDB.getCurrentUserId(), (user) -> {
+                                    userPreferences.set(user.getPreference());
+                                }, e -> {
+                                    Log.d("SENSOR", "Error in getting user ");
+                                });
 
-                                GptApiClient.generateOneDayTripPlan(sensorData, places, userPreferences, new GptApiClient.GptApiCallback() {
+                                Log.d("SENSOR", "Places: " + places.get(0).getAddress());
+                                // Split the string by commas
+                                String country = "Australia";
+                                try {
+                                    String[] parts = places.get(0).getAddress().split(",");
+                                    country = parts[parts.length - 1].trim();
+                                } catch (Exception ex) {
+                                    Log.d("SENSOR", "Error: "+ex);
+                                }
+
+                                String finalCountry = country;
+                                GptApiClient.generateOneDayTripPlan(sensorData, places, userPreferences.get(), new GptApiClient.GptApiCallback() {
                                     @Override
                                     public void onSuccess(String response) {
                                         // Handle the successful response here
+                                        loadingDialog.dismiss();
                                         Log.d("SENSOR", "Trip plan recommended: " + response);
 
                                         String tripName = GptApiClient.getStringFromJsonResponse(response, "tripName");
                                         
                                         // Parse the JSON response into a list of ActivityItem objects
-                                        GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
+                                        GptApiClient.parseActivityItemsFromJson(finalCountry, response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
                                             @Override
                                             public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
                                                 Log.d("SENSOR", "RecommendActivities: "+recommendedActivities);
-                                                Trip trip = new Trip();
-                                                trip.setName(tripName);
-                                                trip.setNumDays(1);
-                                                trip.setStartDate(Timestamp.now());
-                                                trip.setEndDate(Timestamp.now());
-                                                trip.addUser(FirestoreDB.getCurrentUserId());
-                                                trip.addLocation(recommendedActivities.get(0).getLocation());
 
-                                                Map<String, List<ActivityItem>> newPlans = new HashMap<>();
-                                                newPlans.put("0", recommendedActivities);
-                                                trip.setPlans(newPlans);
+                                                // Show a popup window to let users select which activities to add to plan
+                                                ListView listView = new ListView(MainActivity.this);
+                                                RecommentActivityAdapter recommentActivityAdapter = new RecommentActivityAdapter(MainActivity.this, recommendedActivities);
+                                                listView.setAdapter(recommentActivityAdapter);
 
-            //                                    FirestoreDB db = FirestoreDB.getInstance();
-            //                                    db.createTrip(FirestoreDB.getCurrentUserId(), trip.convertTripToMap());
+                                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                                builder.setTitle("Recommendations");
+                                                builder.setView(listView);
+
+                                                builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialog, int id) {
+                                                        // Get only the selected items
+                                                        List<ActivityItem> selectedItems = recommentActivityAdapter.getSelectedItems();
+
+                                                        Trip trip = new Trip();
+                                                        trip.setName(tripName);
+                                                        trip.setNumDays(1);
+                                                        trip.setStartDate(Timestamp.now());
+                                                        // Set end date to the end of the current day
+                                                        Calendar calendar = Calendar.getInstance();
+                                                        calendar.setTime(new Date()); // Set to current date
+                                                        calendar.set(Calendar.HOUR_OF_DAY, 23);
+                                                        calendar.set(Calendar.MINUTE, 59);
+                                                        calendar.set(Calendar.SECOND, 59);
+                                                        calendar.set(Calendar.MILLISECOND, 999);
+                                                        Date endDate = calendar.getTime();
+                                                        trip.setEndDate(new Timestamp(endDate.getTime() / 1000, (int) ((endDate.getTime() % 1000) * 1000000)));
+
+                                                        trip.addUser(FirestoreDB.getCurrentUserId());
+                                                        trip.addLocation(recommendedActivities.get(0).getLocation());
+
+                                                        Map<String, List<ActivityItem>> newPlans = new HashMap<>();
+                                                        newPlans.put("0", selectedItems);
+                                                        trip.setPlans(newPlans);
+
+                                                        FirestoreDB db = FirestoreDB.getInstance();
+                                                        db.createTrip(FirestoreDB.getCurrentUserId(), trip.convertTripToMap());
+
+                                                        binding.navView.setSelectedItemId(R.id.navigation_plan);
+
+                                                        Fragment planFragment = HomeFragment.newInstance(HomeFragment.PLAN);
+                                                        getSupportFragmentManager()
+                                                                .beginTransaction()
+                                                                .replace(R.id.fragmentContainerView, planFragment)
+                                                                .commit();
+
+                                                    }
+                                                });
+                                                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                                        dialogInterface.dismiss();
+                                                    }
+                                                });
+
+                                                builder.create().show();
                                             }
                                         });
                                     }
@@ -318,6 +385,7 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onFailure(String error) {
                                         // Handle the error here
+                                        loadingDialog.dismiss();
                                         Log.e("SENSOR", "Failed to recommend trip plan: " + error);
                                         Toast.makeText(MainActivity.this, "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
                                     }
@@ -364,7 +432,7 @@ public class MainActivity extends AppCompatActivity {
         LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         // Define the place fields to return
-        List<Place.Field> placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG);
+        List<Place.Field> placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.TYPES);
 
         // Create a request object
         FindCurrentPlaceRequest request = FindCurrentPlaceRequest.newInstance(placeFields);
@@ -392,7 +460,7 @@ public class MainActivity extends AppCompatActivity {
                     Exception exception = task.getException();
                     if (exception instanceof ApiException) {
                         ApiException apiException = (ApiException) exception;
-                        Log.e("PLACES", "Place not found: " + apiException.getStatusCode());
+                        Log.e("PLACES", "Place not found: " + apiException.getMessage());
                     }
                 }
             }

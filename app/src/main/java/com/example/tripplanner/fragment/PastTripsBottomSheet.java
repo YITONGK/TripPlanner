@@ -66,6 +66,10 @@ public class PastTripsBottomSheet extends BottomSheetDialogFragment implements S
             firestoreDB.getPastTripsByUserId(userId, new OnSuccessListener<List<Trip>>() {
                 @Override
                 public void onSuccess(List<Trip> trips) {
+                    if (trips != null && trips.size() == 0){
+                        PastTripsBottomSheet.this.dismiss();
+
+                    }
                     Map<String, List<Trip>> tripsByCountry = groupTripsByCountry(trips);
                     Log.d("DEBUG", "Trips by country: " + tripsByCountry.size());
                     adapter = new SectionedPlanAdapter(getContext(), tripsByCountry, PastTripsBottomSheet.this);

@@ -86,33 +86,33 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             }
         });
 
-        Button gptPlanButton = findViewById(R.id.gptPlanButton);
-        gptPlanButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String userInput = editTextMessage.getText().toString().trim();
-                if (!userInput.isEmpty()) {
-                    GptApiClient.getTripPlan("Melbourne", new GptApiClient.GptApiCallback() {
-                        @Override
-                        public void onSuccess(String response) {
-                            runOnUiThread(() -> {
-                                // Parse and display the response
-                                Toast.makeText(CreateNewPlanActivity.this, "GPT Response: " + response, Toast.LENGTH_LONG).show();
-                            });
-                        }
-
-                        @Override
-                        public void onFailure(String error) {
-                            runOnUiThread(() -> {
-                                Toast.makeText(CreateNewPlanActivity.this, "Error: " + error, Toast.LENGTH_LONG).show();
-                            });
-                        }
-                    });
-                } else {
-                    Toast.makeText(CreateNewPlanActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+//        Button gptPlanButton = findViewById(R.id.gptPlanButton);
+//        gptPlanButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                String userInput = editTextMessage.getText().toString().trim();
+//                if (!userInput.isEmpty()) {
+//                    GptApiClient.getTripPlan("Melbourne", new GptApiClient.GptApiCallback() {
+//                        @Override
+//                        public void onSuccess(String response) {
+//                            runOnUiThread(() -> {
+//                                // Parse and display the response
+//                                Toast.makeText(CreateNewPlanActivity.this, "GPT Response: " + response, Toast.LENGTH_LONG).show();
+//                            });
+//                        }
+//
+//                        @Override
+//                        public void onFailure(String error) {
+//                            runOnUiThread(() -> {
+//                                Toast.makeText(CreateNewPlanActivity.this, "Error: " + error, Toast.LENGTH_LONG).show();
+//                            });
+//                        }
+//                    });
+//                } else {
+//                    Toast.makeText(CreateNewPlanActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
+//                }
+//            }
+//        });
 
     }
 

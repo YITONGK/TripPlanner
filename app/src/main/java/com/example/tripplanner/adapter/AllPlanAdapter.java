@@ -57,7 +57,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         // get duration of the trip
         int days = allPlans.get(position).getNumDays();
         String dayAndNight;
-        if (days == 1) {
+        if (days <= 1) {
             dayAndNight = "1 day";
         }
         else if (days == 2) {
@@ -116,45 +116,45 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
                 }
             });
         }
-        public void bind(Trip trip) {
-            if (trip == null){
-                Log.d("MEMORY", "Trip is null");
-                return;
-            }
-            List<Location> locationList = trip.getLocations();
-            StringBuilder sb = new StringBuilder();
-            for (Location location : locationList) {
-                sb.append(location.getName()).append(", ");
-            }
-            if (sb.length() > 0) {
-                sb.setLength(sb.length() - 2);
-            }
-            locations.setText(sb.toString());
-
-            // get duration of the trip
-            int days = trip.getLastingDays();
-            String dayAndNight;
-            if (days == 1) {
-                dayAndNight = "1 day";
-            }
-            else if (days == 2) {
-                dayAndNight = "2 days and 1 night";
-            } else {
-                dayAndNight = days + " days" + " and " + (days - 1) + " nights";
-            }
-            duration.setText(dayAndNight);
-
-            // get the number of activities of the trip
-            Map<String, List<ActivityItem>> plans = trip.getPlans();
-            int count = 0;
-            for (List<ActivityItem> plan: plans.values()) {
-                count += plan.size();
-            }
-            String countStr = count > 1 ? " activities" : " activity";
-            numActivity.setText(countStr);
-
-
-            // titleTextView.setText(trip.getTitle());
-        }
+//        public void bind(Trip trip) {
+//            if (trip == null){
+//                Log.d("MEMORY", "Trip is null");
+//                return;
+//            }
+//            List<Location> locationList = trip.getLocations();
+//            StringBuilder sb = new StringBuilder();
+//            for (Location location : locationList) {
+//                sb.append(location.getName()).append(", ");
+//            }
+//            if (sb.length() > 0) {
+//                sb.setLength(sb.length() - 2);
+//            }
+//            locations.setText(sb.toString());
+//
+//            // get duration of the trip
+//            int days = trip.getLastingDays();
+//            String dayAndNight;
+//            if (days <= 1) {
+//                dayAndNight = "1 day";
+//            }
+//            else if (days == 2) {
+//                dayAndNight = "2 days and 1 night";
+//            } else {
+//                dayAndNight = days + " days" + " and " + (days - 1) + " nights";
+//            }
+//            duration.setText(dayAndNight);
+//
+//            // get the number of activities of the trip
+//            Map<String, List<ActivityItem>> plans = trip.getPlans();
+//            int count = 0;
+//            for (List<ActivityItem> plan: plans.values()) {
+//                count += plan.size();
+//            }
+//            String countStr = count > 1 ? " activities" : " activity";
+//            numActivity.setText(countStr);
+//
+//
+//            // titleTextView.setText(trip.getTitle());
+//        }
     }
 }
