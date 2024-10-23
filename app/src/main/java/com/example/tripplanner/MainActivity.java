@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.bumptech.glide.Glide;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
@@ -44,9 +45,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
@@ -63,6 +67,10 @@ public class MainActivity extends AppCompatActivity {
 
     private SensorDetector sensorDetector;
 
+    private FirebaseFirestore db;
+    private FirebaseUser currentUser;
+    private String uid;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,6 +83,16 @@ public class MainActivity extends AppCompatActivity {
         }
         placesClient = Places.createClient(this);
         PlacesClientProvider.initialize(placesClient);
+
+        db = FirebaseFirestore.getInstance();
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (currentUser != null) {
+            uid = currentUser.getUid();
+            loadUserProfile();
+        } else {
+            Log.e("MainActivity", "User not login");
+        }
 
         handleIntent(getIntent());
 
@@ -354,5 +372,28 @@ public class MainActivity extends AppCompatActivity {
         }
     });
 
+    private void loadUserProfile() {
+        DocumentReference userRef = db.collection("users").document(uid);
 
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                String profilePictureUrl = documentSnapshot.getString("profilePicture");
+
+                ImageView profileBtn = findViewById(R.id.profileBtn);
+
+                if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
+                    Glide.with(this)
+                            .load(profilePictureUrl)
+                            .placeholder(R.drawable.woman)
+                            .into(profileBtn);
+                } else {
+                    profileBtn.setImageResource(R.drawable.woman);
+                }
+            } else {
+                Log.d("MainActivity", "user document does not exist");
+            }
+        }).addOnFailureListener(e -> {
+            Log.e("MainActivity", "fetch user data failed", e);
+        });
+    }
 }

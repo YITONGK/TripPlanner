@@ -1,6 +1,7 @@
 package com.example.tripplanner.fragment;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -8,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,7 +22,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.AdapterView;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -31,23 +35,23 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.bumptech.glide.Glide;
 import com.codebyashish.googledirectionapi.AbstractRouting;
 import com.codebyashish.googledirectionapi.ErrorHandling;
 import com.codebyashish.googledirectionapi.RouteDrawing;
 import com.codebyashish.googledirectionapi.RouteInfoModel;
 import com.codebyashish.googledirectionapi.RouteListener;
-import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.MapActivity;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
+import com.example.tripplanner.adapter.RecommentActivityAdapter;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
-import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.PlanItem;
+import com.example.tripplanner.entity.RouteInfo;
 import com.example.tripplanner.utils.GptApiClient;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
@@ -68,7 +72,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.sql.Time;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -78,14 +81,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Collections;
 import java.util.List;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
-import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
@@ -94,6 +95,9 @@ import com.google.android.libraries.places.api.net.PlacesClient;
 
 import com.example.tripplanner.entity.Weather;
 import com.example.tripplanner.utils.WeatherAPIClient;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
 
 import java.util.Date;
@@ -102,7 +106,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -128,9 +131,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     public static Trip trip;
 
     // For specific day plan
-    private TextView addActivityLocation;
+    private FloatingActionButton addActivityLocation;
     private RecyclerView activityLocationRecyclerView;
     private ArrayList<ActivityItem> activityItemArray;
+    private List<PlanItem> planItems;
     private ActivityItemAdapter adapter;
     private AtomicReference<Location> activityLocation = new AtomicReference<>();
 
@@ -142,6 +146,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     private WeatherAPIClient weatherAPIClient;
     private List<Polyline> polylines = new ArrayList<>();
     private Random random = new Random(123);
+
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public interface OnPlaceFetchedListener {
         void onPlaceFetched(Location location);
@@ -160,10 +166,10 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             @Override
             public void onChanged(Trip trip) {
                 if (trip != null) {
-                    PlanFragment.this.trip = trip;
-                    PlanFragment.this.locationList = trip.getLocations();
-                    PlanFragment.this.startDate = trip.getStartDate();
-                    PlanFragment.this.endDate = trip.getEndDate();
+                    PlanFragment.trip = trip;
+                    PlanFragment.locationList = trip.getLocations();
+                    PlanFragment.startDate = trip.getStartDate();
+                    PlanFragment.endDate = trip.getEndDate();
                 }
             }
         });
@@ -172,7 +178,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             if (this.layout == PLAN_SPECIFIC_DAY) {
                 this.dayIndex = getArguments().getInt("dayIndex", -1);
                 long startDateMillis = getArguments().getLong("startDateMillis");
-                this.startDate = new Timestamp(new Date(startDateMillis));
+                startDate = new Timestamp(new Date(startDateMillis));
             }
         }
     }
@@ -204,7 +210,9 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
             // Get the activity items list for this day from the ViewModel
             activityItemArray = viewModel.getActivityItemArray(dayIndex);
-            adapter = new ActivityItemAdapter(getContext(), activityItemArray);
+            planItems = new ArrayList<>();
+            preparePlanItems();
+            adapter = new ActivityItemAdapter(getContext(), planItems);
 
             ItemTouchHelper.Callback callback = new ItemTouchHelper.Callback() {
 
@@ -227,10 +235,22 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     int fromPosition = viewHolder.getAdapterPosition();
                     int toPosition = target.getAdapterPosition();
 
-                    Collections.swap(activityItemArray, fromPosition, toPosition);
-                    adapter.notifyItemMoved(fromPosition, toPosition);
+                    PlanItem fromItem = planItems.get(fromPosition);
+                    if (fromItem.getType() == PlanItem.TYPE_ACTIVITY) {
+                        int fromActivityIndex = getActivityItemIndex(fromPosition);
+                        int toActivityIndex = getActivityItemIndexForMove(toPosition);
 
-                    return true;
+                        if (toActivityIndex == -1) {
+                            toActivityIndex = 0;
+                        }
+                        ActivityItem movedActivityItem = activityItemArray.remove(fromActivityIndex);
+                        activityItemArray.add(toActivityIndex, movedActivityItem);
+                        PlanItem movedPlanItem = planItems.remove(fromPosition);
+                        planItems.add(toPosition, movedPlanItem);
+                        adapter.notifyItemMoved(fromPosition, toPosition);
+                        return true;
+                    }
+                    return false;
                 }
 
                 @Override
@@ -240,6 +260,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 @Override
                 public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                     super.clearView(recyclerView, viewHolder);
+                    preparePlanItems();
+                    adapter.notifyDataSetChanged();
                     viewModel.updateActivityList(dayIndex, activityItemArray);
                     viewModel.saveTripToDatabase();
                 }
@@ -257,8 +279,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
             adapter.setOnItemClickListener(new ActivityItemAdapter.OnItemClickListener() {
                 @Override
-                public void onItemClick(int position) {
-                    showEditActivityDialog(position);
+                public void onItemClick(int position, PlanItem planItem) {
+                    if (planItem.getType() == PlanItem.TYPE_ACTIVITY) {
+                        int activityIndex = getActivityItemIndex(position);
+                        showEditActivityDialog(activityIndex);
+                    }
                 }
             });
 
@@ -276,25 +301,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             planSuggestButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
-//                    String destination = "Unknown Destination";
-//                    if (locationList != null && !locationList.isEmpty()) {
-//                        destination = locationList.get(0).getName();
-//                    }
-//
-//                    Log.d("PlanFragment", "Destination: "+ destination);
-//                    Log.d("PlanFragment", "Weather: "+allWeatherData);
-
-                    // Get the weather forecast for the destination
-//                    String weatherForecast = "Unknown weather forecast";
-//                    if (allWeatherData != null && !allWeatherData.isEmpty()) {
-//                        // Get the weather for the first day (assuming day index 0)
-//                        Weather weather = allWeatherData.get(0);
-//                        if (weather != null) {
-//                            weatherForecast = String.format("Weather is %s with a high of %.1f°C", weather.getDescription(), weather.getTemperature());
-//                        }
-//                    }
-
 
                     // Call the recommendTripPlan method
                     String destination = "Melbourne, Australia"; // Example destination
@@ -316,35 +322,53 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 //                                    // Update the activityItemArray with the new recommended activities
 //                                    activityItemArray.clear();
 //                                    activityItemArray.addAll(recommendedActivities);
-//
-
 
                                     // Update in ViewModel and save
                                     for (ActivityItem activityItem : recommendedActivities) {
                                         viewModel.addActivity(dayIndex, activityItem);
                                     }
 
-                                    viewModel.saveTripToDatabase();
 
-                                    // Notify the adapter that the data has changed
-                                    adapter.notifyDataSetChanged();
+                                    // Show a popup window to let users select which activities to add to plan
+                                    ListView listView = new ListView(getContext());
+                                    RecommentActivityAdapter recommentActivityAdapter = new RecommentActivityAdapter(getContext(), recommendedActivities);
+                                    listView.setAdapter(recommentActivityAdapter);
+
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                                    builder.setTitle("Recommendations");
+                                    builder.setView(listView);
+
+                                    builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // Get only the selected items
+                                            List<ActivityItem> selectedItems = recommentActivityAdapter.getSelectedItems();
+                                            // Handle the selected items here
+                                            for (ActivityItem selectedItem : selectedItems) {
+                                                Log.d("Selected Activity", selectedItem.toString());
+                                            }
+
+                                            // Update in ViewModel and save
+                                            for (ActivityItem activityItem : selectedItems) {
+                                                viewModel.addActivity(dayIndex, activityItem);
+                                            }
+
+                                            viewModel.saveTripToDatabase();
+
+                                            // Notify the adapter that the data has changed
+                                            adapter.notifyDataSetChanged();
+                                        }
+                                    });
+                                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            dialogInterface.dismiss();
+                                        }
+                                    });
+
+                                    builder.create().show();
                                 }
                             });
-
-////                            // Update the activityItemArray with the new recommended activities
-//                            activityItemArray.clear();
-//                            activityItemArray.addAll(recommendedActivities);
-//
-//                            // Notify the adapter that the data has changed
-//                            adapter.notifyDataSetChanged();
-//
-//                            // Update in ViewModel and save
-//                            for (ActivityItem activityItem: recommendedActivities){
-//                                viewModel.addActivity(dayIndex, activityItem);
-//                            }
-//
-//                            adapter.notifyDataSetChanged();
-//                            viewModel.saveTripToDatabase();
 
                         }
 
@@ -357,34 +381,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     });
                 }
             });
-
-            // Fetch the distance matrix
-//            RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
-//                @Override
-//                public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-//                    // Handle the successful result
-//                    Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
-//                    List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItemArray);
-//                    Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
-//
-//                    if (activityItemArray.size() > 1){
-//                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
-//                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
-//                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
-//                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
-//                    }
-//
-//
-//                }
-//
-//                @Override
-//                public void onFailure(Exception e) {
-//                    // Handle the error
-//                    Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
-//                }
-//
-//            });
-
 
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
@@ -413,48 +409,73 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
     }
 
     private void showAddActivityDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Add activity");
+        final Dialog dialog = new Dialog(getContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_add_activity);
 
-        final EditText input = new EditText(getContext());
-        input.setInputType(InputType.TYPE_CLASS_TEXT);
-        builder.setView(input);
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        lp.copyFrom(dialog.getWindow().getAttributes());
+        lp.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+        dialog.getWindow().setAttributes(lp);
 
-        builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+        TextInputEditText activityNameEditText = dialog.findViewById(R.id.activityNameEditText);
+        MaterialButton addButton = dialog.findViewById(R.id.addButton);
+        MaterialButton cancelButton = dialog.findViewById(R.id.cancelButton);
+
+        addButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int which) {
-                String activityName = input.getText().toString();
+            public void onClick(View v) {
+                String activityName = activityNameEditText.getText().toString().trim();
                 if (!activityName.isEmpty()) {
                     ActivityItem activityItem = new ActivityItem(activityName);
                     // Update in ViewModel and save
                     viewModel.addActivity(dayIndex, activityItem);
-                    adapter.notifyDataSetChanged();
                     viewModel.saveTripToDatabase();
+                    preparePlanItems();
+                    adapter.notifyDataSetChanged();
+                    dialog.dismiss();
                     showEditActivityDialog(activityItemArray.size() - 1);
                 } else {
-                    Toast.makeText(getContext(), "Please enter something", Toast.LENGTH_SHORT).show();
+                    activityNameEditText.setError("Please enter activity name");
                 }
             }
         });
-        builder.setNegativeButton("Cancel", null);
 
-        builder.show();
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
     }
 
     private void showEditActivityDialog(int position) {
         ActivityItem activityItem = activityItemArray.get(position);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Edit activity");
+        final Dialog dialog = new Dialog(getContext());
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_edit_activity);
 
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_activity, null);
-        builder.setView(dialogView);
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 
-        EditText startTime = dialogView.findViewById(R.id.startTime);
-        EditText endTime = dialogView.findViewById(R.id.endTime);
-        EditText inputLocation = dialogView.findViewById(R.id.inputLocation);
-        EditText inputNotes = dialogView.findViewById(R.id.inputNotes);
-        ListView autocompleteListView = dialogView.findViewById(R.id.autocompleteListView);
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+        lp.copyFrom(dialog.getWindow().getAttributes());
+        lp.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+        dialog.getWindow().setAttributes(lp);
+
+        TextInputEditText activityName = dialog.findViewById(R.id.activityName);
+        TextInputEditText startTime = dialog.findViewById(R.id.startTime);
+        TextInputEditText endTime = dialog.findViewById(R.id.endTime);
+        TextInputEditText inputLocation = dialog.findViewById(R.id.inputLocation);
+        TextInputEditText inputNotes = dialog.findViewById(R.id.inputNotes);
+        ListView autocompleteListView = dialog.findViewById(R.id.autocompleteListView);
+        Button saveButton = dialog.findViewById(R.id.saveButton);
+        Button cancelButton = dialog.findViewById(R.id.cancelButton);
+        Button deleteButton = dialog.findViewById(R.id.deleteButton);
 
         autocompleteAdapter = new AutocompleteAdapter(getContext(), new ArrayList<>());
         autocompleteListView.setAdapter(autocompleteAdapter);
@@ -468,6 +489,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
         activityLocation = new AtomicReference<>();
 
+        activityName.setText(activityItem.getName());
         if (activityItem.getLocation() != null) {
             activityLocation.set(activityItem.getLocation());
             inputLocation.setText(activityItem.getLocationString());
@@ -488,13 +510,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             endMinute[0] = calendar.get(Calendar.MINUTE);
             endTime.setText(String.format("%02d:%02d", endHour[0], endMinute[0]));
         }
-        inputLocation.setText(activityItem.getLocationString());
         inputNotes.setText(activityItem.getNotes());
 
         startTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 int hour = startHour[0] != 0 ? startHour[0] : Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
                 int minute = startMinute[0] != 0 ? startMinute[0] : Calendar.getInstance().get(Calendar.MINUTE);
 
@@ -515,7 +535,6 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         endTime.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 int hour = endHour[0] != 0 ? endHour[0] : Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
                 int minute = endMinute[0] != 0 ? endMinute[0] : Calendar.getInstance().get(Calendar.MINUTE);
 
@@ -532,6 +551,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                 timePickerDialog.show();
             }
         });
+
         inputLocation.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
@@ -564,9 +584,11 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             });
         });
 
-        builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+        saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int which) {
+            public void onClick(View v) {
+                String newActivityName = activityName.getText().toString().trim();
+                activityItem.setName(newActivityName);
                 if (isStartTimeSelected[0]) {
                     Timestamp startTimestamp = buildTimestamp(startDate, dayIndex, startHour[0], startMinute[0]);
                     activityItem.setStartTime(startTimestamp);
@@ -575,26 +597,38 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     Timestamp endTimestamp = buildTimestamp(startDate, dayIndex, endHour[0], endMinute[0]);
                     activityItem.setEndTime(endTimestamp);
                 }
-                if (activityLocation.get() != null) {
-                    activityItem.setLocation(activityLocation.get());
-                } else if (activityItem.getLocation() == null && !inputLocation.getText().toString().isEmpty()) {
-                    // Handle manual input
-                    activityItem.setLocation(new Location("", inputLocation.getText().toString(), "", 0, 0, ""));
+                String locationText = inputLocation.getText().toString().trim();
+                if (!locationText.isEmpty()) {
+                    if (activityLocation.get() != null) {
+                        activityItem.setLocation(activityLocation.get());
+                    } else {
+                        activityItem.setLocation(new Location("", locationText, "", 0, 0, ""));
+                    }
+                } else {
+                    activityItem.setLocation(null);
                 }
                 activityItem.setNotes(inputNotes.getText().toString());
+                preparePlanItems();
                 adapter.notifyDataSetChanged();
 
                 // Update in ViewModel and save
                 viewModel.updateActivity(dayIndex, position, activityItem);
                 viewModel.saveTripToDatabase();
+
+                dialog.dismiss();
             }
         });
 
-        builder.setNegativeButton("Cancel", null);
-
-        builder.setNeutralButton("Delete", new DialogInterface.OnClickListener() {
+        cancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int which) {
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
                 // Show a confirmation dialog
                 new AlertDialog.Builder(getContext())
                         .setTitle("Delete Activity")
@@ -603,11 +637,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                             public void onClick(DialogInterface confirmDialog, int whichButton) {
                                 // Update in ViewModel and save
                                 viewModel.removeActivity(dayIndex, position);
-                                adapter.notifyDataSetChanged();
                                 viewModel.saveTripToDatabase();
+                                preparePlanItems();
+                                adapter.notifyDataSetChanged();
 
                                 confirmDialog.dismiss();
-                                dialogInterface.dismiss();
+                                dialog.dismiss();
                             }
                         })
                         .setNegativeButton("No", null)
@@ -615,7 +650,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             }
         });
 
-        builder.show();
+        dialog.show();
     }
 
     private void fetchPlaceFromPlaceId(String placeId, EditText inputLocation, ListView autocompleteListView, OnPlaceFetchedListener listener) {
@@ -1051,6 +1086,114 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             locationName.put(key, nameList);
         }
         return locationName;
+    }
+
+    private void preparePlanItems() {
+        if (planItems == null) {
+            planItems = new ArrayList<>();
+        } else {
+            planItems.clear();
+        }
+
+        for (int i = 0; i < activityItemArray.size(); i++) {
+            planItems.add(new PlanItem(activityItemArray.get(i)));
+
+            if (i < activityItemArray.size() - 1) {
+                ActivityItem currentItem = activityItemArray.get(i);
+                ActivityItem nextItem = activityItemArray.get(i + 1);
+
+                if (currentItem.getLocation() != null && nextItem.getLocation() != null) {
+                    planItems.add(new PlanItem((RouteInfo) null));
+                    int routeInfoPosition = planItems.size() - 1;
+                    fetchRouteInfo(currentItem.getLocation(), nextItem.getLocation(), routeInfoPosition);
+                }
+            }
+        }
+    }
+
+    private void fetchRouteInfo(Location origin, Location destination, int routeInfoPosition) {
+        List<ActivityItem> activityItems = new ArrayList<>();
+        ActivityItem originItem = new ActivityItem("Origin");
+        originItem.setLocation(origin);
+        ActivityItem destinationItem = new ActivityItem("Destination");
+        destinationItem.setLocation(destination);
+        activityItems.add(originItem);
+        activityItems.add(destinationItem);
+
+        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
+            @Override
+            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+                DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
+                        origin.getNonNullIdOrName(),
+                        destination.getNonNullIdOrName());
+
+                if (entry != null && entry.getDuration() != null && entry.getDistance() != null) {
+                    RouteInfo routeInfo = new RouteInfo(entry.getDuration(), entry.getDistance());
+                    PlanItem routePlanItem = planItems.get(routeInfoPosition);
+                    routePlanItem = new PlanItem(routeInfo);
+                    planItems.set(routeInfoPosition, routePlanItem);
+
+                    mainHandler.post(() -> {
+                        if (isAdded()) {
+                            adapter.notifyItemChanged(routeInfoPosition);
+                        } else {
+                            Log.d("PlanFragment", "Fragment not attached, cannot update UI");
+                        }
+                    });
+                } else {
+                    Log.d("PlanFragment", "No route information available between " + origin.getNonNullIdOrName() + " and " + destination.getNonNullIdOrName());
+                    RouteInfo routeInfo = new RouteInfo("No route available", "");
+                    PlanItem routePlanItem = planItems.get(routeInfoPosition);
+                    routePlanItem = new PlanItem(routeInfo);
+                    planItems.set(routeInfoPosition, routePlanItem);
+
+                    mainHandler.post(() -> {
+                        if (isAdded()) {
+                            adapter.notifyItemChanged(routeInfoPosition);
+                        } else {
+                            Log.d("PlanFragment", "Fragment not attached, cannot update UI");
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+            }
+        });
+    }
+
+    private int getActivityItemIndex(int planItemPosition) {
+        int activityIndex = -1;
+        for (int i = 0; i <= planItemPosition; i++) {
+            PlanItem item = planItems.get(i);
+            if (item.getType() == PlanItem.TYPE_ACTIVITY) {
+                activityIndex++;
+            }
+        }
+        return activityIndex;
+    }
+
+    private int getActivityItemIndexForMove(int planItemPosition) {
+        int activityIndex = 0;
+        for (int i = 0; i < planItemPosition; i++) {
+            PlanItem item = planItems.get(i);
+            if (item.getType() == PlanItem.TYPE_ACTIVITY) {
+                activityIndex++;
+            }
+        }
+        return activityIndex;
+    }
+
+    private void removeConnectedRouteItems(int activityPosition) {
+        if (activityPosition > 0 && planItems.get(activityPosition - 1).getType() == PlanItem.TYPE_ROUTE_INFO) {
+            planItems.remove(activityPosition - 1);
+            activityPosition--;
+        }
+        if (activityPosition < planItems.size() - 1 && planItems.get(activityPosition + 1).getType() == PlanItem.TYPE_ROUTE_INFO) {
+            planItems.remove(activityPosition + 1);
+        }
     }
 
 }
