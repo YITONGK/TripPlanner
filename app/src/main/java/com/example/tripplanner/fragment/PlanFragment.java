@@ -688,26 +688,45 @@ public class PlanFragment extends Fragment
         deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Show a confirmation dialog
-                new AlertDialog.Builder(getContext())
-                        .setTitle("Delete Activity")
-                        .setMessage("Are you sure you want to delete this activity?")
-                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface confirmDialog, int whichButton) {
-                                // Update in ViewModel and save
-                                viewModel.removeActivity(dayIndex, position);
-                                viewModel.saveTripToDatabase();
-                                preparePlanItems();
-                                adapter.notifyDataSetChanged();
+                final Dialog deleteDialog = new Dialog(getContext());
+                deleteDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                deleteDialog.setContentView(R.layout.dialog_delete_activity);
 
-                                confirmDialog.dismiss();
-                                dialog.dismiss();
-                            }
-                        })
-                        .setNegativeButton("No", null)
-                        .show();
+                deleteDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                deleteDialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+
+                WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+                lp.copyFrom(deleteDialog.getWindow().getAttributes());
+                lp.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+                deleteDialog.getWindow().setAttributes(lp);
+
+                MaterialButton cancelDeleteButton = deleteDialog.findViewById(R.id.cancelDeleteButton);
+                MaterialButton confirmDeleteButton = deleteDialog.findViewById(R.id.confirmDeleteButton);
+
+                cancelDeleteButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        deleteDialog.dismiss();
+                    }
+                });
+
+                confirmDeleteButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        viewModel.removeActivity(dayIndex, position);
+                        viewModel.saveTripToDatabase();
+                        preparePlanItems();
+                        adapter.notifyDataSetChanged();
+
+                        deleteDialog.dismiss();
+                        dialog.dismiss();
+                    }
+                });
+
+                deleteDialog.show();
             }
         });
+
 
         dialog.show();
     }
