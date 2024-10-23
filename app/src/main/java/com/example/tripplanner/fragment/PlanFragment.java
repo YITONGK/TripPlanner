@@ -52,6 +52,7 @@ import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
+import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
 
 import com.example.tripplanner.entity.User;
@@ -62,6 +63,7 @@ import com.example.tripplanner.entity.RouteInfo;
 import com.example.tripplanner.utils.GptApiClient;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.utils.RoutePlanner;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -1225,6 +1227,48 @@ public class PlanFragment extends Fragment
         destinationItem.setLocation(destination);
         activityItems.add(originItem);
         activityItems.add(destinationItem);
+        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
+            @Override
+            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+                DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
+                        origin.getNonNullIdOrName(),
+                        destination.getNonNullIdOrName());
+
+                if (entry != null && entry.getDuration() != null && entry.getDistance() != null) {
+                    RouteInfo routeInfo = new RouteInfo(entry.getDuration(), entry.getDistance());
+                    PlanItem routePlanItem = planItems.get(routeInfoPosition);
+                    routePlanItem = new PlanItem(routeInfo);
+                    planItems.set(routeInfoPosition, routePlanItem);
+
+                    mainHandler.post(() -> {
+                        if (isAdded()) {
+                            adapter.notifyItemChanged(routeInfoPosition);
+                        } else {
+                            Log.d("PlanFragment", "Fragment not attached, cannot update UI");
+                        }
+                    });
+                } else {
+                    Log.d("PlanFragment", "No route information available between " + origin.getNonNullIdOrName() + " and " + destination.getNonNullIdOrName());
+                    RouteInfo routeInfo = new RouteInfo("No route available", "");
+                    PlanItem routePlanItem = planItems.get(routeInfoPosition);
+                    routePlanItem = new PlanItem(routeInfo);
+                    planItems.set(routeInfoPosition, routePlanItem);
+
+                    mainHandler.post(() -> {
+                        if (isAdded()) {
+                            adapter.notifyItemChanged(routeInfoPosition);
+                        } else {
+                            Log.d("PlanFragment", "Fragment not attached, cannot update UI");
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
+            }
+        });
     }
 
     private int getActivityItemIndex(int planItemPosition) {
