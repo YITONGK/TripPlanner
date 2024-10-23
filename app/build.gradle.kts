@@ -76,6 +76,9 @@ dependencies {
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-firestore")
 
+    // UI
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.9.0")
     implementation("com.google.firebase:firebase-storage:20.2.1")
     implementation("de.hdodenhof:circleimageview:3.1.0")
 
