@@ -47,6 +47,9 @@ public class User {
     }
 
     public String getPreference() {
+        if (preference == null){
+            return "None";
+        }
         return preference;
     }
 

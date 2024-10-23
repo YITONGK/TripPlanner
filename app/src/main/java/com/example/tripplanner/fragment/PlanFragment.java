@@ -334,11 +334,15 @@ public class PlanFragment extends Fragment
                     if (user == null) {
                         FirestoreDB.getInstance().getUserById(FirestoreDB.getCurrentUserId(), returnedUser -> {
                             user = returnedUser;
+                            userPreferences.set(user.getPreference());
+                            Log.d("PlanFragment", "Get user: "+ user);
                         }, e -> {
                             Log.d("PlanFragment", "Error in fetching user: " + e);
                         });
+                    } else {
+                        userPreferences.set(user.getPreference());
                     }
-                    userPreferences.set(user.getPreference());
+
 
                     fetchWeatherDataForDate(startDate, dayIndex, new WeatherDataCallback() {
                         @Override
@@ -374,11 +378,6 @@ public class PlanFragment extends Fragment
 //                                    activityItemArray.clear();
 //                                    activityItemArray.addAll(recommendedActivities);
 
-                                    // Update in ViewModel and save
-                                    for (ActivityItem activityItem : recommendedActivities) {
-                                        viewModel.addActivity(dayIndex, activityItem);
-                                    }
-
 
                                     // Show a popup window to let users select which activities to add to plan
                                     ListView listView = new ListView(getContext());
@@ -406,8 +405,10 @@ public class PlanFragment extends Fragment
 
                                             viewModel.saveTripToDatabase();
 
+                                            preparePlanItems();
                                             // Notify the adapter that the data has changed
                                             adapter.notifyDataSetChanged();
+                                            viewModel.updateActivityList(dayIndex, activityItemArray);
                                         }
                                     });
                                     builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

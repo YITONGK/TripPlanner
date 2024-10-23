@@ -2,6 +2,7 @@ package com.example.tripplanner.utils;
 
 import android.util.Log;
 
+import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
@@ -22,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RoutePlanner {
-    private static final String API_KEY = "AIzaSyB6ERXJUvrKoEbEBTVt4Ofgg_3G3z6tFcQ";
+    private static final String API_KEY = BuildConfig.MAPS_API_KEY;
 //    private List<DistanceMatrixEntry> distanceMatrix;
 
     public static void fetchDistanceMatrix(List<ActivityItem> activityItems, String mode, DistanceMatrixCallback callback) {
