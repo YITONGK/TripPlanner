@@ -35,7 +35,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.bumptech.glide.Glide;
 import com.codebyashish.googledirectionapi.AbstractRouting;
 import com.codebyashish.googledirectionapi.ErrorHandling;
 import com.codebyashish.googledirectionapi.RouteDrawing;
@@ -43,6 +42,7 @@ import com.codebyashish.googledirectionapi.RouteInfoModel;
 import com.codebyashish.googledirectionapi.RouteListener;
 import com.example.tripplanner.MapActivity;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
+import com.example.tripplanner.adapter.RecommentActivityAdapter;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
@@ -328,10 +328,45 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                                         viewModel.addActivity(dayIndex, activityItem);
                                     }
 
-                                    viewModel.saveTripToDatabase();
 
-                                    // Notify the adapter that the data has changed
-                                    adapter.notifyDataSetChanged();
+                                    // Show a popup window to let users select which activities to add to plan
+                                    ListView listView = new ListView(getContext());
+                                    RecommentActivityAdapter recommentActivityAdapter = new RecommentActivityAdapter(getContext(), recommendedActivities);
+                                    listView.setAdapter(recommentActivityAdapter);
+
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                                    builder.setTitle("Recommendations");
+                                    builder.setView(listView);
+
+                                    builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // Get only the selected items
+                                            List<ActivityItem> selectedItems = recommentActivityAdapter.getSelectedItems();
+                                            // Handle the selected items here
+                                            for (ActivityItem selectedItem : selectedItems) {
+                                                Log.d("Selected Activity", selectedItem.toString());
+                                            }
+
+                                            // Update in ViewModel and save
+                                            for (ActivityItem activityItem : selectedItems) {
+                                                viewModel.addActivity(dayIndex, activityItem);
+                                            }
+
+                                            viewModel.saveTripToDatabase();
+
+                                            // Notify the adapter that the data has changed
+                                            adapter.notifyDataSetChanged();
+                                        }
+                                    });
+                                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            dialogInterface.dismiss();
+                                        }
+                                    });
+
+                                    builder.create().show();
                                 }
                             });
 
@@ -346,6 +381,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     });
                 }
             });
+
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
             weatherAPIClient = new WeatherAPIClient();

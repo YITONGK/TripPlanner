@@ -79,6 +79,8 @@ dependencies {
     // UI
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.9.0")
+    implementation("com.google.firebase:firebase-storage:20.2.1")
+    implementation("de.hdodenhof:circleimageview:3.1.0")
 
 
 //    implementation("androidx.credentials:credentials:1.5.0-alpha05")
