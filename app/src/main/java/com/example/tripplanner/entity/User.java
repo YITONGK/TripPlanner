@@ -70,13 +70,6 @@ public class User {
         this.email = email;
     }
 
-    public String getProfileImagePath() {
-        return profileImagePath;
-    }
-
-    public void setProfileImagePath(String profileImagePath) {
-        this.profileImagePath = profileImagePath;
-    }
 
     @Override
     public String toString() {
@@ -84,7 +77,6 @@ public class User {
                 "id='" + id + '\'' +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
-                ", profileImagePath='" + profileImagePath + '\'' +
                 ", preference='" + preference + '\'' +
                 '}';
     }

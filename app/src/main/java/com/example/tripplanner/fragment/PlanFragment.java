@@ -231,7 +231,7 @@ public class PlanFragment extends Fragment
 
                 @Override
                 public int getMovementFlags(@NonNull RecyclerView recyclerView,
-                        @NonNull RecyclerView.ViewHolder viewHolder) {
+                                            @NonNull RecyclerView.ViewHolder viewHolder) {
                     int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
                     int swipeFlags = 0;
                     return makeMovementFlags(dragFlags, swipeFlags);
@@ -239,8 +239,8 @@ public class PlanFragment extends Fragment
 
                 @Override
                 public boolean onMove(@NonNull RecyclerView recyclerView,
-                        @NonNull RecyclerView.ViewHolder viewHolder,
-                        @NonNull RecyclerView.ViewHolder target) {
+                                      @NonNull RecyclerView.ViewHolder viewHolder,
+                                      @NonNull RecyclerView.ViewHolder target) {
                     int fromPosition = viewHolder.getAdapterPosition();
                     int toPosition = target.getAdapterPosition();
 
@@ -331,7 +331,7 @@ public class PlanFragment extends Fragment
 
                     // Fetch user preference
                     AtomicReference<String> userPreferences = new AtomicReference<>("Enjoys coffee shops and outdoor activities");
-                    if (user == null){
+                    if (user == null) {
                         FirestoreDB.getInstance().getUserById(FirestoreDB.getCurrentUserId(), returnedUser -> {
                             user = returnedUser;
                         }, e -> {
@@ -348,8 +348,17 @@ public class PlanFragment extends Fragment
                             Weather weather = weatherData.get(dayIndex);
                             weatherForecast[0] = String.format("Weather is %s with max %.1f°C and min %.1f°C",
                                     weather.getDescription(), weather.getMaxTemp(), weather.getMinTemp());
+                        }
 
-                    GptApiClient.recommendTripPlan(destination, weatherForecast, userPreferences, new GptApiClient.GptApiCallback() {
+                        @Override
+                        public void onFailure(String errorMessage) {
+                            Log.d("PlanFragment", "Failed to fetch weather");
+                        }
+
+
+                    });
+
+                    GptApiClient.recommendTripPlan(destination, weatherForecast[0], userPreferences.get(), trip, new GptApiClient.GptApiCallback() {
                         @Override
                         public void onSuccess(String response) {
                             // Handle the successful response here
@@ -359,7 +368,7 @@ public class PlanFragment extends Fragment
                             GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
                                 @Override
                                 public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
-                                    Log.d("PlanFragment", "RecommendActivities: "+recommendedActivities);
+                                    Log.d("PlanFragment", "RecommendActivities: " + recommendedActivities);
 
 //                                    // Update the activityItemArray with the new recommended activities
 //                                    activityItemArray.clear();
@@ -412,9 +421,7 @@ public class PlanFragment extends Fragment
                                 }
                             });
 
-
                         }
-
                         @Override
                         public void onFailure(String errorMessage) {
                             // Handle the failure to retrieve weather data
@@ -422,65 +429,9 @@ public class PlanFragment extends Fragment
                         }
                     });
 
-//                     GptApiClient.recommendTripPlan(destination, weatherForecast[0], userPreferences.get(), trip,
-//                             new GptApiClient.GptApiCallback() {
-//                                 @Override
-//                                 public void onSuccess(String response) {
-//                                     // Handle the successful response here
-//                                     Log.d("PlanFragment", "Trip plan recommended: " + response);
-
-//                                     // Parse the JSON response into a list of ActivityItem objects
-//                                     GptApiClient.parseActivityItemsFromJson(response, placesClient,
-//                                             new GptApiClient.OnActivityItemsParsedListener() {
-//                                                 @Override
-//                                                 public void onActivityItemsParsed(
-//                                                         List<ActivityItem> recommendedActivities) {
-//                                                     Log.d("PlanFragment",
-//                                                             "RecommendActivities: " + recommendedActivities);
-
-//                                                     // Update in ViewModel and save
-//                                                     for (ActivityItem activityItem : recommendedActivities) {
-//                                                         viewModel.addActivity(dayIndex, activityItem);
-//                                                     }
-
-//                                                     viewModel.saveTripToDatabase();
-
-//                                                     // Notify the adapter that the data has changed
-//                                                     adapter.notifyDataSetChanged();
-//                                                 }
-//                                             });
-
-//                                     //// // Update the activityItemArray with the new recommended activities
-//                                     // activityItemArray.clear();
-//                                     // activityItemArray.addAll(recommendedActivities);
-//                                     //
-//                                     // // Notify the adapter that the data has changed
-//                                     // adapter.notifyDataSetChanged();
-//                                     //
-//                                     // // Update in ViewModel and save
-//                                     // for (ActivityItem activityItem: recommendedActivities){
-//                                     // viewModel.addActivity(dayIndex, activityItem);
-//                                     // }
-//                                     //
-//                                     // adapter.notifyDataSetChanged();
-//                                     // viewModel.saveTripToDatabase();
-
-//                                 }
-
-//                                 @Override
-//                                 public void onFailure(String error) {
-//                                     // Handle the error here
-//                                     Log.e("PlanFragment", "Failed to recommend trip plan: " + error);
-//                                     Toast.makeText(getContext(), "Failed to recommend trip plan", Toast.LENGTH_SHORT)
-//                                             .show();
-//                                 }
-//                             });
-//                 }
-//             });
-
-           
                 }
             });
+
 
 
         } else {
@@ -894,7 +845,6 @@ public class PlanFragment extends Fragment
     // Define a callback interface for weather data retrieval
     public interface WeatherDataCallback {
         void onSuccess(Map<Integer, Weather> weatherData);
-
         void onFailure(String errorMessage);
     }
 
@@ -1274,49 +1224,6 @@ public class PlanFragment extends Fragment
         destinationItem.setLocation(destination);
         activityItems.add(originItem);
         activityItems.add(destinationItem);
-
-        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
-            @Override
-            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-                DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
-                        origin.getNonNullIdOrName(),
-                        destination.getNonNullIdOrName());
-
-                if (entry != null && entry.getDuration() != null && entry.getDistance() != null) {
-                    RouteInfo routeInfo = new RouteInfo(entry.getDuration(), entry.getDistance());
-                    PlanItem routePlanItem = planItems.get(routeInfoPosition);
-                    routePlanItem = new PlanItem(routeInfo);
-                    planItems.set(routeInfoPosition, routePlanItem);
-
-                    mainHandler.post(() -> {
-                        if (isAdded()) {
-                            adapter.notifyItemChanged(routeInfoPosition);
-                        } else {
-                            Log.d("PlanFragment", "Fragment not attached, cannot update UI");
-                        }
-                    });
-                } else {
-                    Log.d("PlanFragment", "No route information available between " + origin.getNonNullIdOrName() + " and " + destination.getNonNullIdOrName());
-                    RouteInfo routeInfo = new RouteInfo("No route available", "");
-                    PlanItem routePlanItem = planItems.get(routeInfoPosition);
-                    routePlanItem = new PlanItem(routeInfo);
-                    planItems.set(routeInfoPosition, routePlanItem);
-
-                    mainHandler.post(() -> {
-                        if (isAdded()) {
-                            adapter.notifyItemChanged(routeInfoPosition);
-                        } else {
-                            Log.d("PlanFragment", "Fragment not attached, cannot update UI");
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
-            }
-        });
     }
 
     private int getActivityItemIndex(int planItemPosition) {
