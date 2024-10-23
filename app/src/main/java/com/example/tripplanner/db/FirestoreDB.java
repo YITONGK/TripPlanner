@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.entity.User;
 import com.example.tripplanner.entity.UserTripStatistics;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -485,6 +486,24 @@ public class FirestoreDB {
                     }
                 })
                 .addOnFailureListener(onFailureListener);
+    }
+
+    public void createUser(User user, OnSuccessListener<Void> onSuccessListener,
+                           OnFailureListener onFailureListener) {
+        Map<String, Object> userData = user.convertUserToMap();
+        firestore.collection("users").add(userData)
+                .addOnSuccessListener(documentReference -> {
+                    Log.d("FirestoreDB", "User created with ID: " + documentReference.getId());
+                    if (onSuccessListener != null) {
+                        onSuccessListener.onSuccess(null); // or pass any relevant data
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FirestoreDB", "Error creating user", e);
+                    if (onFailureListener != null) {
+                        onFailureListener.onFailure(e);
+                    }
+                });
     }
 
 }

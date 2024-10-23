@@ -11,6 +11,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.tripplanner.databinding.ActivityEditProfileBinding;
+import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.User;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -22,6 +24,7 @@ public class EditProfileActivity extends AppCompatActivity {
     private ActivityEditProfileBinding binding;
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseUser user;
+    private User userData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,13 +37,22 @@ public class EditProfileActivity extends AppCompatActivity {
         TextView username = findViewById(R.id.username);
         TextView email = findViewById(R.id.emailAddress);
         ImageView profilePicture = findViewById(R.id.profilePicture);
+        TextView preference = findViewById(R.id.preference);
 
         // display current username and email address
         username.setText(intent.getStringExtra("username"));
         email.setText(intent.getStringExtra("email"));
+        preference.setText(intent.getStringExtra("preference"));
 
         user = FirebaseAuth.getInstance().getCurrentUser();
         String uid = user.getUid();
+
+        FirestoreDB.getInstance().getUserById(uid, returnedUser ->{
+            userData = returnedUser;
+            Log.d("FirestoreDB", "UserData: "+userData);
+        }, (e) -> {
+            Log.d("FirestoreDB", "error in fetching user by id: "+e);
+        });
 
         profilePicture.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -71,30 +83,44 @@ public class EditProfileActivity extends AppCompatActivity {
         // update username and profile picture
         TextView newUsername = findViewById(R.id.username);
         ImageView newProfilePicture = findViewById(R.id.profilePicture);
+        TextView newPreference = findViewById(R.id.preference);
 
         // check if new username and email address are valid
         if (newUsername.getText().toString().isEmpty()) {
             Toast.makeText(EditProfileActivity.this, "Please enter a valid username", Toast.LENGTH_SHORT).show();
         } else {
-            DocumentReference user = db.collection("users").document(uid);
-            user.update(
-                    "username", newUsername.getText().toString()
-                )
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.d("TAG", "User's details successfully updated!");
-                        // Navigate to Profile Activity
-                        Intent intent = new Intent(EditProfileActivity.this, ProfileActivity.class);
-                        startActivity(intent);
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d("TAG", "Error updating user's details", e);
-                    }
-                });
+            userData.setUsername(newUsername.getText().toString());
+            userData.setPreference(newPreference.getText().toString());
+            FirestoreDB.getInstance().updateUserById(uid, userData, new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void unused) {
+                    Log.d("FirestoreDB", "Successfully updated user");
+                    // Navigate to Profile Activity
+                    Intent intent = new Intent(EditProfileActivity.this, ProfileActivity.class);
+                    startActivity(intent);
+                }
+            }, (e) -> {
+                Log.d("FirestoreDB", "Error in updating user: " + e);
+            });
+//            DocumentReference user = db.collection("users").document(uid);
+//            user.update(
+//                    "username", newUsername.getText().toString()
+//                )
+//                .addOnSuccessListener(new OnSuccessListener<Void>() {
+//                    @Override
+//                    public void onSuccess(Void aVoid) {
+//                        Log.d("TAG", "User's details successfully updated!");
+//                        // Navigate to Profile Activity
+//                        Intent intent = new Intent(EditProfileActivity.this, ProfileActivity.class);
+//                        startActivity(intent);
+//                    }
+//                })
+//                .addOnFailureListener(new OnFailureListener() {
+//                    @Override
+//                    public void onFailure(@NonNull Exception e) {
+//                        Log.d("TAG", "Error updating user's details", e);
+//                    }
+//                });
         }
     }
 }
