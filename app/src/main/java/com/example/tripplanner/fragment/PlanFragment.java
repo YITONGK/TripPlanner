@@ -20,7 +20,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -31,19 +30,17 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.bumptech.glide.Glide;
 import com.codebyashish.googledirectionapi.AbstractRouting;
 import com.codebyashish.googledirectionapi.ErrorHandling;
 import com.codebyashish.googledirectionapi.RouteDrawing;
 import com.codebyashish.googledirectionapi.RouteInfoModel;
 import com.codebyashish.googledirectionapi.RouteListener;
-import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.MapActivity;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
+import com.example.tripplanner.adapter.RecommentActivityAdapter;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
-import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
@@ -68,7 +65,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.sql.Time;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -85,7 +81,6 @@ import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
-import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
@@ -102,7 +97,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -316,35 +310,48 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 //                                    // Update the activityItemArray with the new recommended activities
 //                                    activityItemArray.clear();
 //                                    activityItemArray.addAll(recommendedActivities);
-//
 
 
-                                    // Update in ViewModel and save
-                                    for (ActivityItem activityItem : recommendedActivities) {
-                                        viewModel.addActivity(dayIndex, activityItem);
-                                    }
+                                    // Show a popup window to let users select which activities to add to plan
+                                    ListView listView = new ListView(getContext());
+                                    RecommentActivityAdapter recommentActivityAdapter = new RecommentActivityAdapter(getContext(), recommendedActivities);
+                                    listView.setAdapter(recommentActivityAdapter);
 
-                                    viewModel.saveTripToDatabase();
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                                    builder.setTitle("Recommendations");
+                                    builder.setView(listView);
 
-                                    // Notify the adapter that the data has changed
-                                    adapter.notifyDataSetChanged();
+                                    builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // Get only the selected items
+                                            List<ActivityItem> selectedItems = recommentActivityAdapter.getSelectedItems();
+                                            // Handle the selected items here
+                                            for (ActivityItem selectedItem : selectedItems) {
+                                                Log.d("Selected Activity", selectedItem.toString());
+                                            }
+
+                                            // Update in ViewModel and save
+                                            for (ActivityItem activityItem : selectedItems) {
+                                                viewModel.addActivity(dayIndex, activityItem);
+                                            }
+
+                                            viewModel.saveTripToDatabase();
+
+                                            // Notify the adapter that the data has changed
+                                            adapter.notifyDataSetChanged();
+                                        }
+                                    });
+                                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            dialogInterface.dismiss();
+                                        }
+                                    });
+
+                                    builder.create().show();
                                 }
                             });
-
-////                            // Update the activityItemArray with the new recommended activities
-//                            activityItemArray.clear();
-//                            activityItemArray.addAll(recommendedActivities);
-//
-//                            // Notify the adapter that the data has changed
-//                            adapter.notifyDataSetChanged();
-//
-//                            // Update in ViewModel and save
-//                            for (ActivityItem activityItem: recommendedActivities){
-//                                viewModel.addActivity(dayIndex, activityItem);
-//                            }
-//
-//                            adapter.notifyDataSetChanged();
-//                            viewModel.saveTripToDatabase();
 
                         }
 
@@ -367,12 +374,12 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
                     List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItemArray);
                     Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
 
-                    if (activityItemArray.size() > 1){
-                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
-                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
-                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
-                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
-                    }
+//                    if (activityItemArray.size() > 1){
+//                        DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
+//                                activityItemArray.get(0).getLocation().getNonNullIdOrName(),
+//                                activityItemArray.get(1).getLocation().getNonNullIdOrName());
+//                        Log.d("RoutePlannerUtil", "Duration for driving: " + entry.getDuration());
+//                    }
 
 
                 }
