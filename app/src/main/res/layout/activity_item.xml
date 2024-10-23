@@ -1,50 +1,65 @@
-<RelativeLayout
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/activity_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp">
+    android:layout_margin="8dp"
+    app:cardElevation="4dp"
+    app:strokeWidth="1dp"
+    android:clickable="true"
+    android:focusable="true">
 
-    <TextView
-        android:id="@+id/activityName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Activity Name"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_alignParentStart="true"
-        android:layout_marginEnd="8dp"
-        android:layout_toStartOf="@id/editIcon" />
+    <RelativeLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp"
+    android:background="#fbf6f1">
 
-    <TextView
-        android:id="@+id/activityDetails"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Activity Details"
-        android:textSize="14sp"
-        android:layout_below="@id/activityName"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="4dp"
-        android:layout_toStartOf="@id/editIcon"
-        android:layout_marginEnd="8dp" />
+        <TextView
+            android:id="@+id/activityName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Activity Name"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_alignParentStart="true"
+            android:layout_marginEnd="8dp"
+            android:layout_toStartOf="@id/dragHandle" />
 
-    <ImageView
-        android:id="@+id/editIcon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/baseline_edit_24"
-        android:contentDescription="Edit"
-        android:padding="4dp"
-        android:layout_toStartOf="@id/dragHandle"
-        android:layout_centerVertical="true" />
+        <TextView
+            android:id="@+id/activityDetails"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Activity Details"
+            android:textSize="14sp"
+            android:textColor="@color/black"
+            android:layout_below="@id/activityName"
+            android:layout_alignParentStart="true"
+            android:layout_marginTop="4dp"
+            android:layout_toStartOf="@id/dragHandle"
+            android:layout_marginEnd="8dp" />
 
-    <ImageView
-        android:id="@+id/dragHandle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_drag_handle"
-        android:contentDescription="Drag Handle"
-        android:padding="8dp"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true" />
+        <ImageView
+            android:id="@+id/editIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/baseline_edit_24"
+            android:contentDescription="Edit"
+            android:padding="4dp"
+            android:layout_toStartOf="@id/dragHandle"
+            android:layout_centerVertical="true" />
 
-</RelativeLayout>
+        <ImageView
+            android:id="@+id/dragHandle"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_drag_handle"
+            android:contentDescription="Drag Handle"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true" />
+
+    </RelativeLayout>
+
+</com.google.android.material.card.MaterialCardView>

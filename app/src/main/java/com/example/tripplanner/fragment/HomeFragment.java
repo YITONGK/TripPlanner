@@ -41,6 +41,8 @@ import com.google.firebase.auth.FirebaseUser;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPlanInterface {
@@ -100,6 +102,15 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
 
     private void displayAllPlans(View rootView) {
         RecyclerView recyclerView = rootView.findViewById(R.id.allPlanRecyclerView);
+
+        // sort trips by startDate
+        Collections.sort(allPlans, new Comparator<Trip>() {
+            @Override
+            public int compare(Trip lhs, Trip rhs) {
+                return rhs.getStartDate().compareTo(lhs.getStartDate());
+            }
+        });
+
         // bind the adapter
         adapter = new AllPlanAdapter(rootView.getContext(), allPlans, this);
         recyclerView.setAdapter(adapter);

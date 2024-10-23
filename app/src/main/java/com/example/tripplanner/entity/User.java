@@ -7,8 +7,8 @@ public class User {
     private String id;
     private String username;
     private String email;
-    private String profileImagePath; // URI or path to the profile image
     private String preference;
+
 
     // Used to create a new user
     public User(String username, String email) {
