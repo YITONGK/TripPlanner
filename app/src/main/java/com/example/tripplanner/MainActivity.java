@@ -5,21 +5,32 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 
+import com.bumptech.glide.Glide;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.utils.GptApiClient;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.RoutePlanner;
 import com.example.tripplanner.utils.SensorDetector;
 import com.example.tripplanner.utils.CaptureAct;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.model.PlaceLikelihood;
+import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
+import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.navigation.NavigationBarView;
@@ -31,6 +42,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import androidx.cardview.widget.CardView;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.ui.AppBarConfiguration;
 
@@ -44,14 +56,22 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.journeyapps.barcodescanner.ScanContract;
 import com.journeyapps.barcodescanner.ScanOptions;
 
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,6 +82,10 @@ public class MainActivity extends AppCompatActivity {
     private PlacesClient placesClient;
 
     private SensorDetector sensorDetector;
+
+    private FirebaseFirestore db;
+    private FirebaseUser currentUser;
+    private String uid;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +99,16 @@ public class MainActivity extends AppCompatActivity {
         }
         placesClient = Places.createClient(this);
         PlacesClientProvider.initialize(placesClient);
+
+        db = FirebaseFirestore.getInstance();
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (currentUser != null) {
+            uid = currentUser.getUid();
+            loadUserProfile();
+        } else {
+            Log.e("MainActivity", "User not login");
+        }
 
         handleIntent(getIntent());
 
@@ -221,47 +255,86 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Initialize WeatherTripPlanner
+        if (!Places.isInitialized()) {
+            Places.initialize(getApplicationContext(), BuildConfig.PLACES_API_KEY);
+        }
+        placesClient = Places.createClient(this);
+
+        // Initialize sensors
         sensorDetector = new SensorDetector(this);
+        sensorDetector.setOnShakeListener(() -> {
+            // Show confirmation dialog
+            new AlertDialog.Builder(MainActivity.this)
+                .setTitle("One-Day Trip Plan")
+                .setMessage("Do you want to generate a one-day trip plan?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Get current location and search nearby places
+                        Log.d("SENSOR", "Shake event detected");
+                        sensorDetector.getCurrentLocation(location -> {
+                            Log.d("SENSOR", "Location: " + location);
+                            searchNearbyPlaces(location, places -> {
+
+                                // Access temperature and humidity
+                                float temperature = sensorDetector.getAmbientTemperature();
+                                float humidity = sensorDetector.getRelativeHumidity();
+                                String sensorData = "Temperature: " + temperature + ", Humidity: " + humidity;
+                                Log.d("SENSOR", sensorData);
+
+                                String userPreferences = "Enjoy cafe and bakery";
+
+                                GptApiClient.generateOneDayTripPlan(sensorData, places, userPreferences, new GptApiClient.GptApiCallback() {
+                                    @Override
+                                    public void onSuccess(String response) {
+                                        // Handle the successful response here
+                                        Log.d("SENSOR", "Trip plan recommended: " + response);
+
+                                        String tripName = GptApiClient.getStringFromJsonResponse(response, "tripName");
+                                        
+                                        // Parse the JSON response into a list of ActivityItem objects
+                                        GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
+                                            @Override
+                                            public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
+                                                Log.d("SENSOR", "RecommendActivities: "+recommendedActivities);
+                                                Trip trip = new Trip();
+                                                trip.setName(tripName);
+                                                trip.setNumDays(1);
+                                                trip.setStartDate(Timestamp.now());
+                                                trip.setEndDate(Timestamp.now());
+                                                trip.addUser(FirestoreDB.getCurrentUserId());
+                                                trip.addLocation(recommendedActivities.get(0).getLocation());
+
+                                                Map<String, List<ActivityItem>> newPlans = new HashMap<>();
+                                                newPlans.put("0", recommendedActivities);
+                                                trip.setPlans(newPlans);
+
+            //                                    FirestoreDB db = FirestoreDB.getInstance();
+            //                                    db.createTrip(FirestoreDB.getCurrentUserId(), trip.convertTripToMap());
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onFailure(String error) {
+                                        // Handle the error here
+                                        Log.e("SENSOR", "Failed to recommend trip plan: " + error);
+                                        Toast.makeText(MainActivity.this, "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
+                                    }
+                                    });
+                            });
+                        });
+                    }
+                })
+                .setNegativeButton("No", null)
+                .show();
+
+        });
+//        sensorDetector.simulateShakeEvent();
+
 
         // Detect weather and plan trip
         // weatherTripPlanner.detectWeatherAndPlanTrip();
-
-        // Example usage of Route Planner
-//        List<ActivityItem> activityItems = new ArrayList<>();
-//        // Create some sample ActivityItems
-//        ActivityItem item1 = new ActivityItem("Visit NYU");
-//        item1.setLocation(new Location("New York University", 40.779437, -73.963244));
-//
-//        ActivityItem item2 = new ActivityItem("Lunch at Central Park");
-//        item2.setLocation(new Location("Central Park", 40.785091, -73.968285));
-//
-//        ActivityItem item3 = new ActivityItem("Empire State Building Tour");
-//        item3.setLocation(new Location("Empire State Building", 40.748817, -73.985428));
-//
-//        // Add items to the list
-//        activityItems.add(item1);
-//        activityItems.add(item2);
-//        activityItems.add(item3);
-
-//        // Fetch the distance matrix
-//        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
-//            @Override
-//            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-//                // Handle the successful result
-//                Log.d("RoutePlannerUtil","Distance Matrix fetched successfully!");
-//                List<ActivityItem> bestRoute = RoutePlanner.calculateBestRoute(distanceMatrix, activityItems);
-//                Log.d("RoutePlannerUtil", "Best Route: " + bestRoute);
-//
-//            }
-//
-//            @Override
-//            public void onFailure(Exception e) {
-//                // Handle the error
-//                Log.d("RoutePlannerUtil", "Failed to fetch Distance Matrix: " + e.getMessage());
-//            }
-//
-//        });
 
     }
 
@@ -284,6 +357,46 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         setIntent(intent); // Update the intent
         handleIntent(intent);
+    }
+
+    private void searchNearbyPlaces( android.location.Location location, OnSuccessListener<List<Place>> listener) {
+        Log.d("SENSOR", "searchNearbyPlaces start");
+        LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+        // Define the place fields to return
+        List<Place.Field> placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG);
+
+        // Create a request object
+        FindCurrentPlaceRequest request = FindCurrentPlaceRequest.newInstance(placeFields);
+
+        // Check for location permissions
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            return;
+        }
+        Task<FindCurrentPlaceResponse> placeResponse = placesClient.findCurrentPlace(request);
+        placeResponse.addOnCompleteListener(new OnCompleteListener<FindCurrentPlaceResponse>() {
+            @Override
+            public void onComplete(@NonNull Task<FindCurrentPlaceResponse> task) {
+                if (task.isSuccessful()) {
+                    FindCurrentPlaceResponse response = task.getResult();
+                    List<Place> places = new ArrayList<>();
+                    for (PlaceLikelihood placeLikelihood : response.getPlaceLikelihoods()) {
+                        places.add(placeLikelihood.getPlace());
+                        Log.i("PLACES", String.format("Place '%s' has likelihood: %f",
+                                placeLikelihood.getPlace().getName(),
+                                placeLikelihood.getLikelihood()));
+                    }
+                    listener.onSuccess(places);
+                } else {
+                    Exception exception = task.getException();
+                    if (exception instanceof ApiException) {
+                        ApiException apiException = (ApiException) exception;
+                        Log.e("PLACES", "Place not found: " + apiException.getStatusCode());
+                    }
+                }
+            }
+        });
     }
 
     private void handleIntent(Intent intent) {
@@ -354,5 +467,28 @@ public class MainActivity extends AppCompatActivity {
         }
     });
 
+    private void loadUserProfile() {
+        DocumentReference userRef = db.collection("users").document(uid);
 
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                String profilePictureUrl = documentSnapshot.getString("profilePicture");
+
+                ImageView profileBtn = findViewById(R.id.profileBtn);
+
+                if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
+                    Glide.with(this)
+                            .load(profilePictureUrl)
+                            .placeholder(R.drawable.woman)
+                            .into(profileBtn);
+                } else {
+                    profileBtn.setImageResource(R.drawable.woman);
+                }
+            } else {
+                Log.d("MainActivity", "user document does not exist");
+            }
+        }).addOnFailureListener(e -> {
+            Log.e("MainActivity", "fetch user data failed", e);
+        });
+    }
 }

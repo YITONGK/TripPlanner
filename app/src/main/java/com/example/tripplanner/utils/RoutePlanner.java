@@ -2,6 +2,7 @@ package com.example.tripplanner.utils;
 
 import android.util.Log;
 
+import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
@@ -22,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RoutePlanner {
-    private static final String API_KEY = "AIzaSyB6ERXJUvrKoEbEBTVt4Ofgg_3G3z6tFcQ";
+    private static final String API_KEY = BuildConfig.MAPS_API_KEY;
 //    private List<DistanceMatrixEntry> distanceMatrix;
 
     public static void fetchDistanceMatrix(List<ActivityItem> activityItems, String mode, DistanceMatrixCallback callback) {
@@ -31,6 +32,11 @@ public class RoutePlanner {
             if (item.getLocation() != null) {
                 locations.add(item.getLocation());
             }
+        }
+
+        if (locations.size() < 2) {
+            callback.onFailure(new IllegalArgumentException("Not enough locations to compute distance matrix."));
+            return;
         }
 
         try {
@@ -63,7 +69,7 @@ public class RoutePlanner {
         }
     }
 
-     private static List<DistanceMatrixEntry> parseDistanceMatrixResponse(String jsonResponse, List<Location> locations, String mode) {
+    private static List<DistanceMatrixEntry> parseDistanceMatrixResponse(String jsonResponse, List<Location> locations, String mode) {
         List<DistanceMatrixEntry> entries = new ArrayList<>();
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -73,16 +79,29 @@ public class RoutePlanner {
                 JSONArray elements = rows.getJSONObject(i).getJSONArray("elements");
                 for (int j = 0; j < elements.length(); j++) {
                     JSONObject element = elements.getJSONObject(j);
-                    String distance = element.getJSONObject("distance").getString("text");
-                    String duration = element.getJSONObject("duration").getString("text");
+                    String status = element.getString("status");
 
-                    entries.add(new DistanceMatrixEntry(
-                            locations.get(i).getNonNullIdOrName(),
-                            locations.get(j).getNonNullIdOrName(),
-                            mode,
-                            distance,
-                            duration
-                    ));
+                    if (status.equals("OK")) {
+                        String distance = element.getJSONObject("distance").getString("text");
+                        String duration = element.getJSONObject("duration").getString("text");
+
+                        entries.add(new DistanceMatrixEntry(
+                                locations.get(i).getNonNullIdOrName(),
+                                locations.get(j).getNonNullIdOrName(),
+                                mode,
+                                distance,
+                                duration
+                        ));
+                    } else {
+                        Log.w("RoutePlannerUtil", "No route found between " + locations.get(i).getNonNullIdOrName() + " and " + locations.get(j).getNonNullIdOrName() + ". Status: " + status);
+                        entries.add(new DistanceMatrixEntry(
+                                locations.get(i).getNonNullIdOrName(),
+                                locations.get(j).getNonNullIdOrName(),
+                                mode,
+                                null,
+                                null
+                        ));
+                    }
                 }
             }
         } catch (Exception e) {
@@ -90,6 +109,7 @@ public class RoutePlanner {
         }
         return entries;
     }
+
 
 
     private static String buildDirectionsUrl(List<Location> locations, String mode) throws Exception {
@@ -113,6 +133,14 @@ public class RoutePlanner {
                 }
                 locationBuilder.append(URLEncoder.encode(location.getName(), "UTF-8"));
             }
+            else {
+                Log.w("RoutePlannerUtil", "Invalid location with no ID or name, skipping.");
+                continue;
+            }
+        }
+
+        if (locationBuilder.length() == 0) {
+            throw new Exception("No valid locations to build URL.");
         }
 
         return "https://maps.googleapis.com/maps/api/distancematrix/json?"

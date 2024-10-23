@@ -6,7 +6,10 @@ import android.util.Log;
 
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.entity.ActivityItem;
+import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.entity.Weather;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.libraries.places.api.model.AddressComponent;
@@ -40,11 +43,29 @@ public class GptApiClient {
     private static final String GPT_API_URL = "https://api.openai.com/v1/chat/completions";
     private static final String API_KEY = BuildConfig.GPT_API_KEY;
     private static final String DEFAULT_PROMPT = "Please plan the trip to ";
-    private static final String REPLAN_PROMPT = "Re-plan the trip due to bad weather conditions. ";
+    private static final String REPLAN_PROMPT = "As a trip planner, your task is to schedule activities for one day of a trip based on details provided by the users. You need to adjust the existing plan by considering the current plans, weather conditions, travel times, and the user's preferred schedule. Information such as distance matrices, weather data, and existing activities will be provided like:\n"+
+            "- Current Plan\n" +
+            "- Weather Forecast\n" +
+            "- Distance Matrix\n" +
+            "- Context\n\n"+
+            "Please respond in the following JSON format:\n" +
+            "{\"activityItem\": [{\"name\": \"string\"," +
+            "      \"startTime\": \"yyyy-MM-dd HH:mm:ss\"," +
+            "      \"endTime\": \"yyyy-MM-dd HH:mm:ss\"," +
+            "      \"locationName\": \"Location Name\"," +
+            "      \"notes\": \"short string\"}]}\n"+
+            "Guidelines:\n"+
+            "- Please ensure that your response is a valid JSON format. \n"+
+            "- Please ensure that the location is real and exists. \n"+
+            "- Please take the weather forecast into account when making your plans. If it's going to rain, plan indoor activities."+
+            "- Please keep the original plans as much as possible.\n" +
+            "- Please consider the trip plans outlined for each day in the context. Make sure there are no duplicate activities or locations in your plan.";
+
     private static final String RECOMMENDATION_PROMPT = "You are a trip planner generating no more 3 activity items for one day in a trip based on the following details which will be given by users:\n"+
         "- Destination\n" +
         "- Weather Forecast\n" +
-        "- User Preferences\n\n"+
+        "- User Preferences\n"+
+        "- Context\n\n"+
         "Please respond in the following JSON format:\n" +
         "{\"activityItem\": [{\"name\": \"string\"," +
         "      \"startTime\": \"yyyy-MM-dd HH:mm:ss\"," +
@@ -53,9 +74,29 @@ public class GptApiClient {
         "      \"notes\": \"short string\"}]}\n"+
         "Guidelines:\n"+
             "- Please ensure that your response is a valid JSON format. \n"+
-            "- Please ensure that the location is real and exists. \n";
+            "- Please ensure that the location is real and exists. \n"+
+            "- Please take the weather forecast into account when making your plans. If it's going to rain, plan indoor activities."+
+            "- Please consider the trip plans outlined for each day in the context. Make sure there are no duplicate activities in your plan.";
 //            "- Please ensure that the returned data is wrapped in {}. \n" +
 //            "- Please do not output any prompt words or markdown code format such as ```json. \n";
+
+    private static final String SHAKE_PROMPT = "You are a trip planner generating activity items for one day in a trip based on the following details which will be given by users:\n"+
+            "- Nearby places\n"+
+            "- Environment (Temperature and Humidity) \n" +
+            "- User Preferences\n\n"+
+            "Please respond in the following JSON format:\n" +
+            "{\"tripName\": \"string\", " +
+            "activityItem\": [{\"name\": \"string\"," +
+            "      \"startTime\": \"yyyy-MM-dd HH:mm:ss\"," +
+            "      \"endTime\": \"yyyy-MM-dd HH:mm:ss\"," +
+            "      \"locationName\": \"Location Name\"," +
+            "      \"notes\": \"short string\"}]}\n"+
+            "Guidelines:\n"+
+            "- Please ensure that your response is a valid JSON format. \n"+
+            "- Please ensure that the location is real and exists. \n" +
+            "- Please take the given nearby locations into account." +
+            "- Please consider the environmental sensor data (temperature and humidity) when making your plans. If the humidity suggests it's raining, or if the temperature is too high or too low, please plan indoor activities.";
+
 
     public interface GptApiCallback {
         void onSuccess(String response);
@@ -105,11 +146,6 @@ public class GptApiClient {
                     Log.d("GptApiClient", "[getChatCompletion] success");
                     String responseBody = response.body().string();
                     Log.d("GptApiClient", "Response: " + responseBody);
-                    String content = extractContentFromResponse(responseBody);
-                    if (content == null){
-                        callback.onFailure("Invalid response");
-                        return;
-                    }
 
                     try {
                         JSONObject jsonResponse = new JSONObject(responseBody);
@@ -138,6 +174,7 @@ public class GptApiClient {
                         }
 
                         if ("stop".equals(finishReason)) {
+                            String content = message.getString("content");
                             callback.onSuccess(content);
                         } else {
                             callback.onFailure("Unexpected finish reason: " + finishReason);
@@ -155,49 +192,71 @@ public class GptApiClient {
         });
     }
 
-    public static String extractContentFromResponse(String jsonResponse) {
-        try {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray choicesArray = jsonObject.getJSONArray("choices");
-            if (choicesArray.length() > 0) {
-                JSONObject firstChoice = choicesArray.getJSONObject(0);
-                JSONObject messageObject = firstChoice.getJSONObject("message");
-                return messageObject.getString("content");
-            }
-        } catch (JSONException e) {
-            Log.e("GptApiClient", "Error in parsing error in extractContentFromResponse()");
-        }
-        return null;
-    }
-
-    public static void recommendTripPlan(String destination, String weatherForecast, String userPreferences, GptApiCallback callback) {
-    
+    public static void recommendTripPlan(String destination, String weatherForecast, String userPreferences, Trip trip, GptApiCallback callback) {
+        String tripData = "Plans in all days:  " + trip.getPlans().toString();
         String userMessage = 
             "- Destination: " + destination + "\n" +
             "- Weather Forecast: " + weatherForecast + "\n" +
-            "- User Preferences: " + userPreferences + "\n\n";
+            "- User Preferences: " + userPreferences + "\n" +
+            "- Context: " + tripData + "\n";
+
+        Log.d("PlanFragment", "User Message: "+userMessage);
 
         getChatCompletion(RECOMMENDATION_PROMPT, userMessage, callback);
     }
 
-    public static String cleanAndValidateJson(String response) {
-        String jsonContent = extractJsonContent(response);
-        if (jsonContent == null) {
-            return null;
+    public static void generateOneDayTripPlan(String sensorData, List<Place> nearbyPlaces, String userPreferences, GptApiCallback callback) {
+        StringBuilder placesStringBuilder = new StringBuilder();
+        for (Place place : nearbyPlaces) {
+            placesStringBuilder.append("Name: ").append(place.getName())
+                    .append(", Address: ").append(place.getAddress())
+                    .append("\n");
         }
+        String placesString = placesStringBuilder.toString();
+        Log.d("SENSOR", "Places: " + placesString);
 
-        // Attempt to parse the JSON to check if it's valid
-        try {
-            new JSONObject(jsonContent);
-            return jsonContent; // Return if valid
-        } catch (JSONException e) {
-            // Log the error and retry if needed
-            Log.d("GptApiClient", "Invalid json: " + jsonContent);
-            Log.e("GptApiClient", "Invalid JSON, retrying...");
-            // Implement retry logic here if necessary
+        String userMessage =
+                "- Nearby places: " + placesString + "\n"+
+                "- Environment: " + sensorData +  "\n" +
+                "- User Preferences: " + userPreferences + "\n\n";
+        getChatCompletion(SHAKE_PROMPT, userMessage, callback);
+    }
+
+//    public static String cleanAndValidateJson(String response) {
+//        String jsonContent = extractJsonContent(response);
+//        if (jsonContent == null) {
+//            return null;
+//        }
+//
+//        // Attempt to parse the JSON to check if it's valid
+//        try {
+//            new JSONObject(jsonContent);
+//            return jsonContent; // Return if valid
+//        } catch (JSONException e) {
+//            // Log the error and retry if needed
+//            Log.d("GptApiClient", "Invalid json: " + jsonContent);
+//            Log.e("GptApiClient", "Invalid JSON, retrying...");
+//            // Implement retry logic here if necessary
+//        }
+//
+//        return null;
+//    }
+
+    public static String cleanJsonResponse(String response){
+        response = response.replace("```json", "");
+        response = response.replace("```", "");
+        return response;
+    }
+
+    public static String getStringFromJsonResponse(String response, String key){
+        String value = null;
+        try{
+            response = cleanJsonResponse(response);
+            value = new JSONObject(response).optString(key, "New");
+        } catch (JSONException e){
+            Log.d("GptApiClient", "[getStringFromJsonResponse] Invalid json");
         }
-
-        return null;
+        return value;
     }
 
     private static String extractJsonContent(String response) {
@@ -217,69 +276,81 @@ public class GptApiClient {
         getChatCompletion(DEFAULT_PROMPT, tripData, callback);
     }
 
-    public static void rePlanTrip(String tripData, GptApiCallback callback) {
-        getChatCompletion(REPLAN_PROMPT, tripData, callback);
+    public static void rePlanTripByWeather(List<ActivityItem> currentPlan, Weather weather, List<DistanceMatrixEntry> distanceMatrix, Trip trip, GptApiCallback callback) {
+        String tripData = "Plans in all days:  " + trip.getPlans().toString();
+        String weatherData = String.format("%s, with a high of %.1f°C and a low of %.1f°C.",
+                weather.getDescription(), weather.getMaxTemp(), weather.getMinTemp());
+        String userMessage =
+                "- Current Plan: " + currentPlan + "\n" +
+                "- Weather Forecast: " + weatherData + "\n" +
+                "- Distance Matrix: " + distanceMatrix + "\n" +
+                "- Context: " + tripData + "\n\n";
+
+        getChatCompletion(REPLAN_PROMPT, userMessage, callback);
     }
 
     public static List<ActivityItem> parseActivityItemsFromJson(String jsonResponse, PlacesClient placesClient, OnActivityItemsParsedListener listener) {
-    List<ActivityItem> activityItems = new ArrayList<>();
+        // Clean the response
+        jsonResponse = cleanJsonResponse(jsonResponse);
 
-    try {
-        JSONObject jsonObject = new JSONObject(jsonResponse);
-        JSONArray activityArray = jsonObject.getJSONArray("activityItem");
+        List<ActivityItem> activityItems = new ArrayList<>();
 
-        if (activityArray.length() == 0) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonResponse);
+            JSONArray activityArray = jsonObject.getJSONArray("activityItem");
+
+            if (activityArray.length() == 0) {
+                listener.onActivityItemsParsed(activityItems);
+                return activityItems;
+            }
+
+            AtomicInteger remainingItems = new AtomicInteger(activityArray.length());
+
+            for (int i = 0; i < activityArray.length(); i++) {
+                JSONObject activityObject = activityArray.getJSONObject(i);
+
+                String name = activityObject.getString("name");
+                String startTimeStr = activityObject.getString("startTime");
+                String endTimeStr = activityObject.getString("endTime");
+                String locationName = activityObject.getString("locationName");
+                String notes = activityObject.optString("notes", "");
+
+                // Convert startTime and endTime from String to Timestamp
+                Timestamp startTime = ActivityItem.convertStringToTimestamp(startTimeStr);
+                Timestamp endTime = ActivityItem.convertStringToTimestamp(endTimeStr);
+
+                ActivityItem activityItem = new ActivityItem(name);
+                activityItem.setStartTime(startTime);
+                activityItem.setEndTime(endTime);
+                activityItem.setNotes(notes);
+
+                // Fetch location details from Google Places API
+                fetchLocationFromGooglePlaces(locationName, placesClient, new OnPlaceFetchedListener() {
+                    @Override
+                    public void onPlaceFetched(Location location) {
+                        activityItem.setLocation(location);
+                        activityItems.add(activityItem);
+                        Log.d("GptApiClient", "Add into activity: " + activityItem);
+
+                        if (remainingItems.decrementAndGet() == 0) {
+                            listener.onActivityItemsParsed(activityItems);
+                        }
+                    }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        Log.d("GptApiClient", "Error in finding location generated by gpt: " + locationName);
+
+                        if (remainingItems.decrementAndGet() == 0) {
+                            listener.onActivityItemsParsed(activityItems);
+                        }
+                    }
+                });
+            }
+        } catch (JSONException e) {
+            Log.d("GptApiClient", "Error in parseActivityItemsFromJson: " + e.getMessage());
             listener.onActivityItemsParsed(activityItems);
-            return activityItems;
         }
-
-        AtomicInteger remainingItems = new AtomicInteger(activityArray.length());
-
-        for (int i = 0; i < activityArray.length(); i++) {
-            JSONObject activityObject = activityArray.getJSONObject(i);
-
-            String name = activityObject.getString("name");
-            String startTimeStr = activityObject.getString("startTime");
-            String endTimeStr = activityObject.getString("endTime");
-            String locationName = activityObject.getString("locationName");
-            String notes = activityObject.optString("notes", "");
-
-            // Convert startTime and endTime from String to Timestamp
-            Timestamp startTime = ActivityItem.convertStringToTimestamp(startTimeStr);
-            Timestamp endTime = ActivityItem.convertStringToTimestamp(endTimeStr);
-
-            ActivityItem activityItem = new ActivityItem(name);
-            activityItem.setStartTime(startTime);
-            activityItem.setEndTime(endTime);
-            activityItem.setNotes(notes);
-
-            // Fetch location details from Google Places API
-            fetchLocationFromGooglePlaces(locationName, placesClient, new OnPlaceFetchedListener() {
-                @Override
-                public void onPlaceFetched(Location location) {
-                    activityItem.setLocation(location);
-                    activityItems.add(activityItem);
-                    Log.d("GptApiClient", "Add into activity: " + activityItem);
-
-                    if (remainingItems.decrementAndGet() == 0) {
-                        listener.onActivityItemsParsed(activityItems);
-                    }
-                }
-
-                @Override
-                public void onError(String errorMessage) {
-                    Log.d("GptApiClient", "Error in finding location generated by gpt: " + locationName);
-
-                    if (remainingItems.decrementAndGet() == 0) {
-                        listener.onActivityItemsParsed(activityItems);
-                    }
-                }
-            });
-        }
-    } catch (JSONException e) {
-        Log.d("GptApiClient", "Error in parseActivityItemsFromJson: " + e.getMessage());
-        listener.onActivityItemsParsed(activityItems);
-    }
         return activityItems;
     }
 
@@ -313,33 +384,7 @@ public class GptApiClient {
                         placesClient.fetchPlace(fetchPlaceRequest)
                                 .addOnSuccessListener(fetchPlaceResponse -> {
                                     Place place = fetchPlaceResponse.getPlace();
-                                    String country = null;
-
-                                    // Extract the country from the address components
-                                    if (place.getAddressComponents() != null) {
-                                        for (AddressComponent component : place.getAddressComponents().asList()) {
-                                            if (component.getTypes().contains("country")) {
-                                                country = component.getName();
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    // Get the primary place type
-                                    String placeType = null;
-                                    if (place.getTypes() != null && !place.getTypes().isEmpty()) {
-                                        placeType = place.getTypes().get(0).toString();
-                                    }
-
-                                    // Create a new Location object with the fetched details
-                                    Location location = new Location(
-                                            place.getId(),
-                                            place.getName(),
-                                            placeType,
-                                            place.getLatLng().latitude,
-                                            place.getLatLng().longitude,
-                                            country
-                                    );
+                                    Location location = Location.getInstanceFromPlace(place);
 
                                     // Notify the listener that the place has been fetched
                                     listener.onPlaceFetched(location);

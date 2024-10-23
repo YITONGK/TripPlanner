@@ -19,7 +19,7 @@ public class WeatherAPIClient {
     //TODO: need a data structure to store extracted weather data
     private HashMap<Integer, Weather> res = new HashMap<Integer, Weather>();
 
-    public Map<Integer, Weather> getWeatherForecast(String name, double lat, double lon, int startDateIndex, int endDateIndex) {
+    public static Map<Integer, Weather> getWeatherForecast(String name, double lat, double lon, int startDateIndex, int endDateIndex) {
         // make get request
         String urlString = "https://api.openweathermap.org/data/2.5/forecast/daily?lat=" + lat + "&lon=" +
             lon + "&cnt=" + endDateIndex + "&appid=" + API_KEY + "&units=metric";

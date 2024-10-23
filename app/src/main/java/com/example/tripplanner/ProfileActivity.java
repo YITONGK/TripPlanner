@@ -10,6 +10,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.bumptech.glide.Glide;
 import com.example.tripplanner.databinding.ActivityProfileBinding;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.User;
@@ -24,8 +26,13 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 public class ProfileActivity extends AppCompatActivity {
     private ActivityProfileBinding binding;
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseUser user;
+
+    private User userData;
+
+    private String uid;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,9 +41,20 @@ public class ProfileActivity extends AppCompatActivity {
         binding = ActivityProfileBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        db = FirebaseFirestore.getInstance();
+        user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user != null) {
+            uid = user.getUid();
+            loadUserProfile();
+        } else {
+            Log.e("ProfileActivity", "User not login");
+        }
+
         TextView username = findViewById(R.id.username);
         TextView email = findViewById(R.id.emailAddress);
         ImageView profilePicture = findViewById(R.id.profilePicture);
+        TextView preference = findViewById(R.id.preference);
 
         // get user details from database
         user = FirebaseAuth.getInstance().getCurrentUser();
@@ -45,17 +63,29 @@ public class ProfileActivity extends AppCompatActivity {
         } else {
             String uid = user.getUid();
 
-            DocumentReference docRef = db.collection("users").document(uid);
-            docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                @Override
-                public void onSuccess(DocumentSnapshot documentSnapshot) {
-                    Log.d("TAG", "successfully read the user data");
-                    User userData = documentSnapshot.toObject(User.class);
-                    Log.d("TAG", userData.getUsername());
-                    username.setText(userData.getUsername());
-                    email.setText(userData.getEmail());
-                }
+            FirestoreDB.getInstance().getUserById(uid, returnedUser ->{
+                userData = returnedUser;
+                Log.d("FirestoreDB", "UserData: "+userData);
+
+                username.setText(userData.getUsername());
+                email.setText(userData.getEmail());
+                preference.setText(userData.getPreference());
+
+            }, (e) -> {
+                Log.d("FirestoreDB", "error in fetching user by id: "+e);
             });
+
+//            DocumentReference docRef = db.collection("users").document(uid);
+//            docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+//                @Override
+//                public void onSuccess(DocumentSnapshot documentSnapshot) {
+//                    Log.d("TAG", "successfully read the user data");
+//                    User userData = documentSnapshot.toObject(User.class);
+//                    Log.d("TAG", userData.getUsername());
+//                    username.setText(userData.getUsername());
+//                    email.setText(userData.getEmail());
+//                }
+//            });
 
             fetchUserTripStatistics(uid);
         }
@@ -67,10 +97,10 @@ public class ProfileActivity extends AppCompatActivity {
                     Toast.makeText(ProfileActivity.this, "Error", Toast.LENGTH_LONG).show();
                 } else {
                     // Pass username and email to Edit Profile Activity
-                    String uid = user.getUid();
                     Intent intent = new Intent(ProfileActivity.this, EditProfileActivity.class);
                     intent.putExtra("username", username.getText().toString());
                     intent.putExtra("email", email.getText().toString());
+                    intent.putExtra("preference", preference.getText().toString());
                     startActivity(intent);
                 }
             }
@@ -82,6 +112,7 @@ public class ProfileActivity extends AppCompatActivity {
                 FirebaseAuth.getInstance().signOut();
                 Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
                 startActivity(intent);
+                finish();
             }
         });
 
@@ -90,6 +121,7 @@ public class ProfileActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
                 startActivity(intent);
+                finish();
             }
         });
     }
@@ -123,6 +155,31 @@ public class ProfileActivity extends AppCompatActivity {
                 // Handle the error
                 Log.e("STATISTICS", "Error retrieving trip statistics", e);
             }
+        });
+    }
+
+    private void loadUserProfile() {
+        DocumentReference userRef = db.collection("users").document(uid);
+
+        userRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                String profilePictureUrl = documentSnapshot.getString("profilePicture");
+
+                ImageView profile = findViewById(R.id.profilePicture);
+
+                if (profilePictureUrl != null && !profilePictureUrl.isEmpty()) {
+                    Glide.with(this)
+                            .load(profilePictureUrl)
+                            .placeholder(R.drawable.woman)
+                            .into(profile);
+                } else {
+                    profile.setImageResource(R.drawable.woman);
+                }
+            } else {
+                Log.d("ProfileActivity", "user document does not exist");
+            }
+        }).addOnFailureListener(e -> {
+            Log.e("ProfileActivity", "fetch user data failed", e);
         });
     }
 

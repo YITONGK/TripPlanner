@@ -26,12 +26,15 @@
         android:orientation="vertical"
         android:padding="40dp">
 
-        <ImageView
+        <de.hdodenhof.circleimageview.CircleImageView
             android:layout_width="150dp"
             android:layout_height="150dp"
             android:id="@+id/profilePicture"
             android:layout_gravity="center"
             android:layout_marginTop="28dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:scaleType="centerCrop"
             android:background="@drawable/woman"/>
 
         <View
@@ -173,6 +176,26 @@
 
         <TextView
             android:id="@+id/emailAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="NaN"
+            android:textSize="15sp"
+            android:layout_marginTop="7dp"/>
+
+        <View
+            android:layout_width="wrap_content"
+            android:layout_height="30dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Preference"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:alpha="0.7" />
+
+        <TextView
+            android:id="@+id/preference"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="NaN"

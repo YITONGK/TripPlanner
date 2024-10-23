@@ -254,5 +254,12 @@ public class Trip {
         }
         return count + (count > 1 ? " activities" : " activity");
     }
+
+    public void addUser(String userId){
+        if (this.userIds == null){
+            this.userIds = new ArrayList<>();
+        }
+        this.userIds.add(userId);
+    }
 }
 
