@@ -70,8 +70,11 @@ import com.journeyapps.barcodescanner.ScanOptions;
 
 import org.json.JSONObject;
 
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -327,7 +330,16 @@ public class MainActivity extends AppCompatActivity {
                                                         trip.setName(tripName);
                                                         trip.setNumDays(1);
                                                         trip.setStartDate(Timestamp.now());
-                                                        trip.setEndDate(Timestamp.now());
+                                                        // Set end date to the end of the current day
+                                                        Calendar calendar = Calendar.getInstance();
+                                                        calendar.setTime(new Date()); // Set to current date
+                                                        calendar.set(Calendar.HOUR_OF_DAY, 23);
+                                                        calendar.set(Calendar.MINUTE, 59);
+                                                        calendar.set(Calendar.SECOND, 59);
+                                                        calendar.set(Calendar.MILLISECOND, 999);
+                                                        Date endDate = calendar.getTime();
+                                                        trip.setEndDate(new Timestamp(endDate.getTime() / 1000, (int) ((endDate.getTime() % 1000) * 1000000)));
+
                                                         trip.addUser(FirestoreDB.getCurrentUserId());
                                                         trip.addLocation(recommendedActivities.get(0).getLocation());
 
@@ -376,7 +388,7 @@ public class MainActivity extends AppCompatActivity {
                 .show();
 
         });
-//        sensorDetector.simulateShakeEvent();
+        sensorDetector.simulateShakeEvent();
 
 
         // Detect weather and plan trip
