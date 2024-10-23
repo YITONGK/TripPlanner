@@ -30,6 +30,7 @@ import android.widget.Button;
 
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -143,6 +144,12 @@ public class PlanFragment extends Fragment
 
     // For specific day plan
     private FloatingActionButton addActivityLocation;
+    private FloatingActionButton planSuggestButton;
+    private TextView textViewAddActivity;
+    private TextView textViewPlanSuggest;
+    private ImageView arrowAddActivity;
+    private ImageView arrowPlanSuggest;
+
     private RecyclerView activityLocationRecyclerView;
     private ArrayList<ActivityItem> activityItemArray;
     private List<PlanItem> planItems;
@@ -217,7 +224,18 @@ public class PlanFragment extends Fragment
             }
 
             addActivityLocation = rootView.findViewById(R.id.addActivityLocation);
+            planSuggestButton = rootView.findViewById(R.id.planSuggest);
+            textViewAddActivity = rootView.findViewById(R.id.textView_add_activity);
+            textViewPlanSuggest = rootView.findViewById(R.id.textView_plan_suggest);
+            arrowAddActivity = rootView.findViewById(R.id.arrow_add_activity);
+            arrowPlanSuggest = rootView.findViewById(R.id.arrow_plan_suggest);
             activityLocationRecyclerView = rootView.findViewById(R.id.activityLocationRecyclerView);
+
+            if (activityItemArray == null || activityItemArray.isEmpty()) {
+                showInstruction(View.VISIBLE);
+            } else {
+                showInstruction(View.GONE);
+            }
 
             // Get the activity items list for this day from the ViewModel
             activityItemArray = viewModel.getActivityItemArray(dayIndex);
@@ -301,6 +319,7 @@ public class PlanFragment extends Fragment
             addActivityLocation.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    showInstruction(View.GONE);
                     showAddActivityDialog();
                 }
             });
@@ -313,6 +332,7 @@ public class PlanFragment extends Fragment
 
                 @Override
                 public void onClick(View v) {
+                    showInstruction(View.GONE);
                     // Show loading dialog
                     ProgressDialog loadingDialog = new ProgressDialog(getContext());
                     loadingDialog.setMessage("Loading...");
@@ -1323,14 +1343,11 @@ public class PlanFragment extends Fragment
         return activityIndex;
     }
 
-    private void removeConnectedRouteItems(int activityPosition) {
-        if (activityPosition > 0 && planItems.get(activityPosition - 1).getType() == PlanItem.TYPE_ROUTE_INFO) {
-            planItems.remove(activityPosition - 1);
-            activityPosition--;
-        }
-        if (activityPosition < planItems.size() - 1 && planItems.get(activityPosition + 1).getType() == PlanItem.TYPE_ROUTE_INFO) {
-            planItems.remove(activityPosition + 1);
-        }
+    public void showInstruction(int visibility) {
+        textViewAddActivity.setVisibility(visibility);
+        textViewPlanSuggest.setVisibility(visibility);
+        arrowAddActivity.setVisibility(visibility);
+        arrowPlanSuggest.setVisibility(visibility);
     }
 
 }
