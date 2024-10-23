@@ -303,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
                                         String tripName = GptApiClient.getStringFromJsonResponse(response, "tripName");
                                         
                                         // Parse the JSON response into a list of ActivityItem objects
-                                        GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
+                                        GptApiClient.parseActivityItemsFromJson("", response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
                                             @Override
                                             public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
                                                 Log.d("SENSOR", "RecommendActivities: "+recommendedActivities);
