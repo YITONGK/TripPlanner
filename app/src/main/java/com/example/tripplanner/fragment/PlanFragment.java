@@ -2,6 +2,7 @@ package com.example.tripplanner.fragment;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -312,6 +313,11 @@ public class PlanFragment extends Fragment
 
                 @Override
                 public void onClick(View v) {
+                    // Show loading dialog
+                    ProgressDialog loadingDialog = new ProgressDialog(getContext());
+                    loadingDialog.setMessage("Loading...");
+                    loadingDialog.setCancelable(false);
+                    loadingDialog.show();
 
                     String destination = "Unknown Destination";
                     if (locationList != null && !locationList.isEmpty()) {
@@ -374,6 +380,9 @@ public class PlanFragment extends Fragment
                             GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
                                 @Override
                                 public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
+                                    // Dismiss loading dialog
+                                    loadingDialog.dismiss();
+                                    // Handle the successful response here
                                     Log.d("PlanFragment", "RecommendActivities: " + recommendedActivities);
 
 //                                    // Update the activityItemArray with the new recommended activities
@@ -429,6 +438,7 @@ public class PlanFragment extends Fragment
                         public void onFailure(String errorMessage) {
                             // Handle the failure to retrieve weather data
                             Log.e("PlanFragment", "Error fetching weather data: " + errorMessage);
+                            loadingDialog.dismiss();
                         }
                     });
 
@@ -1234,6 +1244,7 @@ public class PlanFragment extends Fragment
                         origin.getNonNullIdOrName(),
                         destination.getNonNullIdOrName());
 
+                Log.d("Route2", "DistanceMatrix: "+distanceMatrix);
                 if (entry != null && entry.getDuration() != null && entry.getDistance() != null) {
                     RouteInfo routeInfo = new RouteInfo(entry.getDuration(), entry.getDistance());
                     PlanItem routePlanItem = planItems.get(routeInfoPosition);
