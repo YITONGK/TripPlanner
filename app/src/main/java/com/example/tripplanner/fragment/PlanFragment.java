@@ -31,6 +31,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -117,6 +118,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class PlanFragment extends Fragment
@@ -149,6 +151,10 @@ public class PlanFragment extends Fragment
     private TextView textViewPlanSuggest;
     private ImageView arrowAddActivity;
     private ImageView arrowPlanSuggest;
+
+    private LinearLayout planSuggestOptionsLayout;
+    private Button buttonAIReplan;
+    private Button buttonAISuggest;
 
     private RecyclerView activityLocationRecyclerView;
     private ArrayList<ActivityItem> activityItemArray;
@@ -230,6 +236,10 @@ public class PlanFragment extends Fragment
             arrowAddActivity = rootView.findViewById(R.id.arrow_add_activity);
             arrowPlanSuggest = rootView.findViewById(R.id.arrow_plan_suggest);
             activityLocationRecyclerView = rootView.findViewById(R.id.activityLocationRecyclerView);
+
+            planSuggestOptionsLayout = rootView.findViewById(R.id.planSuggestOptionsLayout);
+            buttonAISuggest = rootView.findViewById(R.id.buttonAISuggest);
+            buttonAIReplan = rootView.findViewById(R.id.buttonAIReplan);
 
             if (activityItemArray == null || activityItemArray.isEmpty()) {
                 showInstruction(View.VISIBLE);
@@ -324,155 +334,141 @@ public class PlanFragment extends Fragment
                 }
             });
 
+            initializePlanSuggestButtons(rootView);
+
             // Find the planSuggest button
-            ImageButton planSuggestButton = rootView.findViewById(R.id.planSuggest);
-
-            // Set an OnClickListener for the planSuggest button
-            planSuggestButton.setOnClickListener(new View.OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    showInstruction(View.GONE);
-                    // Show loading dialog
-                    ProgressDialog loadingDialog = new ProgressDialog(getContext());
-                    loadingDialog.setMessage("Loading...");
-                    loadingDialog.setCancelable(false);
-                    loadingDialog.show();
-
-                    String destination = "Unknown Destination";
-                    if (locationList != null && !locationList.isEmpty()) {
-                        destination = locationList.get(0).getName();
-                    }
-
-                    Log.d("PlanFragment", "Destination: " + destination);
-
-                    // Get the weather forecast for the destination
-                    final String[] weatherForecast = {"Sunny with a high of 25°C"};
-                    // if (allWeatherData != null && !allWeatherData.isEmpty()) {
-                    // // Get the weather for the first day (assuming day index 0)
-                    // Weather weather = allWeatherData.get(0);
-                    // if (weather != null) {
-                    // weatherForecast = String.format("Weather is %s with a high of %.1f°C",
-                    // weather.getDescription(), weather.getTemperature());
-                    // }
-                    // }
-
-                    // Fetch user preference
-                    AtomicReference<String> userPreferences = new AtomicReference<>("Enjoys coffee shops and outdoor activities");
-                    if (user == null) {
-                        FirestoreDB.getInstance().getUserById(FirestoreDB.getCurrentUserId(), returnedUser -> {
-                            user = returnedUser;
-                            userPreferences.set(user.getPreference());
-                            Log.d("PlanFragment", "Get user: "+ user);
-                        }, e -> {
-                            Log.d("PlanFragment", "Error in fetching user: " + e);
-                        });
-                    } else {
-                        userPreferences.set(user.getPreference());
-                    }
-
-
-                    fetchWeatherDataForDate(startDate, dayIndex, new WeatherDataCallback() {
-                        @Override
-                        public void onSuccess(Map<Integer, Weather> weatherData) {
-                            // Handle the successful retrieval of weather data
-                            Log.d("PlanFragment", "Weather data retrieved: " + weatherData);
-                            Weather weather = weatherData.get(dayIndex);
-                            weatherForecast[0] = String.format("Weather is %s with max %.1f°C and min %.1f°C",
-                                    weather.getDescription(), weather.getMaxTemp(), weather.getMinTemp());
-                        }
-
-                        @Override
-                        public void onFailure(String errorMessage) {
-                            Log.d("PlanFragment", "Failed to fetch weather");
-                        }
-
-
-                    });
-
-                    GptApiClient.recommendTripPlan(destination, weatherForecast[0], userPreferences.get(), trip, new GptApiClient.GptApiCallback() {
-                        @Override
-                        public void onSuccess(String response) {
-                            // Handle the successful response here
-                            Log.d("PlanFragment", "Trip plan recommended: " + response);
-
-                            // Parse the JSON response into a list of ActivityItem objects
-                            GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
-                                @Override
-                                public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
-                                    // Dismiss loading dialog
-                                    loadingDialog.dismiss();
-                                    // Handle the successful response here
-                                    Log.d("PlanFragment", "RecommendActivities: " + recommendedActivities);
-
-//                                    // Update the activityItemArray with the new recommended activities
-//                                    activityItemArray.clear();
-//                                    activityItemArray.addAll(recommendedActivities);
-
-
-                                    // Show a popup window to let users select which activities to add to plan
-                                    ListView listView = new ListView(getContext());
-                                    RecommentActivityAdapter recommentActivityAdapter = new RecommentActivityAdapter(getContext(), recommendedActivities);
-                                    listView.setAdapter(recommentActivityAdapter);
-
-                                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                                    builder.setTitle("Recommendations");
-                                    builder.setView(listView);
-
-                                    builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int id) {
-                                            // Get only the selected items
-                                            List<ActivityItem> selectedItems = recommentActivityAdapter.getSelectedItems();
-                                            // Handle the selected items here
-                                            for (ActivityItem selectedItem : selectedItems) {
-                                                Log.d("Selected Activity", selectedItem.toString());
-                                            }
-
-                                            // Update in ViewModel and save
-                                            for (ActivityItem activityItem : selectedItems) {
-                                                viewModel.addActivity(dayIndex, activityItem);
-                                            }
-
-                                            viewModel.saveTripToDatabase();
-
-                                            preparePlanItems();
-                                            // Notify the adapter that the data has changed
-                                            adapter.notifyDataSetChanged();
-                                            viewModel.updateActivityList(dayIndex, activityItemArray);
-                                        }
-                                    });
-                                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-                                            dialogInterface.dismiss();
-                                        }
-                                    });
-
-                                    builder.create().show();
-                                }
-                            });
-
-                        }
-                        @Override
-                        public void onFailure(String errorMessage) {
-                            // Handle the failure to retrieve weather data
-                            Log.e("PlanFragment", "Error fetching weather data: " + errorMessage);
-                            loadingDialog.dismiss();
-                        }
-                    });
-
-                }
-            });
-
-
+//            ImageButton planSuggestButton = rootView.findViewById(R.id.planSuggest);
+//
+//            // Set an OnClickListener for the planSuggest button
+//            planSuggestButton.setOnClickListener(new View.OnClickListener() {
+//
+//                @Override
+//                public void onClick(View v) {
+//                    showInstruction(View.GONE);
+//                    // Show loading dialog
+//                    ProgressDialog loadingDialog = new ProgressDialog(getContext());
+//                    loadingDialog.setMessage("Loading...");
+//                    loadingDialog.setCancelable(false);
+//                    loadingDialog.show();
+//
+//                    String destination = "Unknown Destination";
+//                    if (locationList != null && !locationList.isEmpty()) {
+//                        destination = locationList.get(0).getName();
+//                    }
+//
+//                    Log.d("PlanFragment", "Destination: " + destination);
+//
+//                    // Get the weather forecast for the destination
+//                    final String[] weatherForecast = {"Sunny with a high of 25°C"};
+//
+//                    // Fetch user preference
+//                    AtomicReference<String> userPreferences = new AtomicReference<>("Enjoys coffee shops and outdoor activities");
+//                    if (user == null) {
+//                        FirestoreDB.getInstance().getUserById(FirestoreDB.getCurrentUserId(), returnedUser -> {
+//                            user = returnedUser;
+//                            userPreferences.set(user.getPreference());
+//                            Log.d("PlanFragment", "Get user: "+ user);
+//                        }, e -> {
+//                            Log.d("PlanFragment", "Error in fetching user: " + e);
+//                        });
+//                    } else {
+//                        userPreferences.set(user.getPreference());
+//                    }
+//
+//
+//                    fetchWeatherDataForDate(startDate, dayIndex, new WeatherDataCallback() {
+//                        @Override
+//                        public void onSuccess(Map<Integer, Weather> weatherData) {
+//                            // Handle the successful retrieval of weather data
+//                            Log.d("PlanFragment", "Weather data retrieved: " + weatherData);
+//                            Weather weather = weatherData.get(dayIndex);
+//                            weatherForecast[0] = String.format("Weather is %s with max %.1f°C and min %.1f°C",
+//                                    weather.getDescription(), weather.getMaxTemp(), weather.getMinTemp());
+//                        }
+//
+//                        @Override
+//                        public void onFailure(String errorMessage) {
+//                            Log.d("PlanFragment", "Failed to fetch weather");
+//                        }
+//
+//
+//                    });
+//
+//                    GptApiClient.recommendTripPlan(destination, weatherForecast[0], userPreferences.get(), trip, new GptApiClient.GptApiCallback() {
+//                        @Override
+//                        public void onSuccess(String response) {
+//                            // Handle the successful response here
+//                            Log.d("PlanFragment", "Trip plan recommended: " + response);
+//
+//                            // Parse the JSON response into a list of ActivityItem objects
+//                            GptApiClient.parseActivityItemsFromJson(response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
+//                                @Override
+//                                public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
+//                                    // Dismiss loading dialog
+//                                    loadingDialog.dismiss();
+//                                    // Handle the successful response here
+//                                    Log.d("PlanFragment", "RecommendActivities: " + recommendedActivities);
+//
+//                                    // Show a popup window to let users select which activities to add to plan
+//                                    ListView listView = new ListView(getContext());
+//                                    RecommentActivityAdapter recommentActivityAdapter = new RecommentActivityAdapter(getContext(), recommendedActivities);
+//                                    listView.setAdapter(recommentActivityAdapter);
+//
+//                                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+//                                    builder.setTitle("Recommendations");
+//                                    builder.setView(listView);
+//
+//                                    builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+//                                        @Override
+//                                        public void onClick(DialogInterface dialog, int id) {
+//                                            // Get only the selected items
+//                                            List<ActivityItem> selectedItems = recommentActivityAdapter.getSelectedItems();
+//                                            // Handle the selected items here
+//                                            for (ActivityItem selectedItem : selectedItems) {
+//                                                Log.d("Selected Activity", selectedItem.toString());
+//                                            }
+//
+//                                            // Update in ViewModel and save
+//                                            for (ActivityItem activityItem : selectedItems) {
+//                                                viewModel.addActivity(dayIndex, activityItem);
+//                                            }
+//
+//                                            viewModel.saveTripToDatabase();
+//
+//                                            preparePlanItems();
+//                                            // Notify the adapter that the data has changed
+//                                            adapter.notifyDataSetChanged();
+//                                            viewModel.updateActivityList(dayIndex, activityItemArray);
+//                                        }
+//                                    });
+//                                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+//                                        @Override
+//                                        public void onClick(DialogInterface dialogInterface, int i) {
+//                                            dialogInterface.dismiss();
+//                                        }
+//                                    });
+//
+//                                    builder.create().show();
+//                                }
+//                            });
+//
+//                        }
+//                        @Override
+//                        public void onFailure(String errorMessage) {
+//                            // Handle the failure to retrieve weather data
+//                            Log.e("PlanFragment", "Error fetching weather data: " + errorMessage);
+//                            loadingDialog.dismiss();
+//                        }
+//                    });
+//
+//                }
+//            });
 
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
             weatherAPIClient = new WeatherAPIClient();
             fetchAndDisplayWeatherData(rootView);
             showTripNote(rootView);
-
         }
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
@@ -482,6 +478,31 @@ public class PlanFragment extends Fragment
         }
 
         return rootView;
+    }
+
+    private void initializePlanSuggestButtons(View rootView) {
+        planSuggestButton = rootView.findViewById(R.id.planSuggest);
+        planSuggestOptionsLayout = rootView.findViewById(R.id.planSuggestOptionsLayout);
+        buttonAISuggest = rootView.findViewById(R.id.buttonAISuggest);
+        buttonAIReplan = rootView.findViewById(R.id.buttonAIReplan);
+
+        final AtomicBoolean isOptionsVisible = new AtomicBoolean(false);
+
+        planSuggestButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showInstruction(View.GONE);
+                if (!isOptionsVisible.get()) {
+                    planSuggestOptionsLayout.setVisibility(View.VISIBLE);
+                    planSuggestButton.setImageResource(R.drawable.baseline_close_24);
+                    isOptionsVisible.set(true);
+                } else {
+                    planSuggestOptionsLayout.setVisibility(View.GONE);
+                    planSuggestButton.setImageResource(R.drawable.baseline_settings_suggest_24);
+                    isOptionsVisible.set(false);
+                }
+            }
+        });
     }
 
     @Override
@@ -1114,13 +1135,6 @@ public class PlanFragment extends Fragment
     @Override
     public void onRouteSuccess(ArrayList<RouteInfoModel> routeInfoModelArrayList, int routeIndexing) {
         Log.d("MapActivity", "onRouteSuccess called. Routes: " + routeInfoModelArrayList.size());
-
-        // if ( polylines != null) {
-        // for (Polyline line : polylines) {
-        // line.remove();
-        // }
-        // polylines.clear();
-        // }
         PolylineOptions polylineOptions = new PolylineOptions();
         // Generate a random color
 
