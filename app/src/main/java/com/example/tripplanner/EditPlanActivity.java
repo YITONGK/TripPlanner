@@ -310,6 +310,7 @@ public class EditPlanActivity extends AppCompatActivity {
         } else {
             dayAndNightText = days + " days and " + (days - 1) + " nights";
         }
+        dayAndNightText = dayAndNightText + "\n" + formatTimestamp(trip.getStartDate()) + " ~ " + formatTimestamp(trip.getEndDate());
         TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);
         daysAndNight.setText(dayAndNightText);
     }
@@ -327,5 +328,11 @@ public class EditPlanActivity extends AppCompatActivity {
             intent.putExtra("tripId", tripId);
             startActivity(intent);
         });
+    }
+
+    public String formatTimestamp(Timestamp timestamp) {
+        Date date = timestamp.toDate();
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd yyyy");
+        return sdf.format(date);
     }
 }
