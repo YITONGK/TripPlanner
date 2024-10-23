@@ -347,6 +347,7 @@ public class GptApiClient {
                         if (remainingItems.decrementAndGet() == 0) {
                             listener.onActivityItemsParsed(activityItems);
                         }
+
                     }
                 });
             }
