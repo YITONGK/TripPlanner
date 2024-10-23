@@ -442,4 +442,49 @@ public class FirestoreDB {
                 });
     }
 
+    public void updateUserById(String userId, User user, OnSuccessListener<Void> onSuccessListener,
+            OnFailureListener onFailureListener) {
+        Map<String, Object> userData = user.convertUserToMap();
+        firestore.collection("users").document(userId)
+                .set(userData)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirestoreDB", "User with ID: " + userId + " has been successfully updated.");
+                    if (onSuccessListener != null) {
+                        onSuccessListener.onSuccess(aVoid);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FirestoreDB", "Error updating user with ID: " + userId, e);
+                    if (onFailureListener != null) {
+                        onFailureListener.onFailure(e);
+                    }
+                });
+    }
+
+    public void getUserById(String userId, OnSuccessListener<User> onSuccessListener,
+            OnFailureListener onFailureListener) {
+        firestore.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        try {
+                            // Parse user fields from the document
+                            String username = documentSnapshot.getString("username");
+                            String email = documentSnapshot.getString("email");
+                            String preference = documentSnapshot.getString("preference");
+
+                            // Create a User object
+                            User user = new User(userId, username, email, preference);
+                            onSuccessListener.onSuccess(user);
+                        } catch (Exception e) {
+                            Log.e("FirestoreDB", "Error parsing user document", e);
+                            onFailureListener.onFailure(e);
+                        }
+                    } else {
+                        onFailureListener.onFailure(new Exception("User not found with ID: " + userId));
+                    }
+                })
+                .addOnFailureListener(onFailureListener);
+    }
+
 }
