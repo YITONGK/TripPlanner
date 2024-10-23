@@ -31,10 +31,15 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
+
 public class SensorDetector implements SensorEventListener {
 
     private Activity activity;
     private SensorManager sensorManager;
+    private FusedLocationProviderClient fusedLocationClient;
 
     // Temperature and Humidity Sensors
     private Sensor temperatureSensor;
@@ -51,6 +56,8 @@ public class SensorDetector implements SensorEventListener {
     private long mShakeTime = 0;
     private boolean isAccelerometerAvailable;
 
+    private OnShakeListener onShakeListener;
+
     // Initialize ExecutorService and Handler
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -60,6 +67,11 @@ public class SensorDetector implements SensorEventListener {
     public SensorDetector(Activity activity) {
         this.activity = activity;
         initializeSensors();
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity);
+    }
+
+    public interface OnShakeListener {
+        void onShake();
     }
 
     private void initializeSensors() {
@@ -79,6 +91,16 @@ public class SensorDetector implements SensorEventListener {
             isHumiditySensorAvailable = false;
             isAccelerometerAvailable = false;
         }
+
+
+        // For testing ShakeEvnet
+        if (onShakeListener != null) {
+            onShakeListener.onShake();
+        }
+    }
+
+    public void setOnShakeListener(OnShakeListener listener) {
+        this.onShakeListener = listener;
     }
 
     public void detectWeatherAndPlanTrip() {
@@ -91,7 +113,7 @@ public class SensorDetector implements SensorEventListener {
             Log.d("SENSOR", "Sensors unavailable. Fetching data from Weather API.");
             Location location = getCurrentLocation();
             if (location != null) {
-                fetchWeatherData(location);
+//                fetchWeatherData(location);
                 Log.d("SENSOR", "fallback to weather api");
             } else {
                 Log.d("SENSOR", "Unable to retrieve current location.");
@@ -106,6 +128,9 @@ public class SensorDetector implements SensorEventListener {
         }
         if (isHumiditySensorAvailable) {
             sensorManager.registerListener(this, humiditySensor, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+        if (isAccelerometerAvailable) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         }
     }
 
@@ -130,29 +155,22 @@ public class SensorDetector implements SensorEventListener {
         return location;
     }
 
-    private void fetchWeatherData(Location location) {
-        double latitude = location.getLatitude();
-        double longitude = location.getLongitude();
-
-        executorService.execute(() -> {
-            String apiUrl = String.format(Locale.US,
-                 "https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&appid=%s&units=metric",
-                 latitude, longitude, WEATHER_API_KEY);
-
-
-            JSONObject weatherResponse = makeNetworkCall(apiUrl);
-
-            mainHandler.post(() -> {
-                if (weatherResponse != null) {
-//                    decideNotification(weatherResponse);
-                    Log.d("SENSOR", "Weather data: " + weatherResponse);
-                } else {
-//                    notifyUser("Failed to retrieve weather data.");
-                    Log.d("SENSOR", "Failed to retrieve weather data.");
-                }
-            });
-        });
+    public void getCurrentLocation(OnSuccessListener<Location> listener) {
+        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            return;
+        }
+        fusedLocationClient.getLastLocation()
+            .addOnSuccessListener(activity, listener)
+            .addOnFailureListener(e -> Log.e("LOCATION", "Failed to get location: " + e.getMessage()));
     }
+
+    public void simulateShakeEvent() {
+        if (onShakeListener != null) {
+            onShakeListener.onShake();
+        }
+    }
+
 
     private void decideNotification(JSONObject weatherData) {
         try {
@@ -199,18 +217,18 @@ public class SensorDetector implements SensorEventListener {
 
         executorService.execute(() -> {
             // Perform the GPT API call in the background thread
-            GptApiClient.rePlanTrip(prompt, new GptApiClient.GptApiCallback() {
-                @Override
-                public void onSuccess(String response) {
-                    Log.d("PLAN", "GPT Response: " + response);
-                    showSuggestedPlan(response);
-                }
-
-                @Override
-                public void onFailure(String error) {
-                    Log.d("PLAN", "Failed to retrieve a new plan from GPT: " + error);
-                }
-            });
+//            GptApiClient.rePlanTrip(prompt, new GptApiClient.GptApiCallback() {
+//                @Override
+//                public void onSuccess(String response) {
+//                    Log.d("PLAN", "GPT Response: " + response);
+//                    showSuggestedPlan(response);
+//                }
+//
+//                @Override
+//                public void onFailure(String error) {
+//                    Log.d("PLAN", "Failed to retrieve a new plan from GPT: " + error);
+//                }
+//            });
         });
     }
 
@@ -266,6 +284,7 @@ public class SensorDetector implements SensorEventListener {
     // SensorEventListener methods
     @Override
     public void onSensorChanged(SensorEvent event) {
+
         if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
             ambientTemperature = event.values[0];
         } else if (event.sensor.getType() == Sensor.TYPE_RELATIVE_HUMIDITY) {
@@ -291,13 +310,23 @@ public class SensorDetector implements SensorEventListener {
                 mShakeTime = now;
 
                 // Handle shake event here
-                onShake();
+                if (onShakeListener != null) {
+                    onShakeListener.onShake();
+                }
             }
         }
 
 //        if (isTemperatureSensorAvailable && isHumiditySensorAvailable) {
 //            decideNotificationWithSensorData(ambientTemperature, relativeHumidity);
 //        }
+    }
+
+    public float getAmbientTemperature() {
+        return ambientTemperature;
+    }
+
+    public float getRelativeHumidity() {
+        return relativeHumidity;
     }
 
     @Override
@@ -309,8 +338,5 @@ public class SensorDetector implements SensorEventListener {
         executorService.shutdown();
     }
 
-    private void onShake() {
-        Log.d("SENSOR", "Device shaken!");
-    }
 
 }

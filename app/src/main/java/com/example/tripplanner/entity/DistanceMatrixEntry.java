@@ -21,4 +21,15 @@ public class DistanceMatrixEntry {
     public String getMode() { return mode; }
     public String getDistance() { return distance; }
     public String getDuration() { return duration; }
+
+    @Override
+    public String toString() {
+        return "DistanceMatrixEntry{" +
+                "from='" + from + '\'' +
+                ", to='" + to + '\'' +
+                ", mode='" + mode + '\'' +
+                ", distance='" + distance + '\'' +
+                ", duration='" + duration + '\'' +
+                '}';
+    }
 }

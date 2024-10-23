@@ -28,6 +28,9 @@ public class ProfileActivity extends AppCompatActivity {
     private ActivityProfileBinding binding;
     private FirebaseFirestore db = FirebaseFirestore.getInstance();
     private FirebaseUser user;
+
+    private User userData;
+
     private String uid;
 
 
@@ -51,6 +54,7 @@ public class ProfileActivity extends AppCompatActivity {
         TextView username = findViewById(R.id.username);
         TextView email = findViewById(R.id.emailAddress);
         ImageView profilePicture = findViewById(R.id.profilePicture);
+        TextView preference = findViewById(R.id.preference);
 
         // get user details from database
         user = FirebaseAuth.getInstance().getCurrentUser();
@@ -59,17 +63,29 @@ public class ProfileActivity extends AppCompatActivity {
         } else {
             String uid = user.getUid();
 
-            DocumentReference docRef = db.collection("users").document(uid);
-            docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                @Override
-                public void onSuccess(DocumentSnapshot documentSnapshot) {
-                    Log.d("TAG", "successfully read the user data");
-                    User userData = documentSnapshot.toObject(User.class);
-                    Log.d("TAG", userData.getUsername());
-                    username.setText(userData.getUsername());
-                    email.setText(userData.getEmail());
-                }
+            FirestoreDB.getInstance().getUserById(uid, returnedUser ->{
+                userData = returnedUser;
+                Log.d("FirestoreDB", "UserData: "+userData);
+
+                username.setText(userData.getUsername());
+                email.setText(userData.getEmail());
+                preference.setText(userData.getPreference());
+
+            }, (e) -> {
+                Log.d("FirestoreDB", "error in fetching user by id: "+e);
             });
+
+//            DocumentReference docRef = db.collection("users").document(uid);
+//            docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+//                @Override
+//                public void onSuccess(DocumentSnapshot documentSnapshot) {
+//                    Log.d("TAG", "successfully read the user data");
+//                    User userData = documentSnapshot.toObject(User.class);
+//                    Log.d("TAG", userData.getUsername());
+//                    username.setText(userData.getUsername());
+//                    email.setText(userData.getEmail());
+//                }
+//            });
 
             fetchUserTripStatistics(uid);
         }
@@ -84,6 +100,7 @@ public class ProfileActivity extends AppCompatActivity {
                     Intent intent = new Intent(ProfileActivity.this, EditProfileActivity.class);
                     intent.putExtra("username", username.getText().toString());
                     intent.putExtra("email", email.getText().toString());
+                    intent.putExtra("preference", preference.getText().toString());
                     startActivity(intent);
                 }
             }

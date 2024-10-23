@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.entity.User;
 import com.example.tripplanner.entity.UserTripStatistics;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -439,6 +440,69 @@ public class FirestoreDB {
                 })
                 .addOnFailureListener(e -> {
                     listener.onSuccess(false);
+                });
+    }
+
+    public void updateUserById(String userId, User user, OnSuccessListener<Void> onSuccessListener,
+            OnFailureListener onFailureListener) {
+        Map<String, Object> userData = user.convertUserToMap();
+        firestore.collection("users").document(userId)
+                .set(userData)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirestoreDB", "User with ID: " + userId + " has been successfully updated.");
+                    if (onSuccessListener != null) {
+                        onSuccessListener.onSuccess(aVoid);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FirestoreDB", "Error updating user with ID: " + userId, e);
+                    if (onFailureListener != null) {
+                        onFailureListener.onFailure(e);
+                    }
+                });
+    }
+
+    public void getUserById(String userId, OnSuccessListener<User> onSuccessListener,
+            OnFailureListener onFailureListener) {
+        firestore.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        try {
+                            // Parse user fields from the document
+                            String username = documentSnapshot.getString("username");
+                            String email = documentSnapshot.getString("email");
+                            String preference = documentSnapshot.getString("preference");
+
+                            // Create a User object
+                            User user = new User(userId, username, email, preference);
+                            onSuccessListener.onSuccess(user);
+                        } catch (Exception e) {
+                            Log.e("FirestoreDB", "Error parsing user document", e);
+                            onFailureListener.onFailure(e);
+                        }
+                    } else {
+                        onFailureListener.onFailure(new Exception("User not found with ID: " + userId));
+                    }
+                })
+                .addOnFailureListener(onFailureListener);
+    }
+
+    public void createUser(User user, OnSuccessListener<Void> onSuccessListener,
+                           OnFailureListener onFailureListener) {
+        Map<String, Object> userData = user.convertUserToMap();
+        firestore.collection("users").add(userData)
+                .addOnSuccessListener(documentReference -> {
+                    Log.d("FirestoreDB", "User created with ID: " + documentReference.getId());
+                    if (onSuccessListener != null) {
+                        onSuccessListener.onSuccess(null); // or pass any relevant data
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("FirestoreDB", "Error creating user", e);
+                    if (onFailureListener != null) {
+                        onFailureListener.onFailure(e);
+                    }
                 });
     }
 

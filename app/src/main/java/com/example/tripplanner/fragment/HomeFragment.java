@@ -209,11 +209,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     1);
             return null;
         }
-        // Location location =
-        // locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        // if (location != null) {
-        // return location;
-        // }
         Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         Log.d("SENSOR", "location: " + location);
         return location;
