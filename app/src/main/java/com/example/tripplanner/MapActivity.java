@@ -1,5 +1,6 @@
 package com.example.tripplanner;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -14,6 +15,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,20 +31,26 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.api.LogDescriptor;
 
 
-public class MapActivity extends AppCompatActivity implements RouteListener {
+public class MapActivity extends AppCompatActivity  {
     private GoogleMap googleMap;
     private ActivityMapBinding binding;
     private HashMap<String, List<Double[]>> receivedMap;
     private List<Polyline> polylines = new ArrayList<>();
     private Random random = new Random(123);
+    private List<LatLng> middlePoints = new ArrayList<>();
+    private LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+    private Map<Marker, Integer> markerToTabPositionMap = new HashMap<>();
+    private HashMap<String, List<String>> receivedLocationNames;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,10 +68,25 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
                 googleMap = gMap;
                 addMarkersToMap(0);
 
+                googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                    @Override
+                    public boolean onMarkerClick(Marker marker) {
+                        Integer tabPosition = markerToTabPositionMap.get(marker);
+                        if (tabPosition != null) {
+                            TabLayout.Tab tab = binding.tabLayoutOverview.getTabAt(tabPosition);
+                            if (tab != null) {
+                                tab.select();
+                            }
+                        }
+                        return false;
+                    }
+                });
             });
         }
 
         initializeFragmentsAndTabs();
+
+
     }
 
     private void addMarkersToMap(int tabPosition) {
@@ -72,43 +95,75 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
         }
 
         googleMap.clear();
-        LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+
 
         if (receivedMap != null) {
             if (tabPosition == 0) {
                 for (String key : receivedMap.keySet()) {
                     List<Double[]> latLngList = receivedMap.get(key);
                     String days = String.valueOf((Integer.parseInt(key)+1));
-                    addMarkersForLatLngList(latLngList, "DAY"+days, boundsBuilder);
+                    //add bounds builder
+                    addboundsBuilder(latLngList, boundsBuilder);
                     //Add route for all days
-                    getRoutePoints(latLngList);
+                    getRoutePoints(latLngList, days);
+
                 }
             } else {
                 String key = String.valueOf(tabPosition - 1);
                 List<Double[]> latLngList = receivedMap.get(key);
-                if (latLngList == null || latLngList.isEmpty()) {
+                List<String> nameList = receivedLocationNames.get(key);
+
+                if (latLngList == null || latLngList.isEmpty() || nameList == null) {
                     googleMap.clear();
                     return;
                 }
+
                 String days = String.valueOf((Integer.parseInt(key)+1));
-                addMarkersForLatLngList(latLngList, "DAY"+days, boundsBuilder);
+                addboundsBuilder(latLngList, boundsBuilder);
+
+                addMarkersForLatLngList(latLngList,nameList);
                 // Add route drawing for specific day
-                getRoutePoints(latLngList);
+                getRoutePoints(latLngList, days);
             }
             int padding = 100;
             googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding));
         }
     }
 
-    private void addMarkersForLatLngList(List<Double[]> latLngList, String title, LatLngBounds.Builder boundsBuilder) {
+    private void addMarkersForLatLngList(List<Double[]> latLngList, List<String> nameList) {
+        int index = 0;
         for (Double[] latLng : latLngList) {
             double latitude = latLng[0];
             double longitude = latLng[1];
             LatLng location = new LatLng(latitude, longitude);
 
+            String title = nameList.get(index);
+
             googleMap.addMarker(new MarkerOptions()
                     .position(location)
+                    .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(String.valueOf(index+1)))))
+                    .setTitle(title);
+
+            index++;
+        }
+    }
+
+    private void addMarkerForOverviewRoute(String title, int tabPosition) {
+        LatLng location = middlePoints.get(middlePoints.size() - 1);
+        if(location != null) {
+            Marker marker = googleMap.addMarker(new MarkerOptions()
+                    .position(location)
                     .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(title))));
+
+            markerToTabPositionMap.put(marker, tabPosition);
+        }
+    }
+
+    private void addboundsBuilder(List<Double[]> latLngList,LatLngBounds.Builder boundsBuilder ){
+        for (Double[] latLng : latLngList) {
+            double latitude = latLng[0];
+            double longitude = latLng[1];
+            LatLng location = new LatLng(latitude, longitude);
             boundsBuilder.include(location);
         }
     }
@@ -127,11 +182,19 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
     private void initializeFragmentsAndTabs() {
         Intent intent = getIntent();
         receivedMap = (HashMap<String, List<Double[]>>) intent.getSerializableExtra("daysAndLocationsMap", HashMap.class);
+        receivedLocationNames = (HashMap<String, List<String>>) intent.getSerializableExtra("locationNames", HashMap.class);
 
         if (receivedMap == null) {
             Log.e("MapActivity", "receivedMap is null!");
         } else {
             Log.d("MapActivity", "receivedMap has been received.");
+        }
+
+
+        if (receivedLocationNames == null) {
+            Log.e("MapActivity", "locationNames is null!");
+        } else {
+            Log.d("MapActivity", "locationNames has been received.");
         }
 
         int numDays = getIntent().getIntExtra("numDays", 0);
@@ -162,7 +225,7 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
         });
     }
 
-    private void getRoutePoints(List<Double[]> latLngList) {
+    private void getRoutePoints(List<Double[]> latLngList, String days) {
         if (latLngList == null || latLngList.size() < 2) {
             Log.d("MapActivity", "Not enough waypoints to draw route");
             return;
@@ -174,13 +237,58 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
             Log.d("location", "lat: "+location[0]+" lon: "+ location[1]);
         }
 
-        Log.d("MapActivity", "Waypoints: " + waypoints);
-
         try {
             RouteDrawing routeDrawing = new RouteDrawing.Builder()
                     .context(MapActivity.this)
                     .travelMode(AbstractRouting.TravelMode.DRIVING)
-                    .withListener(MapActivity.this)
+                    .withListener(new RouteListener() {
+                        @Override
+                        public void onRouteFailure(ErrorHandling e) {
+                            Log.e("MapActivity", "Route calculation failed: " + e.getMessage());
+                        }
+
+                        @Override
+                        public void onRouteStart() {
+                            Log.d("TAG", "yes started");
+                        }
+
+                        @Override
+                        public void onRouteSuccess(ArrayList<RouteInfoModel> routeInfoModelArrayList, int routeIndexing) {
+                            boolean isOverviewMode = binding.tabLayoutOverview.getSelectedTabPosition() == 0;
+                            if (!isOverviewMode && polylines != null) {
+                                for (Polyline line : polylines) {
+                                    line.remove();
+                                }
+                                polylines.clear();
+                            }
+                            PolylineOptions polylineOptions = new PolylineOptions();
+                            int randomColor = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256));
+                            for (int i = 0; i < routeInfoModelArrayList.size(); i++) {
+                                if (i == routeIndexing) {
+                                    List<LatLng> routePoints = routeInfoModelArrayList.get(routeIndexing).getPoints();
+                                    polylineOptions.color(randomColor);
+                                    polylineOptions.width(12);
+                                    polylineOptions.addAll(routePoints);
+                                    polylineOptions.startCap(new RoundCap());
+                                    polylineOptions.endCap(new RoundCap());
+                                    Polyline polyline = googleMap.addPolyline(polylineOptions);
+                                    polylines.add(polyline);
+                                    int middleIndex = routePoints.size() / 2;
+                                    LatLng middlePoint = routePoints.get(middleIndex);
+                                    middlePoints.add(middlePoint);
+                                    if(isOverviewMode) {
+                                        addMarkerForOverviewRoute("DAY" + days, Integer.parseInt(days));
+                                    }
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onRouteCancelled() {
+                            Log.d("TAG", "route canceled");
+                            // restart your route drawing
+                        }
+                    })
                     .alternativeRoutes(true)
                     .waypoints(waypoints)
                     .build();
@@ -189,53 +297,6 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
         } catch (Exception e) {
             Log.e("MapActivity", "Error in RouteDrawing setup", e);
         }
-    }
-
-    @Override
-    public void onRouteFailure(ErrorHandling e) {
-        Log.e("MapActivity", "Route calculation failed: " + e.getMessage());
-        Toast.makeText(this, "Failed to calculate route: " + e.getMessage(), Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void onRouteStart() {
-        Log.d("TAG", "yes started");
-    }
-
-    @Override
-    public void onRouteSuccess(ArrayList<RouteInfoModel> routeInfoModelArrayList, int routeIndexing) {
-        Log.d("MapActivity", "onRouteSuccess called. Routes: " + routeInfoModelArrayList.size());
-
-        boolean isOverviewMode = binding.tabLayoutOverview.getSelectedTabPosition() == 0;
-
-        if (!isOverviewMode && polylines != null) {
-            for (Polyline line : polylines) {
-                line.remove();
-            }
-            polylines.clear();
-        }
-        PolylineOptions polylineOptions = new PolylineOptions();
-        // Generate a random color
-
-        int randomColor = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256));
-        for (int i = 0; i < routeInfoModelArrayList.size(); i++) {
-            if (i == routeIndexing) {
-                Log.e("TAG", "onRoutingSuccess: routeIndexing" + routeIndexing);
-                polylineOptions.color(randomColor);
-                polylineOptions.width(12);
-                polylineOptions.addAll(routeInfoModelArrayList.get(routeIndexing).getPoints());
-                polylineOptions.startCap(new RoundCap());
-                polylineOptions.endCap(new RoundCap());
-                Polyline polyline = googleMap.addPolyline(polylineOptions);
-                polylines.add(polyline);
-            }
-        }
-    }
-
-    @Override
-    public void onRouteCancelled() {
-        Log.d("TAG", "route canceled");
-        // restart your route drawing
     }
 
     private Bitmap createCustomMarker(String text) {
@@ -249,7 +310,12 @@ public class MapActivity extends AppCompatActivity implements RouteListener {
         backgroundPaint.setStyle(Paint.Style.FILL);
 
         //background size
-        canvas.drawRect(0, 0, 200, 100, backgroundPaint);
+        if(binding.tabLayoutOverview.getSelectedTabPosition() == 0){
+            canvas.drawRect(0, 0, 200, 100, backgroundPaint);
+        }
+        else{
+            canvas.drawCircle(100, 50, 50, backgroundPaint);
+        }
 
         //text
         Paint textPaint = new Paint();

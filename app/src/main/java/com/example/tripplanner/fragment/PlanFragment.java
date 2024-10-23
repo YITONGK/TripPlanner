@@ -853,6 +853,8 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
 
         HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
 
+        HashMap<String, List<String>> locationNames = getLocationNames();
+
         if (daysAndLocationsMap == null) {
             return;
         }
@@ -907,6 +909,7 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             public void onMapClick(LatLng latLng) {
                 Intent intent = new Intent(getActivity(), MapActivity.class);
                 intent.putExtra("daysAndLocationsMap", daysAndLocationsMap);
+                intent.putExtra("locationNames", locationNames);
                 intent.putExtra("numDays",viewModel.getTrip().getNumDays());
                 startActivity(intent);
             }
@@ -1061,6 +1064,30 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
         return locationMap;
     }
 
+    public HashMap<String, List<String>> getLocationNames() {
+        HashMap<String, List<String>> locationName = new HashMap<>();
+
+        if (trip == null) {
+            return null;
+        }
+
+        Set<String> keys = trip.getPlans().keySet();
+
+        for (String key : keys) {
+            List<ActivityItem> activityItems = trip.getPlans().get(key);
+            List<String> nameList = new ArrayList<>();
+
+            for (ActivityItem item : activityItems) {
+                String name = item.getName();
+                if (name != null && !name.isEmpty()) {
+                    nameList.add(name);
+                }
+            }
+            locationName.put(key, nameList);
+        }
+        return locationName;
+    }
+
     private void preparePlanItems() {
         if (planItems == null) {
             planItems = new ArrayList<>();
@@ -1168,6 +1195,5 @@ public class PlanFragment extends Fragment implements OnMapReadyCallback, Activi
             planItems.remove(activityPosition + 1);
         }
     }
-
 
 }
