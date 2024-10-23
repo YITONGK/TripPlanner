@@ -398,7 +398,7 @@ public class MainActivity extends AppCompatActivity {
                 .show();
 
         });
-        sensorDetector.simulateShakeEvent();
+//        sensorDetector.simulateShakeEvent();
 
 
         // Detect weather and plan trip
