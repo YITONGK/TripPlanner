@@ -56,6 +56,8 @@ public class RoutePlanner {
                     if (response.isSuccessful()) {
                         String responseData = response.body().string();
                         List<DistanceMatrixEntry> distanceMatrix = parseDistanceMatrixResponse(responseData, locations, mode);
+                        Log.d("RoutePlannerUtil", "DistanceMatrix: "+distanceMatrix);
+
                         callback.onSuccess(distanceMatrix);
                     } else {
                         Log.e("RoutePlannerUtil", "Error: " + response.code());
@@ -71,6 +73,7 @@ public class RoutePlanner {
 
     private static List<DistanceMatrixEntry> parseDistanceMatrixResponse(String jsonResponse, List<Location> locations, String mode) {
         List<DistanceMatrixEntry> entries = new ArrayList<>();
+        Log.d("Route", "Response: "+ jsonResponse);
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
             JSONArray rows = jsonObject.getJSONArray("rows");

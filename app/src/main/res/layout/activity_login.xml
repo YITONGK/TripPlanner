@@ -57,8 +57,7 @@
                 android:id="@+id/emailAddress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textEmailAddress"
-                android:drawableEnd="@drawable/done_icon"/>
+                android:inputType="textEmailAddress" />
 
             <View
                 android:layout_width="wrap_content"
@@ -75,31 +74,11 @@
                 android:id="@+id/password"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textPassword"
-                android:drawableEnd="@drawable/password_icon"/>
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-<!--                <CheckBox-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:text="Remeber me"-->
-<!--                    android:layout_centerVertical="true"-->
-<!--                    android:alpha="0.7" />-->
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Forgot password?"
-                    android:layout_centerVertical="true"
-                    android:layout_alignParentEnd="true"/>
-            </RelativeLayout>
+                android:inputType="textPassword" />
 
             <View
                 android:layout_width="wrap_content"
-                android:layout_height="10dp" />
+                android:layout_height="30dp" />
             
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/loginBtn"
@@ -121,21 +100,7 @@
 
             <View
                 android:layout_width="wrap_content"
-                android:layout_height="10dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:text="Or sign in with Google"
-                android:layout_gravity="center"/>
-<!--            <com.google.android.gms.common.SignInButton-->
-<!--                android:id="@+id/google_signInBtn"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="60dp"/>-->
-
-            <View
-                android:layout_width="wrap_content"
-                android:layout_height="10dp" />
+                android:layout_height="30dp" />
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>
