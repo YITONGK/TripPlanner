@@ -55,8 +55,10 @@
         android:id="@+id/textViewDaysAndNights"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="16dp"
+        android:textSize="16sp"
         android:padding="16dp"
+        android:lineSpacingExtra="8dp"
+        android:lineSpacingMultiplier="1.2"
         android:layout_below="@+id/textViewSelectedPlace" />
 
     <com.google.android.material.tabs.TabLayout
