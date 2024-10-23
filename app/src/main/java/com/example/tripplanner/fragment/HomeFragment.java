@@ -206,10 +206,28 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     Log.d("name", "name is "+ name);
                     Log.d("latLngList", "onMapReady: "+ latLngList.get(0));
                 }
-                getRoutePoints(latLngList, name);
+                getRoutePoints(latLngList, name, key);
 
             }
         }
+
+        // Set marker click listener
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                // Retrieve the tripId from the marker's tag
+                String tripId = (String) marker.getTag();
+                if (tripId != null) {
+                    // Start EditPlanActivity and pass the tripId
+                    Intent intent = new Intent(getActivity(), EditPlanActivity.class);
+                    intent.putExtra("tripId", tripId);
+                    intent.putExtra("From", "Map");
+                    startActivity(intent);
+                }
+                return true;
+            }
+        });
+
 //        Log.d("HomeFragment", "onMapReady called, map is ready");
 //        LatLng sydney = new LatLng(-34, 151);
 //        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
@@ -304,7 +322,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         showPastTripsBottomSheetIfPossible();
     }
 
-    private void getRoutePoints(List<LatLng> latLngList, String title) {
+    private void getRoutePoints(List<LatLng> latLngList, String title, String tripId) {
         if (latLngList == null || latLngList.size() < 2) {
             return;
         }
@@ -348,6 +366,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                                     LatLng middlePoint = routePoints.get(middleIndex);
                                     middlePoints.add(middlePoint);
                                     addMarkerForOverviewRoute(title);
+
+                                    addMarkerForOverviewRoute(title, tripId);
                                 }
                             }
                         }
@@ -396,7 +416,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         return bitmap;
     }
 
-
     private void addMarkerForOverviewRoute(String title) {
         LatLng location = middlePoints.get(middlePoints.size() - 1);
         if(location != null) {
@@ -404,6 +423,20 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     .position(location)
                     .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(title))));
 
+        }
+    }
+
+    private void addMarkerForOverviewRoute(String title, String tripId) {
+        LatLng location = middlePoints.get(middlePoints.size() - 1);
+        if (location != null) {
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(location)
+                    .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(title))));
+
+            // Store the tripId in the marker's tag
+            if (marker != null) {
+                marker.setTag(tripId);
+            }
         }
     }
 

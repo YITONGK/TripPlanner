@@ -171,6 +171,7 @@ public class PlanFragment extends Fragment
 
     private Handler mainHandler = new Handler(Looper.getMainLooper());
 
+
     public interface OnPlaceFetchedListener {
         void onPlaceFetched(Location location);
     }
@@ -1382,5 +1383,8 @@ public class PlanFragment extends Fragment
         arrowAddActivity.setVisibility(visibility);
         arrowPlanSuggest.setVisibility(visibility);
     }
+
+
+
 
 }
