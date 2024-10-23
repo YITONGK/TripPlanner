@@ -34,6 +34,7 @@ import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.AllPlanAdapter;
 import com.example.tripplanner.adapter.AllPlanInterface;
 import com.example.tripplanner.db.FirestoreDB;
+import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Trip;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -56,6 +57,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPlanInterface {
@@ -101,9 +103,12 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
 
                         List<LatLng> latLngList = new ArrayList<>();
 
-                        for (com.example.tripplanner.entity.Location location : trip.getLocations()) {
-                            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                            latLngList.add(latLng);
+                        for(List<ActivityItem> plan : trip.getPlans().values()){
+                            for(ActivityItem activity : plan){
+                                com.example.tripplanner.entity.Location location = activity.getLocation();
+                                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                                latLngList.add(latLng);
+                            }
                         }
 
                         HashMap<String, List<LatLng>> locationMap = new HashMap<>();
