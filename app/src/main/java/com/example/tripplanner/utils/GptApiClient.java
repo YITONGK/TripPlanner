@@ -6,7 +6,10 @@ import android.util.Log;
 
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.entity.ActivityItem;
+import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.entity.Weather;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.libraries.places.api.model.AddressComponent;
@@ -40,11 +43,29 @@ public class GptApiClient {
     private static final String GPT_API_URL = "https://api.openai.com/v1/chat/completions";
     private static final String API_KEY = BuildConfig.GPT_API_KEY;
     private static final String DEFAULT_PROMPT = "Please plan the trip to ";
-    private static final String REPLAN_PROMPT = "Re-plan the trip due to bad weather conditions. ";
+    private static final String REPLAN_PROMPT = "As a trip planner, your task is to schedule activities for one day of a trip based on details provided by the users. You need to adjust the existing plan by considering the current plans, weather conditions, travel times, and the user's preferred schedule. Information such as distance matrices, weather data, and existing activities will be provided like:\n"+
+            "- Current Plan\n" +
+            "- Weather Forecast\n" +
+            "- Distance Matrix\n" +
+            "- Context\n\n"+
+            "Please respond in the following JSON format:\n" +
+            "{\"activityItem\": [{\"name\": \"string\"," +
+            "      \"startTime\": \"yyyy-MM-dd HH:mm:ss\"," +
+            "      \"endTime\": \"yyyy-MM-dd HH:mm:ss\"," +
+            "      \"locationName\": \"Location Name\"," +
+            "      \"notes\": \"short string\"}]}\n"+
+            "Guidelines:\n"+
+            "- Please ensure that your response is a valid JSON format. \n"+
+            "- Please ensure that the location is real and exists. \n"+
+            "- Please take the weather forecast into account when making your plans. If it's going to rain, plan indoor activities."+
+            "- Please keep the original plans as much as possible.\n" +
+            "- Please consider the trip plans outlined for each day in the context. Make sure there are no duplicate activities or locations in your plan.";
+
     private static final String RECOMMENDATION_PROMPT = "You are a trip planner generating no more 3 activity items for one day in a trip based on the following details which will be given by users:\n"+
         "- Destination\n" +
         "- Weather Forecast\n" +
-        "- User Preferences\n\n"+
+        "- User Preferences\n"+
+        "- Context\n\n"+
         "Please respond in the following JSON format:\n" +
         "{\"activityItem\": [{\"name\": \"string\"," +
         "      \"startTime\": \"yyyy-MM-dd HH:mm:ss\"," +
@@ -54,7 +75,8 @@ public class GptApiClient {
         "Guidelines:\n"+
             "- Please ensure that your response is a valid JSON format. \n"+
             "- Please ensure that the location is real and exists. \n"+
-            "- Please take the weather forecast into account when making your plans. If it's going to rain, plan indoor activities.";
+            "- Please take the weather forecast into account when making your plans. If it's going to rain, plan indoor activities."+
+            "- Please consider the trip plans outlined for each day in the context. Make sure there are no duplicate activities in your plan.";
 //            "- Please ensure that the returned data is wrapped in {}. \n" +
 //            "- Please do not output any prompt words or markdown code format such as ```json. \n";
 
@@ -170,12 +192,15 @@ public class GptApiClient {
         });
     }
 
-    public static void recommendTripPlan(String destination, String weatherForecast, String userPreferences, GptApiCallback callback) {
-    
+    public static void recommendTripPlan(String destination, String weatherForecast, String userPreferences, Trip trip, GptApiCallback callback) {
+        String tripData = "Plans in all days:  " + trip.getPlans().toString();
         String userMessage = 
             "- Destination: " + destination + "\n" +
             "- Weather Forecast: " + weatherForecast + "\n" +
-            "- User Preferences: " + userPreferences + "\n\n";
+            "- User Preferences: " + userPreferences + "\n" +
+            "- Context: " + tripData + "\n";
+
+        Log.d("PlanFragment", "User Message: "+userMessage);
 
         getChatCompletion(RECOMMENDATION_PROMPT, userMessage, callback);
     }
@@ -251,8 +276,17 @@ public class GptApiClient {
         getChatCompletion(DEFAULT_PROMPT, tripData, callback);
     }
 
-    public static void rePlanTrip(String tripData, GptApiCallback callback) {
-        getChatCompletion(REPLAN_PROMPT, tripData, callback);
+    public static void rePlanTripByWeather(List<ActivityItem> currentPlan, Weather weather, List<DistanceMatrixEntry> distanceMatrix, Trip trip, GptApiCallback callback) {
+        String tripData = "Plans in all days:  " + trip.getPlans().toString();
+        String weatherData = String.format("%s, with a high of %.1f°C and a low of %.1f°C.",
+                weather.getDescription(), weather.getMaxTemp(), weather.getMinTemp());
+        String userMessage =
+                "- Current Plan: " + currentPlan + "\n" +
+                "- Weather Forecast: " + weatherData + "\n" +
+                "- Distance Matrix: " + distanceMatrix + "\n" +
+                "- Context: " + tripData + "\n\n";
+
+        getChatCompletion(REPLAN_PROMPT, userMessage, callback);
     }
 
     public static List<ActivityItem> parseActivityItemsFromJson(String jsonResponse, PlacesClient placesClient, OnActivityItemsParsedListener listener) {

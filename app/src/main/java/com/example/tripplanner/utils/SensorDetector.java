@@ -217,18 +217,18 @@ public class SensorDetector implements SensorEventListener {
 
         executorService.execute(() -> {
             // Perform the GPT API call in the background thread
-            GptApiClient.rePlanTrip(prompt, new GptApiClient.GptApiCallback() {
-                @Override
-                public void onSuccess(String response) {
-                    Log.d("PLAN", "GPT Response: " + response);
-                    showSuggestedPlan(response);
-                }
-
-                @Override
-                public void onFailure(String error) {
-                    Log.d("PLAN", "Failed to retrieve a new plan from GPT: " + error);
-                }
-            });
+//            GptApiClient.rePlanTrip(prompt, new GptApiClient.GptApiCallback() {
+//                @Override
+//                public void onSuccess(String response) {
+//                    Log.d("PLAN", "GPT Response: " + response);
+//                    showSuggestedPlan(response);
+//                }
+//
+//                @Override
+//                public void onFailure(String error) {
+//                    Log.d("PLAN", "Failed to retrieve a new plan from GPT: " + error);
+//                }
+//            });
         });
     }
 
