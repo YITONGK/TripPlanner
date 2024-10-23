@@ -2,6 +2,7 @@ package com.example.tripplanner;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -10,6 +11,7 @@ import android.os.Bundle;
 
 import com.bumptech.glide.Glide;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
+import com.example.tripplanner.adapter.RecommentActivityAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
@@ -57,6 +59,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
@@ -270,6 +273,12 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        // Show loading dialog
+                        ProgressDialog loadingDialog = new ProgressDialog(MainActivity.this);
+                        loadingDialog.setMessage("Loading...");
+                        loadingDialog.setCancelable(false);
+                        loadingDialog.show();
+
                         // Get current location and search nearby places
                         Log.d("SENSOR", "Shake event detected");
                         sensorDetector.getCurrentLocation(location -> {
@@ -288,6 +297,7 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onSuccess(String response) {
                                         // Handle the successful response here
+                                        loadingDialog.dismiss();
                                         Log.d("SENSOR", "Trip plan recommended: " + response);
 
                                         String tripName = GptApiClient.getStringFromJsonResponse(response, "tripName");
@@ -297,20 +307,55 @@ public class MainActivity extends AppCompatActivity {
                                             @Override
                                             public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
                                                 Log.d("SENSOR", "RecommendActivities: "+recommendedActivities);
-                                                Trip trip = new Trip();
-                                                trip.setName(tripName);
-                                                trip.setNumDays(1);
-                                                trip.setStartDate(Timestamp.now());
-                                                trip.setEndDate(Timestamp.now());
-                                                trip.addUser(FirestoreDB.getCurrentUserId());
-                                                trip.addLocation(recommendedActivities.get(0).getLocation());
 
-                                                Map<String, List<ActivityItem>> newPlans = new HashMap<>();
-                                                newPlans.put("0", recommendedActivities);
-                                                trip.setPlans(newPlans);
+                                                // Show a popup window to let users select which activities to add to plan
+                                                ListView listView = new ListView(MainActivity.this);
+                                                RecommentActivityAdapter recommentActivityAdapter = new RecommentActivityAdapter(MainActivity.this, recommendedActivities);
+                                                listView.setAdapter(recommentActivityAdapter);
 
-            //                                    FirestoreDB db = FirestoreDB.getInstance();
-            //                                    db.createTrip(FirestoreDB.getCurrentUserId(), trip.convertTripToMap());
+                                                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                                                builder.setTitle("Recommendations");
+                                                builder.setView(listView);
+
+                                                builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialog, int id) {
+                                                        // Get only the selected items
+                                                        List<ActivityItem> selectedItems = recommentActivityAdapter.getSelectedItems();
+
+                                                        Trip trip = new Trip();
+                                                        trip.setName(tripName);
+                                                        trip.setNumDays(1);
+                                                        trip.setStartDate(Timestamp.now());
+                                                        trip.setEndDate(Timestamp.now());
+                                                        trip.addUser(FirestoreDB.getCurrentUserId());
+                                                        trip.addLocation(recommendedActivities.get(0).getLocation());
+
+                                                        Map<String, List<ActivityItem>> newPlans = new HashMap<>();
+                                                        newPlans.put("0", selectedItems);
+                                                        trip.setPlans(newPlans);
+
+                                                        FirestoreDB db = FirestoreDB.getInstance();
+                                                        db.createTrip(FirestoreDB.getCurrentUserId(), trip.convertTripToMap());
+
+                                                        binding.navView.setSelectedItemId(R.id.navigation_plan);
+
+                                                        Fragment planFragment = HomeFragment.newInstance(HomeFragment.PLAN);
+                                                        getSupportFragmentManager()
+                                                                .beginTransaction()
+                                                                .replace(R.id.fragmentContainerView, planFragment)
+                                                                .commit();
+
+                                                    }
+                                                });
+                                                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                                        dialogInterface.dismiss();
+                                                    }
+                                                });
+
+                                                builder.create().show();
                                             }
                                         });
                                     }
@@ -318,6 +363,7 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onFailure(String error) {
                                         // Handle the error here
+                                        loadingDialog.dismiss();
                                         Log.e("SENSOR", "Failed to recommend trip plan: " + error);
                                         Toast.makeText(MainActivity.this, "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
                                     }
