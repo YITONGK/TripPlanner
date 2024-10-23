@@ -20,7 +20,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -31,27 +30,22 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.bumptech.glide.Glide;
 import com.codebyashish.googledirectionapi.AbstractRouting;
 import com.codebyashish.googledirectionapi.ErrorHandling;
 import com.codebyashish.googledirectionapi.RouteDrawing;
 import com.codebyashish.googledirectionapi.RouteInfoModel;
 import com.codebyashish.googledirectionapi.RouteListener;
-import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.MapActivity;
-import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
-import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.ActivityItemAdapter;
-import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
+import com.example.tripplanner.entity.User;
 import com.example.tripplanner.utils.GptApiClient;
 import com.example.tripplanner.utils.PlacesClientProvider;
 import com.example.tripplanner.entity.Trip;
-import com.example.tripplanner.utils.RoutePlanner;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -68,7 +62,6 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.sql.Time;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -86,7 +79,6 @@ import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
-import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
@@ -103,7 +95,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class PlanFragment extends Fragment
@@ -127,6 +118,7 @@ public class PlanFragment extends Fragment
 
     private PlanViewModel viewModel;
     public static Trip trip;
+    public static User user;
 
     // For specific day plan
     private TextView addActivityLocation;
@@ -297,10 +289,17 @@ public class PlanFragment extends Fragment
                     // }
                     // }
 
-                    // Call the recommendTripPlan method
-                    // String destination = "Melbourne, Australia"; // Example destination
-                     // Example weather forecast
-                    String userPreferences = "Enjoys coffee shops and outdoor activities"; // Example user preferences
+                    // Fetch user preference
+                    AtomicReference<String> userPreferences = new AtomicReference<>("Enjoys coffee shops and outdoor activities");
+                    if (user == null){
+                        FirestoreDB.getInstance().getUserById(FirestoreDB.getCurrentUserId(), returnedUser -> {
+                            user = returnedUser;
+                        }, e -> {
+                            Log.d("PlanFragment", "Error in fetching user: " + e);
+                        });
+                    }
+                    userPreferences.set(user.getPreference());
+
                     fetchWeatherDataForDate(startDate, dayIndex, new WeatherDataCallback() {
                         @Override
                         public void onSuccess(Map<Integer, Weather> weatherData) {
@@ -317,7 +316,7 @@ public class PlanFragment extends Fragment
                             Log.e("PlanFragment", "Error fetching weather data: " + errorMessage);
                         }
                     });
-                    GptApiClient.recommendTripPlan(destination, weatherForecast[0], userPreferences, trip,
+                    GptApiClient.recommendTripPlan(destination, weatherForecast[0], userPreferences.get(), trip,
                             new GptApiClient.GptApiCallback() {
                                 @Override
                                 public void onSuccess(String response) {
