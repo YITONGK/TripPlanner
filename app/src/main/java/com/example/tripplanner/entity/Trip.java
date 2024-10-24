@@ -238,7 +238,7 @@ public class Trip {
 
     public String getDurationString() {
         int days = getNumDays();
-        if (days == 1) {
+        if (days <= 1) {
             return "1 day";
         } else if (days == 2) {
             return "2 days and 1 night";

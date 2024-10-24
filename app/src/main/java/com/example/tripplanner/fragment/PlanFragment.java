@@ -188,7 +188,6 @@ public class PlanFragment extends Fragment
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         placesClient = PlacesClientProvider.getPlacesClient();
-
         // Get ViewModel instance
         viewModel = new ViewModelProvider(requireActivity()).get(PlanViewModel.class);
 
@@ -231,11 +230,6 @@ public class PlanFragment extends Fragment
         if (this.layout == PLAN_SPECIFIC_DAY) {
             rootView = inflater.inflate(R.layout.plan_specific_day, container, false);
 
-            if (endDate != null && endDate.compareTo(Timestamp.now()) < 0) {
-                ImageButton planSuggest = rootView.findViewById(R.id.planSuggest);
-                planSuggest.setVisibility(View.GONE);
-            }
-
             addActivityLocation = rootView.findViewById(R.id.addActivityLocation);
             planSuggestButton = rootView.findViewById(R.id.planSuggest);
             textViewAddActivity = rootView.findViewById(R.id.textView_add_activity);
@@ -247,6 +241,12 @@ public class PlanFragment extends Fragment
             planSuggestOptionsLayout = rootView.findViewById(R.id.planSuggestOptionsLayout);
             buttonAISuggest = rootView.findViewById(R.id.buttonAISuggest);
             buttonAIReplan = rootView.findViewById(R.id.buttonAIReplan);
+
+            if (endDate != null && endDate.compareTo(Timestamp.now()) < 0) {
+//                ImageButton planSuggest = rootView.findViewById(R.id.planSuggest);
+//                planSuggest.setVisibility(View.GONE);
+                textViewPlanSuggest.setVisibility(View.GONE);
+            }
 
             if (activityItemArray == null || activityItemArray.isEmpty()) {
                 showInstruction(View.VISIBLE);
