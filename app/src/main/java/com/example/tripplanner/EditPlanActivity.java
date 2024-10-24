@@ -128,12 +128,6 @@ public class EditPlanActivity extends AppCompatActivity {
         startDate = trip.getStartDate();
         days = trip.getNumDays();
 
-//        Timestamp startDateTimestamp = trip.getStartDate();
-//        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
-//        Date date = new Date(Long.parseLong(startDateTimestamp.toString()));
-//        startDate = sf.format(date);
-
-        // TODO: get activities of the plan
     }
 
     private void setupTripInfo() {
