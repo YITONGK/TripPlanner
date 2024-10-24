@@ -144,6 +144,7 @@
         android:layout_centerHorizontal="true"
         android:layout_below="@id/calendar_view"
         android:padding="10dp"
+        android:layout_marginTop="-40dp"
         android:backgroundTint="@color/black"
         android:textColor="@color/white"
         android:visibility="gone" />
@@ -170,7 +171,7 @@
             android:id="@+id/text_delete_trip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Delete Trip Plan"
+            android:text="Delete Trip"
             android:textSize="16sp"
             android:layout_marginStart="8dp" />
 
