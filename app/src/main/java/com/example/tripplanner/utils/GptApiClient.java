@@ -62,7 +62,8 @@ public class GptApiClient {
             "- Please take the weather forecast into account when making your plans. If it's going to rain, plan indoor activities."+
             "- Please keep the original plans as much as possible rather than generate new one.\n" +
             "- Please consider the trip plans outlined for each day in the context. Make sure there are no duplicate activities or locations in your plan."+
-            "- Please provide your reason to briefly explain why you're rescheduling this in no more than one sentence.";
+            "- Please provide your reason to briefly explain why you're rescheduling this in no more than one sentence."+
+            "- Please update the timestamps of the activity items based on your revised plan and ensure they are in the correct sequence.";
 
     private static final String RECOMMENDATION_PROMPT = "You are a trip planner generating no more 3 activity items for one day in a trip based on the following details which will be given by users:\n"+
         "- Destination\n" +

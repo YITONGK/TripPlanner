@@ -612,7 +612,7 @@ public class PlanFragment extends Fragment
 
                                     Log.d("PlanFragment", "RecommendActivities: " + recommendedActivities);
 
-                                    AlertDialog.Builder recommendBuilder = new AlertDialog.Builder(getContext());
+                                    AlertDialog.Builder replanBuilder = new AlertDialog.Builder(getContext());
                                     LayoutInflater inflater = LayoutInflater.from(getContext());
                                     View dialogView = inflater.inflate(R.layout.dialog_with_description, null);
 
@@ -624,35 +624,39 @@ public class PlanFragment extends Fragment
                                     listView.setAdapter(adapter);
 
 //                                    AlertDialog.Builder recommendBuilder = new AlertDialog.Builder(getContext());
-                                    recommendBuilder.setTitle("Suggestions");
-                                    recommendBuilder.setView(dialogView);
+                                    replanBuilder.setTitle("Suggestions");
+                                    replanBuilder.setView(dialogView);
 
                                     List<ActivityItem> finalRecommendedActivities = recommendedActivities;
-                                    recommendBuilder.setPositiveButton("Accept", new DialogInterface.OnClickListener() {
+                                    replanBuilder.setPositiveButton("Accept", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int id) {
                                             // Update in ViewModel and save
                                             viewModel.clearActivitiesForDay(dayIndex);
+
                                             for (ActivityItem activityItem : finalRecommendedActivities) {
                                                 viewModel.addActivity(dayIndex, activityItem);
                                             }
 
                                             viewModel.saveTripToDatabase();
-
+                                            
+                                            // Refresh the data source
+                                            activityItemArray = viewModel.getActivityItemArray(dayIndex);
+                                            Log.d("PlanFragment", "ActivityItem: "+activityItemArray);
                                             preparePlanItems();
                                             // Notify the adapter that the data has changed
                                             adapter.notifyDataSetChanged();
                                             viewModel.updateActivityList(dayIndex, activityItemArray);
                                         }
                                     });
-                                    recommendBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                    replanBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialogInterface, int i) {
                                             dialogInterface.dismiss();
                                         }
                                     });
 
-                                    recommendBuilder.create().show();
+                                    replanBuilder.create().show();
                                 }
                             });
                         }
