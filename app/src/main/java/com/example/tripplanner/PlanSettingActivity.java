@@ -49,7 +49,6 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
 
     private ActivityPlanSettingBinding binding;
     private EditText editTripName;
-    private TextView editTrafficMode;
     private TextView timeDuration;
     private int days;
     private String startDate;
@@ -57,6 +56,8 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
     private TextView startDateTitle;
 //    private MaterialCalendarView calendarView;
     private TextView textViewStartDate;
+    private TextView trafficModeTitle;
+    private TextView editTrafficMode;
 //    private Button buttonDone;
 //    private CalendarDay selectedDate;
     private String selectedDateString;
@@ -77,6 +78,7 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         editTripName = findViewById(R.id.edit_trip_name);
         editTripName.setText(getIntent().getStringExtra("tripName"));
 
+        trafficModeTitle = findViewById(R.id.traffic_mode);
         editTrafficMode = findViewById(R.id.edit_traffic_mode);
         editTrafficMode.setText(getIntent().getStringExtra("trafficMode"));
         editTrafficMode.setOnClickListener(v -> {
@@ -105,6 +107,8 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
             loadNumberPickerFragment();
             startDateTitle.setVisibility(View.GONE);
             textViewStartDate.setVisibility(View.GONE);
+            trafficModeTitle.setVisibility(View.GONE);
+            editTrafficMode.setVisibility(View.GONE);
         });
 
         textViewStartDate.setOnClickListener(v -> {
@@ -195,6 +199,8 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
 
         startDateTitle.setVisibility(View.VISIBLE);
         textViewStartDate.setVisibility(View.VISIBLE);
+        trafficModeTitle.setVisibility(View.VISIBLE);
+        editTrafficMode.setVisibility(View.VISIBLE);
     }
 
     private void confirmAndDeleteTrip(String tripId) {
