@@ -105,6 +105,9 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.15.1")
     implementation("com.github.dangiashish:Google-Direction-Api:1.6")
     annotationProcessor("com.github.bumptech.glide:compiler:4.15.1")
+
+    // Recycler View Swipe to Delete
+    implementation("it.xabaras.android:recyclerview-swipedecorator:1.4")
 }
 
 secrets {

@@ -17,10 +17,14 @@ import com.example.tripplanner.R;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
+import com.google.firebase.Timestamp;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHolder> {
     private Context context;
@@ -65,6 +69,7 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         } else {
             dayAndNight = days + " days" + " and " + (days - 1) + " nights";
         }
+        dayAndNight = dayAndNight + "\n" + formatTimestamp(allPlans.get(position).getStartDate()) + " ~ " + formatTimestamp(allPlans.get(position).getEndDate());
         holder.duration.setText(dayAndNight);
 
         // get the number of activities of the trip
@@ -79,11 +84,30 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         // get the cover image of the trip
         holder.img.setImageResource(allPlans.get(position).getCityDrawable());
 
+        // set the background colour of the card view
+        holder.plan.setCardBackgroundColor(holder.itemView.getResources().getColor(getRandomColor(sb.length()), null));
+
+    }
+
+    private int getRandomColor(int len) {
+        List<Integer> colorCode = new ArrayList<>();
+        colorCode.add(R.color.blue);
+        colorCode.add(R.color.pink);
+        colorCode.add(R.color.yellow);
+        colorCode.add(R.color.orange);
+
+        return colorCode.get(len % colorCode.size());
     }
 
     @Override
     public int getItemCount() {
         return allPlans.size();
+    }
+
+    public String formatTimestamp(Timestamp timestamp) {
+        Date date = timestamp.toDate();
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd yyyy");
+        return sdf.format(date);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

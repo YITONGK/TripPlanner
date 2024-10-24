@@ -2,6 +2,8 @@ package com.example.tripplanner.fragment;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -16,11 +18,15 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,7 +36,9 @@ import com.codebyashish.googledirectionapi.RouteDrawing;
 import com.codebyashish.googledirectionapi.RouteInfoModel;
 import com.codebyashish.googledirectionapi.RouteListener;
 import com.example.tripplanner.EditPlanActivity;
+import com.example.tripplanner.MainActivity;
 import com.example.tripplanner.MapActivity;
+import com.example.tripplanner.PlanSettingActivity;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.AllPlanAdapter;
 import com.example.tripplanner.adapter.AllPlanInterface;
@@ -63,10 +71,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator;
 
 public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPlanInterface {
 
@@ -77,7 +88,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
     private int layout = R.layout.home_fragment_layout_plan;
     private GoogleMap mMap;
 
-    private ArrayList<Trip> allPlans = new ArrayList<>();;
+    private ArrayList<Trip> allPlans = new ArrayList<>();
 //    private List<LatLng> pointList = new ArrayList<>();
     private HashMap<String, HashMap<String, List<LatLng>>> tripLocationMap = new HashMap<>();
     private AllPlanAdapter adapter;
@@ -182,6 +193,19 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                 allPlans.clear();
                 allPlans.addAll(trips);
                 adapter.notifyDataSetChanged();
+
+                // display instruction if no trips in current account
+                TextView instruction = rootView.findViewById(R.id.instruction);
+                ImageView arrow = rootView.findViewById(R.id.instructionArrow);
+                Log.d("all plan count", String.valueOf(allPlans.size()));
+                if (!allPlans.isEmpty()) {
+                    arrow.setVisibility(View.INVISIBLE);
+                    instruction.setVisibility(View.INVISIBLE);
+                } else {
+                    arrow.setVisibility(View.VISIBLE);
+                    instruction.setVisibility(View.VISIBLE);
+                }
+
                 for (Trip trip : trips) {
                     Log.d("PLAN", "Trip: " + trip.toString());
                 }
@@ -191,7 +215,75 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         } else {
             Log.d("Debug", "No user is signed in.");
         }
+
+        ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+                new AlertDialog.Builder(getContext())
+                    .setTitle("Delete Trip")
+                    .setMessage("Are you sure you want to delete this trip?")
+                    .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            deleteTrip(viewHolder.getAbsoluteAdapterPosition());
+                        }
+                    })
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int whichButton) {
+                            // Reset the swiped row back to its original position
+                            adapter.notifyItemChanged(viewHolder.getAbsoluteAdapterPosition()); // Reset the row
+                        }
+                    })
+                    .show();
+            }
+
+            @Override
+            public void onChildDraw (Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,float dX, float dY,int actionState, boolean isCurrentlyActive){
+                new RecyclerViewSwipeDecorator.Builder(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+//                  .addBackgroundColor(ContextCompat.getColor(getContext(), R.color.my_background))
+                    .addActionIcon(R.drawable.baseline_delete_24)
+                    .create()
+                    .decorate();
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+            }
+        };
+
+        // Attach the ItemTouchHelper to RecyclerView
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleCallback);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
     }
+
+    private void deleteTrip(int pos) {
+        String tripId = allPlans.get(pos).getId();
+        FirestoreDB firestoreDB = FirestoreDB.getInstance();
+
+        // Perform the deletion in a background thread
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        // Handle successful deletion
+                        Log.d("PLAN", "Trip successfully deleted.");
+                        Intent intent = new Intent(getContext(), MainActivity.class);
+                        startActivity(intent);
+                    }
+                }, new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // Handle deletion failure
+                        Log.e("PLAN", "Error deleting trip", e);
+                    }
+                });
+            }
+        }).start();
+    }
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
