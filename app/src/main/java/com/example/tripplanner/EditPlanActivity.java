@@ -25,6 +25,7 @@ import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanFragment;
 import com.example.tripplanner.fragment.PlanViewModel;
+import com.example.tripplanner.utils.TimeUtils;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.Timestamp;
 
@@ -184,10 +185,18 @@ public class EditPlanActivity extends AppCompatActivity {
                 adjustFragmentsForNewDays(newDays);
                 days = newDays;
                 trip.setNumDays(days);
-                trip.setEndDate(new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(days), 0));
+                trip.setEndDate(TimeUtils.getEndDateTimestamp(startDate, days));
                 updateDayAndNightText();
                 refreshTabsAndFragments();
                 loadFragment(fragments.get(0));
+            }
+            String newStartDateString = data.getStringExtra("startDate");
+            if (newStartDateString != null && !newStartDateString.isEmpty()) {
+                Timestamp newStartDate = TimeUtils.convertStringToTimestamp(newStartDateString);
+                startDate = newStartDate;
+                trip.setStartDate(newStartDate);
+                trip.setEndDate(TimeUtils.getEndDateTimestamp(newStartDate, days));
+                updateDayAndNightText();
             }
             FirestoreDB firestoreDB = FirestoreDB.getInstance();
             firestoreDB.updateTrip(tripId, trip, listener -> {
@@ -210,6 +219,7 @@ public class EditPlanActivity extends AppCompatActivity {
             Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
             intent.putExtra("tripName", tripName);
             intent.putExtra("days", days);
+            intent.putExtra("startDate", TimeUtils.convertTimestampToStringForCalendar(startDate));
             intent.putExtra("tripId", tripId);
             intent.putExtra("From", from);
             planSettingsLauncher.launch(intent);

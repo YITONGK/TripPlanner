@@ -27,6 +27,7 @@ import android.widget.Toast;
 
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.fragment.NumberPickerFragment;
+import com.example.tripplanner.utils.TimeUtils;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -47,12 +48,14 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
     private EditText editTripName;
     private TextView timeDuration;
     private int days;
+    private String startDate;
 
     private TextView startDateTitle;
     private MaterialCalendarView calendarView;
     private TextView textViewStartDate;
     private Button buttonDone;
     private CalendarDay selectedDate;
+    private String selectedDateString;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -74,10 +77,17 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         calendarView = findViewById(R.id.calendar_view);
         buttonDone = findViewById(R.id.button_done);
 
-        editTripName.setText(getIntent().getStringExtra("tripName"));
+        // get intent extras
         days = getIntent().getIntExtra("days", 0);
-        timeDuration.setText(days + (days > 1 ? " days" : " day"));
+        startDate = getIntent().getStringExtra("startDate");
         String tripId = getIntent().getStringExtra("tripId");
+
+        // set texts
+        editTripName.setText(getIntent().getStringExtra("tripName"));
+        timeDuration.setText(days + (days > 1 ? " days" : " day"));
+        if (startDate != null) {
+            textViewStartDate.setText(startDate);
+        }
 
         timeDuration.setOnClickListener(v -> {
             loadNumberPickerFragment();
@@ -95,7 +105,7 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
             if (selected) {
                 selectedDate = date;
                 Date javaDate = date.getDate();
-                SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM d, yyyy", Locale.getDefault());
+                SimpleDateFormat dateFormat = TimeUtils.CALENDAR_DATE_FORMAT;
                 String formattedDate = dateFormat.format(javaDate);
                 textViewStartDate.setText(formattedDate);
                 Log.d("PlanSettingActivity", "Selecting date: " + formattedDate);
@@ -107,9 +117,10 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
             buttonDone.setVisibility(View.GONE);
             textViewStartDate.setVisibility(View.VISIBLE);
             if (selectedDate != null) {
-                // Save the selected start date
-                // Update your trip model or database here
-                Log.d("PlanSettingActivity", "Start date saved: " + selectedDate.getDate().toString());
+                Date javaDate = selectedDate.getDate();
+                SimpleDateFormat dateFormat = TimeUtils.DEFAULT_DATE_FORMAT;
+                selectedDateString = dateFormat.format(javaDate);
+                Log.d("PlanSettingActivity", "Start date saved: " + selectedDateString);
             }
         });
 
@@ -129,6 +140,7 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
             Intent resultIntent = new Intent();
             resultIntent.putExtra("tripName", newTripName);
             resultIntent.putExtra("days", days);
+            resultIntent.putExtra("startDate", selectedDateString);
             setResult(RESULT_OK, resultIntent);
 
             finish();
@@ -182,13 +194,12 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
     }
 
     private void deleteTrip(String tripId) {
-        FirestoreDB firestoreDB = FirestoreDB.getInstance();
 
         // Perform the deletion in a background thread
         new Thread(new Runnable() {
             @Override
             public void run() {
-                firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
+                FirestoreDB.getInstance().deleteTripById(tripId, new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
                         // Handle successful deletion
