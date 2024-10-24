@@ -43,23 +43,26 @@ public class GptApiClient {
     private static final String GPT_API_URL = "https://api.openai.com/v1/chat/completions";
     private static final String API_KEY = BuildConfig.GPT_API_KEY;
     private static final String DEFAULT_PROMPT = "Please plan the trip to ";
-    private static final String REPLAN_PROMPT = "As a trip planner, your task is to schedule activities for one day of a trip based on details provided by the users. You need to adjust the existing plan by considering the current plans, weather conditions, travel times, and the user's preferred schedule. Information such as distance matrices, weather data, and existing activities will be provided like:\n"+
-            "- Current Plan\n" +
-            "- Weather Forecast\n" +
-            "- Distance Matrix\n" +
-            "- Context\n\n"+
+    private static final String REPLAN_PROMPT =
+            "As a trip planner, your task is to schedule activities for one day of a trip based on details provided by the users. You need to adjust the existing plan by considering the current plans, weather conditions, travel times, and the user's preferred schedule. Information such as distance matrices, weather data, and existing activities will be provided like:\n"+
+                "- Current Plan\n" +
+                "- Weather Forecast\n" +
+                "- Distance Matrix\n" +
+                "- Context\n\n"+
             "Please respond in the following JSON format:\n" +
             "{\"activityItem\": [{\"name\": \"string\"," +
             "      \"startTime\": \"yyyy-MM-dd HH:mm:ss\"," +
             "      \"endTime\": \"yyyy-MM-dd HH:mm:ss\"," +
             "      \"locationName\": \"Location Name\"," +
-            "      \"notes\": \"short string\"}]}\n"+
+            "      \"notes\": \"short string\"}], " +
+            "\"reason\": \"string\"}\n"+
             "Guidelines:\n"+
             "- Please ensure that your response is a valid JSON format. \n"+
             "- Please ensure that the location is real and exists. \n"+
             "- Please take the weather forecast into account when making your plans. If it's going to rain, plan indoor activities."+
-            "- Please keep the original plans as much as possible.\n" +
-            "- Please consider the trip plans outlined for each day in the context. Make sure there are no duplicate activities or locations in your plan.";
+            "- Please keep the original plans as much as possible rather than generate new one.\n" +
+            "- Please consider the trip plans outlined for each day in the context. Make sure there are no duplicate activities or locations in your plan."+
+            "- Please provide your reason to briefly explain why you're rescheduling this in no more than one sentence.";
 
     private static final String RECOMMENDATION_PROMPT = "You are a trip planner generating no more 3 activity items for one day in a trip based on the following details which will be given by users:\n"+
         "- Destination\n" +
@@ -219,28 +222,11 @@ public class GptApiClient {
                 "- Nearby places: " + placesString + "\n"+
                 "- Environment: " + sensorData +  "\n" +
                 "- User Preferences: " + userPreferences + "\n\n";
+
+        Log.d("PlanFragment", "User Message: "+userMessage);
+
         getChatCompletion(SHAKE_PROMPT, userMessage, callback);
     }
-
-//    public static String cleanAndValidateJson(String response) {
-//        String jsonContent = extractJsonContent(response);
-//        if (jsonContent == null) {
-//            return null;
-//        }
-//
-//        // Attempt to parse the JSON to check if it's valid
-//        try {
-//            new JSONObject(jsonContent);
-//            return jsonContent; // Return if valid
-//        } catch (JSONException e) {
-//            // Log the error and retry if needed
-//            Log.d("GptApiClient", "Invalid json: " + jsonContent);
-//            Log.e("GptApiClient", "Invalid JSON, retrying...");
-//            // Implement retry logic here if necessary
-//        }
-//
-//        return null;
-//    }
 
     public static String cleanJsonResponse(String response){
         response = response.replace("```json", "");
@@ -276,15 +262,15 @@ public class GptApiClient {
         getChatCompletion(DEFAULT_PROMPT, tripData, callback);
     }
 
-    public static void rePlanTripByWeather(List<ActivityItem> currentPlan, Weather weather, List<DistanceMatrixEntry> distanceMatrix, Trip trip, GptApiCallback callback) {
+    public static void rePlanTripByWeather(List<ActivityItem> currentPlan, String weather, List<DistanceMatrixEntry> distanceMatrix, Trip trip, GptApiCallback callback) {
         String tripData = "Plans in all days:  " + trip.getPlans().toString();
-        String weatherData = String.format("%s, with a high of %.1f°C and a low of %.1f°C.",
-                weather.getDescription(), weather.getMaxTemp(), weather.getMinTemp());
         String userMessage =
                 "- Current Plan: " + currentPlan + "\n" +
-                "- Weather Forecast: " + weatherData + "\n" +
+                "- Weather Forecast: " + weather + "\n" +
                 "- Distance Matrix: " + distanceMatrix + "\n" +
                 "- Context: " + tripData + "\n\n";
+
+        Log.d("PlanFragment", "User Message: "+userMessage);
 
         getChatCompletion(REPLAN_PROMPT, userMessage, callback);
     }
@@ -395,16 +381,16 @@ public class GptApiClient {
                                 })
                                 .addOnFailureListener(e -> {
                                     Log.d("GptApiClient", "Error fetching place details for ID: " + placeId);
-                                    listener.onPlaceFetched(null); // Notify listener of failure
+                                    listener.onPlaceFetched(null);
                                 });
                     } else {
                         Log.d("GptApiClient", "No autocomplete predictions found for: " + locationName);
-                        listener.onPlaceFetched(null); // Notify listener of failure
+                        listener.onPlaceFetched(null);
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.d("GptApiClient", "Error finding autocomplete predictions for: " + locationName);
-                    listener.onPlaceFetched(null); // Notify listener of failure
+                    listener.onPlaceFetched(null);
                 });
     }
 
