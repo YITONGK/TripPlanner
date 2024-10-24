@@ -49,6 +49,7 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
 
     private ActivityPlanSettingBinding binding;
     private EditText editTripName;
+    private TextView editTrafficMode;
     private TextView timeDuration;
     private int days;
     private String startDate;
@@ -74,6 +75,14 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         });
 
         editTripName = findViewById(R.id.edit_trip_name);
+        editTripName.setText(getIntent().getStringExtra("tripName"));
+
+        editTrafficMode = findViewById(R.id.edit_traffic_mode);
+        editTrafficMode.setText(getIntent().getStringExtra("trafficMode"));
+        editTrafficMode.setOnClickListener(v -> {
+            showTrafficModeDialog();
+        });
+
         timeDuration = findViewById(R.id.edit_time_duration);
         startDateTitle = findViewById(R.id.calendar_title);
         textViewStartDate = findViewById(R.id.edit_start_date);
@@ -101,32 +110,7 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         textViewStartDate.setOnClickListener(v -> {
             // textViewStartDate.setVisibility(View.GONE);
             showDatePickerDialog();
-            // calendarView.setVisibility(View.VISIBLE);
-            // buttonDone.setVisibility(View.VISIBLE);
         });
-
-        // calendarView.setOnDateChangedListener((widget, date, selected) -> {
-        //     if (selected) {
-        //         selectedDate = date;
-        //         Date javaDate = date.getDate();
-        //         SimpleDateFormat dateFormat = TimeUtils.CALENDAR_DATE_FORMAT;
-        //         String formattedDate = dateFormat.format(javaDate);
-        //         textViewStartDate.setText(formattedDate);
-        //         Log.d("PlanSettingActivity", "Selecting date: " + formattedDate);
-        //     }
-        // });
-
-        // buttonDone.setOnClickListener(v -> {
-        //     calendarView.setVisibility(View.GONE);
-        //     buttonDone.setVisibility(View.GONE);
-        //     textViewStartDate.setVisibility(View.VISIBLE);
-        //     if (selectedDate != null) {
-        //         Date javaDate = selectedDate.getDate();
-        //         SimpleDateFormat dateFormat = TimeUtils.DEFAULT_DATE_FORMAT;
-        //         selectedDateString = dateFormat.format(javaDate);
-        //         Log.d("PlanSettingActivity", "Start date saved: " + selectedDateString);
-        //     }
-        // });
 
 
         ImageButton backButton = findViewById(R.id.button_back);
@@ -140,13 +124,13 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         ImageButton saveButton = findViewById(R.id.button_save);
         saveButton.setOnClickListener(v -> {
             String newTripName = editTripName.getText().toString();
-
+            String selectedTrafficMode = editTrafficMode.getText().toString();
             Intent resultIntent = new Intent();
             resultIntent.putExtra("tripName", newTripName);
+            resultIntent.putExtra("trafficMode", selectedTrafficMode);
             resultIntent.putExtra("days", days);
             resultIntent.putExtra("startDate", selectedDateString);
             setResult(RESULT_OK, resultIntent);
-
             finish();
         });
 
@@ -164,6 +148,20 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
                     .show();
         });
 
+    }
+
+    private void showTrafficModeDialog() {
+        final String[] trafficModes = {"Driving", "Walking", "Bicycling", "Transit"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Traffic Mode");
+        builder.setItems(trafficModes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                editTrafficMode.setText(trafficModes[which]);
+            }
+        });
+        builder.show();
     }
 
     private void showDatePickerDialog() {

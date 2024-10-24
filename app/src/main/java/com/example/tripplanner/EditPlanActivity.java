@@ -52,6 +52,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private Trip trip;
     private String tripId;
     private String from;
+    private String trafficMode;
 
     private ActivityResultLauncher<Intent> planSettingsLauncher;
 
@@ -128,17 +129,11 @@ public class EditPlanActivity extends AppCompatActivity {
         selectedPlace = sb.toString();
         startDate = trip.getStartDate();
         days = trip.getNumDays();
+        trafficMode = trip.getTrafficMode();
 
-//        Timestamp startDateTimestamp = trip.getStartDate();
-//        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
-//        Date date = new Date(Long.parseLong(startDateTimestamp.toString()));
-//        startDate = sf.format(date);
-
-        // TODO: get activities of the plan
     }
 
     private void setupTripInfo() {
-//        tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
         tripName = trip.getName();
         TextView tripTo = findViewById(R.id.textViewSelectedPlace);
         tripTo.setText(tripName);
@@ -180,6 +175,9 @@ public class EditPlanActivity extends AppCompatActivity {
             tripName = newTripName;
             tripNameView.setText(newTripName);
             trip.setName(tripName);
+            String newTrafficMode = data.getStringExtra("trafficMode");
+            trip.setTrafficMode(newTrafficMode);
+            trafficMode = newTrafficMode;
             int newDays = data.getIntExtra("days", days);
             if (days != newDays) {
                 adjustFragmentsForNewDays(newDays);
@@ -198,6 +196,10 @@ public class EditPlanActivity extends AppCompatActivity {
                 trip.setEndDate(TimeUtils.getEndDateTimestamp(newStartDate, days));
                 updateDayAndNightText();
             }
+
+            PlanViewModel planViewModel = new ViewModelProvider(this).get(PlanViewModel.class);
+            planViewModel.setTrip(trip);
+
             FirestoreDB firestoreDB = FirestoreDB.getInstance();
             firestoreDB.updateTrip(tripId, trip, listener -> {
                 // Handle success
@@ -222,6 +224,7 @@ public class EditPlanActivity extends AppCompatActivity {
             intent.putExtra("startDate", TimeUtils.convertTimestampToStringForCalendar(startDate));
             intent.putExtra("tripId", tripId);
             intent.putExtra("From", from);
+            intent.putExtra("trafficMode", trafficMode);
             planSettingsLauncher.launch(intent);
         });
     }

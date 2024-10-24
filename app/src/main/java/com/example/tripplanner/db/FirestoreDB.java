@@ -245,6 +245,7 @@ public class FirestoreDB {
                                     ? documentSnapshot.getLong("numDays").intValue()
                                     : 0;
                             String note = documentSnapshot.getString("note");
+                            String trafficMode = documentSnapshot.getString("trafficMode");
                             List<String> userIds = (List<String>) documentSnapshot.get("userIds");
 
                             // Parse locations
@@ -306,6 +307,7 @@ public class FirestoreDB {
                             trip.setPlans(plans);
                             trip.setNumDays(numDays);
                             trip.setUserIds(userIds);
+                            trip.setTrafficMode(trafficMode);
 
                             onSuccessListener.onSuccess(trip);
                         } catch (Exception e) {

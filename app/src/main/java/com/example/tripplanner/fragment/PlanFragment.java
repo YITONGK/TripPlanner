@@ -137,6 +137,7 @@ public class PlanFragment extends Fragment
 
     public static List<Location> locationList;
     public static Timestamp endDate;
+    public static String trafficMode;
     private String startDay;
     private int lastingDays;
 
@@ -201,6 +202,12 @@ public class PlanFragment extends Fragment
                     PlanFragment.locationList = trip.getLocations();
                     PlanFragment.startDate = trip.getStartDate();
                     PlanFragment.endDate = trip.getEndDate();
+                    PlanFragment.trafficMode = trip.getTrafficMode();
+
+                    if (layout == PLAN_SPECIFIC_DAY && dayIndex >= 0) {
+                        preparePlanItems();
+                        adapter.notifyDataSetChanged();
+                    }
                 }
             }
         });
@@ -223,6 +230,29 @@ public class PlanFragment extends Fragment
         fragment.setArguments(bundle);
         return fragment;
     }
+
+    @Override
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        viewModel.getTripLiveData().observe(getViewLifecycleOwner(), new Observer<Trip>() {
+            @Override
+            public void onChanged(Trip trip) {
+                if (trip != null) {
+                    PlanFragment.this.trip = trip;
+                    PlanFragment.this.locationList = trip.getLocations();
+                    PlanFragment.this.startDate = trip.getStartDate();
+                    PlanFragment.this.endDate = trip.getEndDate();
+                    PlanFragment.this.trafficMode = trip.getTrafficMode();
+
+                    if (layout == PLAN_SPECIFIC_DAY && dayIndex >= 0) {
+                        preparePlanItems();
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+            }
+        });
+    }
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -1460,7 +1490,7 @@ public class PlanFragment extends Fragment
         destinationItem.setLocation(destination);
         activityItems.add(originItem);
         activityItems.add(destinationItem);
-        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
+        RoutePlanner.fetchDistanceMatrix(activityItems, trafficMode.toLowerCase(), new DistanceMatrixCallback() {
             @Override
             public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
                 DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
@@ -1506,10 +1536,6 @@ public class PlanFragment extends Fragment
     }
 
     private List<DistanceMatrixEntry> fetchDistanceMatrixByActivityItems(){
-//        List<ActivityItem> activityItems = new ArrayList<>();
-//        for (int i = 0; i < activityItemArray.size(); i++) {
-//            activityItems.add(activityItemArray.get(i));
-//        }
         final List<DistanceMatrixEntry>[] returnedDistanceMatrix = new List[]{null};
         RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
             @Override
