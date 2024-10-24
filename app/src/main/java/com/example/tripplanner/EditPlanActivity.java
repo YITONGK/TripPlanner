@@ -51,6 +51,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private Trip trip;
     private String tripId;
     private String from;
+    private String trafficMode;
 
     private ActivityResultLauncher<Intent> planSettingsLauncher;
 
@@ -127,17 +128,12 @@ public class EditPlanActivity extends AppCompatActivity {
         selectedPlace = sb.toString();
         startDate = trip.getStartDate();
         days = trip.getNumDays();
+        trafficMode = trip.getTrafficMode();
+        Log.d("extract traffic mode", "mode: " + trafficMode);
 
-//        Timestamp startDateTimestamp = trip.getStartDate();
-//        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
-//        Date date = new Date(Long.parseLong(startDateTimestamp.toString()));
-//        startDate = sf.format(date);
-
-        // TODO: get activities of the plan
     }
 
     private void setupTripInfo() {
-//        tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
         tripName = trip.getName();
         TextView tripTo = findViewById(R.id.textViewSelectedPlace);
         tripTo.setText(tripName);
@@ -179,6 +175,7 @@ public class EditPlanActivity extends AppCompatActivity {
             tripName = newTripName;
             tripNameView.setText(newTripName);
             trip.setName(tripName);
+            trip.setTrafficMode(data.getStringExtra("trafficMode"));
             int newDays = data.getIntExtra("days", days);
             if (days != newDays) {
                 adjustFragmentsForNewDays(newDays);
@@ -212,6 +209,7 @@ public class EditPlanActivity extends AppCompatActivity {
             intent.putExtra("days", days);
             intent.putExtra("tripId", tripId);
             intent.putExtra("From", from);
+            intent.putExtra("trafficMode", trafficMode);
             planSettingsLauncher.launch(intent);
         });
     }

@@ -39,6 +39,7 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
 
     private ActivityPlanSettingBinding binding;
     private EditText editTripName;
+    private TextView editTrafficMode;
     private TextView timeDuration;
     private int days;
 
@@ -57,11 +58,17 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
 
         editTripName = findViewById(R.id.edit_trip_name);
         editTripName.setText(getIntent().getStringExtra("tripName"));
+
+        editTrafficMode = findViewById(R.id.edit_traffic_mode);
+        editTrafficMode.setText(getIntent().getStringExtra("trafficMode"));
+        editTrafficMode.setOnClickListener(v -> {
+            showTrafficModeDialog();
+        });
+
         timeDuration = findViewById(R.id.edit_time_duration);
         days = getIntent().getIntExtra("days", 0);
         timeDuration.setText(days + (days > 1 ? " days" : " day"));
         String tripId = getIntent().getStringExtra("tripId");
-
         timeDuration.setOnClickListener(v -> {
             loadNumberPickerFragment();
         });
@@ -78,9 +85,11 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         ImageButton saveButton = findViewById(R.id.button_save);
         saveButton.setOnClickListener(v -> {
             String newTripName = editTripName.getText().toString();
+            String selectedTrafficMode = editTrafficMode.getText().toString();
 
             Intent resultIntent = new Intent();
             resultIntent.putExtra("tripName", newTripName);
+            resultIntent.putExtra("trafficMode", selectedTrafficMode);
             resultIntent.putExtra("days", days);
             setResult(RESULT_OK, resultIntent);
 
@@ -101,6 +110,20 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
                     .show();
         });
 
+    }
+
+    private void showTrafficModeDialog() {
+        final String[] trafficModes = {"Driving", "Walking", "Bicycling", "Transit"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Traffic Mode");
+        builder.setItems(trafficModes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                editTrafficMode.setText(trafficModes[which]);
+            }
+        });
+        builder.show();
     }
 
     private void loadNumberPickerFragment() {

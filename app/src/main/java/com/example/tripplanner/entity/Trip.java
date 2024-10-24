@@ -27,6 +27,7 @@ public class Trip {
     private Map<String, List<ActivityItem>> plans;
     private DatabaseInterface database;
     private List<String> userIds;
+    private String trafficMode;
 
     // No-argument constructor required for Firestore deserialization
     public Trip() {
@@ -49,7 +50,7 @@ public class Trip {
         }
         this.userIds = new ArrayList<>();
         this.userIds.add(userId);
-        
+        this.trafficMode = "Driving";
     }
 
     public Trip(String name, Timestamp startDate, Timestamp endDate, List<Location> locations, String userId) {
@@ -96,6 +97,7 @@ public class Trip {
             plansMap.put(entry.getKey(), activityMaps);
         }
         map.put("plans", plansMap);
+        map.put("trafficMode", trafficMode);
         return map;
     }
 
@@ -167,6 +169,14 @@ public class Trip {
         this.name = name;
     }
 
+    public String getTrafficMode() {
+        return trafficMode;
+    }
+
+    public void setTrafficMode(String trafficMode) {
+        this.trafficMode = trafficMode;
+    }
+
     public int getLastingDays() {
         long daysBetween = TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
         return (int) daysBetween;
@@ -191,6 +201,7 @@ public class Trip {
                 ", locations=" + locations +
                 ", note='" + note + '\'' +
                 ", plans=" + plans +
+                ", traffic mode=" + trafficMode +
                 ", database=" + database +
                 ", userIds=" + userIds +
                 '}';

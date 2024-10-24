@@ -1310,7 +1310,7 @@ public class PlanFragment extends Fragment
         destinationItem.setLocation(destination);
         activityItems.add(originItem);
         activityItems.add(destinationItem);
-        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
+        RoutePlanner.fetchDistanceMatrix(activityItems, "Driving", new DistanceMatrixCallback() {
             @Override
             public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
                 DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
