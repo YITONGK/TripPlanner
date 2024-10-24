@@ -340,63 +340,6 @@ public class PlanFragment extends Fragment
 
             initializePlanSuggestButtons(rootView);
 
-            // Find the planSuggest button
-//            ImageButton planSuggestButton = rootView.findViewById(R.id.planSuggest);
-//
-//            // Set an OnClickListener for the planSuggest button
-//            planSuggestButton.setOnClickListener(new View.OnClickListener() {
-//
-//                @Override
-//                public void onClick(View v) {
-//                    showInstruction(View.GONE);
-//                    // Show loading dialog
-//                    ProgressDialog loadingDialog = new ProgressDialog(getContext());
-//                    loadingDialog.setMessage("Loading...");
-//                    loadingDialog.setCancelable(false);
-//                    loadingDialog.show();
-//
-//                    if (locationList.size() == 1){
-//                        fetchDataAndRequestGpt(locationList.get(0).getName(), loadingDialog);
-//                    } else {
-//                        String[] choices = locationList.stream()
-//                                .filter(location -> location != null)
-//                                .map(Location::getName)
-//                                .toArray(String[]::new);
-//
-//                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-//                        AtomicInteger selectedIndex = new AtomicInteger(0);
-//
-//                        final String[] selectedLocation = {choices[0]};
-//                        builder.setTitle("Select Location")
-//                                .setSingleChoiceItems(choices, 0, new DialogInterface.OnClickListener() {
-//
-//                                    @Override
-//                                    public void onClick(DialogInterface dialogInterface, int i) {
-////                                    selectedLocation[0] = choices[i];
-//                                        selectedLocation[0] = choices[i];
-//                                        locationSelected = choices[i];
-//                                    }
-//                                })
-//                                .setNegativeButton("Cancel", (dialogInterface, i) -> {
-//                                    dialogInterface.dismiss();
-//                                })
-//                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//                                    @Override
-//                                    public void onClick(DialogInterface dialogInterface, int i) {
-//                                        fetchDataAndRequestGpt(selectedLocation[0], loadingDialog);
-//
-//                                    }
-//                                });
-//
-//                        AlertDialog dialog = builder.create();
-//                        dialog.show();
-//                    }
-//                }
-//            });
-
-
-
-
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
             weatherAPIClient = new WeatherAPIClient();
@@ -547,6 +490,73 @@ public class PlanFragment extends Fragment
                 }
             }
         });
+
+        buttonAISuggest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                executeAISuggest(v);
+                planSuggestOptionsLayout.setVisibility(View.GONE);
+                planSuggestButton.setImageResource(R.drawable.baseline_settings_suggest_24);
+                isOptionsVisible.set(false);
+            }
+        });
+
+        buttonAIReplan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                executeAIReplan(v);
+                planSuggestOptionsLayout.setVisibility(View.GONE);
+                planSuggestButton.setImageResource(R.drawable.baseline_settings_suggest_24);
+                isOptionsVisible.set(false);
+            }
+        });
+    }
+
+    private void executeAISuggest(View v) {
+        ProgressDialog loadingDialog = new ProgressDialog(getContext());
+        loadingDialog.setMessage("Loading...");
+        loadingDialog.setCancelable(false);
+        loadingDialog.show();
+
+        if (locationList.size() == 1){
+            fetchDataAndRequestGpt(locationList.get(0).getName(), loadingDialog);
+        } else {
+            String[] choices = locationList.stream()
+                    .filter(location -> location != null)
+                    .map(Location::getName)
+                    .toArray(String[]::new);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            AtomicInteger selectedIndex = new AtomicInteger(0);
+
+            final String[] selectedLocation = {choices[0]};
+            builder.setTitle("Select Location")
+                    .setSingleChoiceItems(choices, 0, new DialogInterface.OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            selectedLocation[0] = choices[i];
+                            locationSelected = choices[i];
+                        }
+                    })
+                    .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                        dialogInterface.dismiss();
+                    })
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            fetchDataAndRequestGpt(selectedLocation[0], loadingDialog);
+
+                        }
+                    });
+
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+    }
+
+    private void executeAIReplan(View v) {
+
     }
 
     @Override
