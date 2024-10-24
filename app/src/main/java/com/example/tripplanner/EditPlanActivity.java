@@ -25,6 +25,7 @@ import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.fragment.PlanFragment;
 import com.example.tripplanner.fragment.PlanViewModel;
+import com.example.tripplanner.utils.TimeUtils;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.Timestamp;
 
@@ -51,6 +52,7 @@ public class EditPlanActivity extends AppCompatActivity {
     private Trip trip;
     private String tripId;
     private String from;
+    private String trafficMode;
 
     private ActivityResultLauncher<Intent> planSettingsLauncher;
 
@@ -127,17 +129,11 @@ public class EditPlanActivity extends AppCompatActivity {
         selectedPlace = sb.toString();
         startDate = trip.getStartDate();
         days = trip.getNumDays();
+        trafficMode = trip.getTrafficMode();
 
-//        Timestamp startDateTimestamp = trip.getStartDate();
-//        SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd");
-//        Date date = new Date(Long.parseLong(startDateTimestamp.toString()));
-//        startDate = sf.format(date);
-
-        // TODO: get activities of the plan
     }
 
     private void setupTripInfo() {
-//        tripName = days + (days > 1 ? " days" : " day") + " trip to " + selectedPlace;
         tripName = trip.getName();
         TextView tripTo = findViewById(R.id.textViewSelectedPlace);
         tripTo.setText(tripName);
@@ -179,16 +175,31 @@ public class EditPlanActivity extends AppCompatActivity {
             tripName = newTripName;
             tripNameView.setText(newTripName);
             trip.setName(tripName);
+            String newTrafficMode = data.getStringExtra("trafficMode");
+            trip.setTrafficMode(newTrafficMode);
+            trafficMode = newTrafficMode;
             int newDays = data.getIntExtra("days", days);
             if (days != newDays) {
                 adjustFragmentsForNewDays(newDays);
                 days = newDays;
                 trip.setNumDays(days);
-                trip.setEndDate(new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(days), 0));
+                trip.setEndDate(TimeUtils.getEndDateTimestamp(startDate, days));
                 updateDayAndNightText();
                 refreshTabsAndFragments();
                 loadFragment(fragments.get(0));
             }
+            String newStartDateString = data.getStringExtra("startDate");
+            if (newStartDateString != null && !newStartDateString.isEmpty()) {
+                Timestamp newStartDate = TimeUtils.convertStringToTimestamp(newStartDateString);
+                startDate = newStartDate;
+                trip.setStartDate(newStartDate);
+                trip.setEndDate(TimeUtils.getEndDateTimestamp(newStartDate, days));
+                updateDayAndNightText();
+            }
+
+            PlanViewModel planViewModel = new ViewModelProvider(this).get(PlanViewModel.class);
+            planViewModel.setTrip(trip);
+
             FirestoreDB firestoreDB = FirestoreDB.getInstance();
             firestoreDB.updateTrip(tripId, trip, listener -> {
                 // Handle success
@@ -210,8 +221,10 @@ public class EditPlanActivity extends AppCompatActivity {
             Intent intent = new Intent(EditPlanActivity.this, PlanSettingActivity.class);
             intent.putExtra("tripName", tripName);
             intent.putExtra("days", days);
+            intent.putExtra("startDate", TimeUtils.convertTimestampToStringForCalendar(startDate));
             intent.putExtra("tripId", tripId);
             intent.putExtra("From", from);
+            intent.putExtra("trafficMode", trafficMode);
             planSettingsLauncher.launch(intent);
         });
     }

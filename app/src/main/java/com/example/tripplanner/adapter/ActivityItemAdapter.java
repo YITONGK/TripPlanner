@@ -116,14 +116,11 @@ public class ActivityItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         public void bind(ActivityItem item) {
             activityName.setText(item.getName());
             StringBuilder details = new StringBuilder();
-            if (item.getStartTime() != null) {
-                details.append("Start Time: ").append(item.getStartTimeString()).append("\n");
-            }
-            if (item.getEndTime() != null) {
-                details.append("End Time: ").append(item.getEndTimeString()).append("\n");
-            }
             if (item.getLocation() != null) {
                 details.append("Location: ").append(item.getLocation().getName()).append("\n");
+            }
+            if (item.getStartTime() != null || item.getEndTime() != null) {
+                details.append("Time: ").append(item.getStartTimeString()).append(" ~ ").append(item.getEndTimeString()).append("\n");
             }
             if (item.getNotes() != null && !item.getNotes().isEmpty()) {
                 details.append("Note: ").append(item.getNotes());

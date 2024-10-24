@@ -31,6 +31,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -49,6 +50,7 @@ import com.example.tripplanner.MapActivity;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.adapter.RecommentActivityAdapter;
 
+import com.example.tripplanner.adapter.ReplanActivityAdapter;
 import com.example.tripplanner.adapter.WeatherAdapter;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
@@ -117,6 +119,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -134,6 +137,7 @@ public class PlanFragment extends Fragment
 
     public static List<Location> locationList;
     public static Timestamp endDate;
+    public static String trafficMode;
     private String startDay;
     private int lastingDays;
 
@@ -151,6 +155,10 @@ public class PlanFragment extends Fragment
     private TextView textViewPlanSuggest;
     private ImageView arrowAddActivity;
     private ImageView arrowPlanSuggest;
+
+    private LinearLayout planSuggestOptionsLayout;
+    private Button buttonAIReplan;
+    private Button buttonAISuggest;
 
     private RecyclerView activityLocationRecyclerView;
     private ArrayList<ActivityItem> activityItemArray;
@@ -171,6 +179,7 @@ public class PlanFragment extends Fragment
 
     private Handler mainHandler = new Handler(Looper.getMainLooper());
 
+    private ProgressDialog loadingDialog;
 
     public interface OnPlaceFetchedListener {
         void onPlaceFetched(Location location);
@@ -193,6 +202,12 @@ public class PlanFragment extends Fragment
                     PlanFragment.locationList = trip.getLocations();
                     PlanFragment.startDate = trip.getStartDate();
                     PlanFragment.endDate = trip.getEndDate();
+                    PlanFragment.trafficMode = trip.getTrafficMode();
+
+                    if (layout == PLAN_SPECIFIC_DAY && dayIndex >= 0) {
+                        preparePlanItems();
+                        adapter.notifyDataSetChanged();
+                    }
                 }
             }
         });
@@ -217,6 +232,29 @@ public class PlanFragment extends Fragment
     }
 
     @Override
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        viewModel.getTripLiveData().observe(getViewLifecycleOwner(), new Observer<Trip>() {
+            @Override
+            public void onChanged(Trip trip) {
+                if (trip != null) {
+                    PlanFragment.this.trip = trip;
+                    PlanFragment.this.locationList = trip.getLocations();
+                    PlanFragment.this.startDate = trip.getStartDate();
+                    PlanFragment.this.endDate = trip.getEndDate();
+                    PlanFragment.this.trafficMode = trip.getTrafficMode();
+
+                    if (layout == PLAN_SPECIFIC_DAY && dayIndex >= 0) {
+                        preparePlanItems();
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+            }
+        });
+    }
+
+
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View rootView;
@@ -235,6 +273,10 @@ public class PlanFragment extends Fragment
             arrowAddActivity = rootView.findViewById(R.id.arrow_add_activity);
             arrowPlanSuggest = rootView.findViewById(R.id.arrow_plan_suggest);
             activityLocationRecyclerView = rootView.findViewById(R.id.activityLocationRecyclerView);
+
+            planSuggestOptionsLayout = rootView.findViewById(R.id.planSuggestOptionsLayout);
+            buttonAISuggest = rootView.findViewById(R.id.buttonAISuggest);
+            buttonAIReplan = rootView.findViewById(R.id.buttonAIReplan);
 
             if (activityItemArray == null || activityItemArray.isEmpty()) {
                 showInstruction(View.VISIBLE);
@@ -329,62 +371,7 @@ public class PlanFragment extends Fragment
                 }
             });
 
-            // Find the planSuggest button
-            ImageButton planSuggestButton = rootView.findViewById(R.id.planSuggest);
-
-            // Set an OnClickListener for the planSuggest button
-            planSuggestButton.setOnClickListener(new View.OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    showInstruction(View.GONE);
-                    // Show loading dialog
-                    ProgressDialog loadingDialog = new ProgressDialog(getContext());
-                    loadingDialog.setMessage("Loading...");
-                    loadingDialog.setCancelable(false);
-                    loadingDialog.show();
-
-                    if (locationList.size() == 1){
-                        fetchDataAndRequestGpt(locationList.get(0).getName(), loadingDialog);
-                    } else {
-                        String[] choices = locationList.stream()
-                                .filter(location -> location != null)
-                                .map(Location::getName)
-                                .toArray(String[]::new);
-
-                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                        AtomicInteger selectedIndex = new AtomicInteger(0);
-
-                        final String[] selectedLocation = {choices[0]};
-                        builder.setTitle("Select Location")
-                                .setSingleChoiceItems(choices, 0, new DialogInterface.OnClickListener() {
-
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int i) {
-//                                    selectedLocation[0] = choices[i];
-                                        selectedLocation[0] = choices[i];
-                                        locationSelected = choices[i];
-                                    }
-                                })
-                                .setNegativeButton("Cancel", (dialogInterface, i) -> {
-                                    dialogInterface.dismiss();
-                                })
-                                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialogInterface, int i) {
-                                        fetchDataAndRequestGpt(selectedLocation[0], loadingDialog);
-
-                                    }
-                                });
-
-                        AlertDialog dialog = builder.create();
-                        dialog.show();
-                    }
-                }
-            });
-
-
-
+            initializePlanSuggestButtons(rootView);
 
         } else {
             rootView = inflater.inflate(R.layout.plan_overview, container, false);
@@ -403,10 +390,31 @@ public class PlanFragment extends Fragment
         return rootView;
     }
 
+    private String fetchWeatherOnDate(){
+        // Get the weather forecast for the destination
+        final String[] weatherForecast = {"Sunny with a high of 25°C"};
+        fetchWeatherDataForDate(startDate, dayIndex, new WeatherDataCallback() {
+            @Override
+            public void onSuccess(Map<Integer, Weather> weatherData) {
+                // Handle the successful retrieval of weather data
+                Log.d("PlanFragment", "Weather data retrieved: " + weatherData);
+                Weather weather = weatherData.get(dayIndex);
+                weatherForecast[0] = weather.getDescription() + ", with a high of " + weather.getMaxTemp() + "°C and a low of "+weather.getMinTemp()+"°C.";
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Log.d("PlanFragment", "Failed to fetch weather");
+            }
+
+        });
+
+        return weatherForecast[0];
+    }
+
     public void fetchDataAndRequestGpt(String selectedLocation, ProgressDialog loadingDialog){
         // Fetch user preference and weather data after selection
         Log.d("PlanFragment", "which: "+selectedLocation);
-//                                String selectedLocation = choices[selectedIndex.get()]; // Get the selected location
 
         // Fetch user preference
         AtomicReference<String> userPreferences = new AtomicReference<>("Enjoys coffee shops and outdoor activities");
@@ -422,26 +430,9 @@ public class PlanFragment extends Fragment
             userPreferences.set(user.getPreference());
         }
 
-        // Get the weather forecast for the destination
-        final String[] weatherForecast = {"Sunny with a high of 25°C"};
-        fetchWeatherDataForDate(startDate, dayIndex, new WeatherDataCallback() {
-            @Override
-            public void onSuccess(Map<Integer, Weather> weatherData) {
-                // Handle the successful retrieval of weather data
-                Log.d("PlanFragment", "Weather data retrieved: " + weatherData);
-                Weather weather = weatherData.get(dayIndex);
-                weatherForecast[0] = String.format("Weather is %s with max %.1f°C and min %.1f°C",
-                        weather.getDescription(), weather.getMaxTemp(), weather.getMinTemp());
-            }
+        String weatherForecast = fetchWeatherOnDate();
 
-            @Override
-            public void onFailure(String errorMessage) {
-                Log.d("PlanFragment", "Failed to fetch weather");
-            }
-
-        });
-
-        GptApiClient.recommendTripPlan(selectedLocation, weatherForecast[0], userPreferences.get(), trip, new GptApiClient.GptApiCallback() {
+        GptApiClient.recommendTripPlan(selectedLocation, weatherForecast, userPreferences.get(), trip, new GptApiClient.GptApiCallback() {
             @Override
             public void onSuccess(String response) {
                 // Handle the successful response here
@@ -511,6 +502,207 @@ public class PlanFragment extends Fragment
                 loadingDialog.dismiss();
             }
         });
+    }
+
+    private void initializePlanSuggestButtons(View rootView) {
+        planSuggestButton = rootView.findViewById(R.id.planSuggest);
+        planSuggestOptionsLayout = rootView.findViewById(R.id.planSuggestOptionsLayout);
+        buttonAISuggest = rootView.findViewById(R.id.buttonAISuggest);
+        buttonAIReplan = rootView.findViewById(R.id.buttonAIReplan);
+
+        final AtomicBoolean isOptionsVisible = new AtomicBoolean(false);
+
+        planSuggestButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                showInstruction(View.GONE);
+                if (!isOptionsVisible.get()) {
+                    planSuggestOptionsLayout.setVisibility(View.VISIBLE);
+                    planSuggestButton.setImageResource(R.drawable.baseline_close_24);
+                    isOptionsVisible.set(true);
+                } else {
+                    planSuggestOptionsLayout.setVisibility(View.GONE);
+                    planSuggestButton.setImageResource(R.drawable.baseline_settings_suggest_24);
+                    isOptionsVisible.set(false);
+                }
+            }
+        });
+
+        buttonAISuggest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                executeAISuggest(v);
+                planSuggestOptionsLayout.setVisibility(View.GONE);
+                planSuggestButton.setImageResource(R.drawable.baseline_settings_suggest_24);
+                isOptionsVisible.set(false);
+            }
+        });
+
+        buttonAIReplan.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                executeAIReplan(v);
+                planSuggestOptionsLayout.setVisibility(View.GONE);
+                planSuggestButton.setImageResource(R.drawable.baseline_settings_suggest_24);
+                isOptionsVisible.set(false);
+            }
+        });
+    }
+
+    private void initializeLoadingDialog(){
+        if (loadingDialog == null) {
+            loadingDialog = new ProgressDialog(getContext());
+            loadingDialog.setMessage("Loading...");
+            loadingDialog.setCancelable(false);
+        }
+    }
+
+    private void executeAISuggest(View v) {
+        initializeLoadingDialog();
+        loadingDialog.show();
+
+        if (locationList.size() == 1){
+            fetchDataAndRequestGpt(locationList.get(0).getName(), loadingDialog);
+        } else {
+            String[] choices = locationList.stream()
+                    .filter(location -> location != null)
+                    .map(Location::getName)
+                    .toArray(String[]::new);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            AtomicInteger selectedIndex = new AtomicInteger(0);
+
+            final String[] selectedLocation = {choices[0]};
+            builder.setTitle("Select Location")
+                    .setSingleChoiceItems(choices, 0, new DialogInterface.OnClickListener() {
+
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            selectedLocation[0] = choices[i];
+                            locationSelected = choices[i];
+                        }
+                    })
+                    .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                        dialogInterface.dismiss();
+                    })
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            fetchDataAndRequestGpt(selectedLocation[0], loadingDialog);
+                        }
+                    });
+
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        }
+    }
+
+    private void executeAIReplan(View v) {
+        // Show dialog to notice that there is no plans on this day
+        Log.d("PlanFragment", "[executeAIReplan] activity items: "+activityItemArray);
+        if (activityItemArray.size() == 0) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+            builder.setTitle("No plans on this day")
+                    .setMessage("There is no plans on this day. Please add activities first.")
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.dismiss();
+                        }
+                    });
+            builder.create().show();
+        } else {
+            initializeLoadingDialog();
+            loadingDialog.show();
+
+            String weather = fetchWeatherOnDate();
+
+            RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
+                @Override
+                public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+                    Log.d("PlanFragment", "DistanceMatrix: "+distanceMatrix);
+                    GptApiClient.rePlanTripByWeather(activityItemArray, weather, distanceMatrix, trip, new GptApiClient.GptApiCallback() {
+
+                        @Override
+                        public void onSuccess(String response) {
+                            GptApiClient.parseActivityItemsFromJson("", response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
+                                @Override
+                                public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
+                                    // Dismiss loading dialog
+                                    loadingDialog.dismiss();
+
+                                    // Parse the reason from the response
+                                    String reason = GptApiClient.getStringFromJsonResponse(response, "reason");
+                                    Log.d("PlanFragment", "Reason: "+reason);
+
+                                    // Handle the successful response here
+                                    recommendedActivities = recommendedActivities.stream()
+                                            .filter(activityItem -> activityItem.getLocation() != null) // Check if the location is non-null
+                                            .collect(Collectors.toCollection(ArrayList::new));
+
+                                    Log.d("PlanFragment", "RecommendActivities: " + recommendedActivities);
+
+                                    AlertDialog.Builder recommendBuilder = new AlertDialog.Builder(getContext());
+                                    LayoutInflater inflater = LayoutInflater.from(getContext());
+                                    View dialogView = inflater.inflate(R.layout.dialog_with_description, null);
+
+                                    TextView descriptionTextView = dialogView.findViewById(R.id.dialogDescription);
+                                    descriptionTextView.setText(reason);
+
+                                    ListView listView = dialogView.findViewById(R.id.listView);
+                                    ReplanActivityAdapter adapter = new ReplanActivityAdapter(getContext(), recommendedActivities);
+                                    listView.setAdapter(adapter);
+
+//                                    AlertDialog.Builder recommendBuilder = new AlertDialog.Builder(getContext());
+                                    recommendBuilder.setTitle("Suggestions");
+                                    recommendBuilder.setView(dialogView);
+
+                                    List<ActivityItem> finalRecommendedActivities = recommendedActivities;
+                                    recommendBuilder.setPositiveButton("Accept", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // Update in ViewModel and save
+                                            viewModel.clearActivitiesForDay(dayIndex);
+                                            for (ActivityItem activityItem : finalRecommendedActivities) {
+                                                viewModel.addActivity(dayIndex, activityItem);
+                                            }
+
+                                            viewModel.saveTripToDatabase();
+
+                                            preparePlanItems();
+                                            // Notify the adapter that the data has changed
+                                            adapter.notifyDataSetChanged();
+                                            viewModel.updateActivityList(dayIndex, activityItemArray);
+                                        }
+                                    });
+                                    recommendBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            dialogInterface.dismiss();
+                                        }
+                                    });
+
+                                    recommendBuilder.create().show();
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            Log.d("PlanFragment", "Failed to replan: " + error);
+                            loadingDialog.dismiss();
+                            Toast.makeText(getContext(), "Failed to replan", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    Log.d("PlanFragment", "Failed to fetch Distance Matrix: " + e.getMessage());
+                }
+            });
+
+        }
     }
 
     @Override
@@ -915,7 +1107,7 @@ public class PlanFragment extends Fragment
                         // Notify the adapter that the data has changed
                         weatherAdapter.notifyDataSetChanged();
                     } else {
-                        Toast.makeText(getContext(), "Failed to fetch weather data", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(getContext(), "Failed to fetch weather data", Toast.LENGTH_SHORT).show();
                     }
                     executor.shutdown(); // Shut down the executor
                 });
@@ -1092,16 +1284,13 @@ public class PlanFragment extends Fragment
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
+
                 Intent intent = new Intent(getActivity(), MapActivity.class);
-//                Bundle bundle = new Bundle();
-//                bundle.putSerializable("daysAndLocationsMap", daysAndLocationsMap); // HashMap<String, List<Double[]>>
-//                bundle.putSerializable("locationNames", locationNames); // HashMap<String, List<String>>
-//
-//                intent.putExtras(bundle);
                 intent.putExtra("daysAndLocationsMap", daysAndLocationsMap);
                 intent.putExtra("locationNames", locationNames);
                 intent.putExtra("numDays",viewModel.getTrip().getNumDays());
                 startActivity(intent);
+
             }
         });
     }
@@ -1148,13 +1337,6 @@ public class PlanFragment extends Fragment
     @Override
     public void onRouteSuccess(ArrayList<RouteInfoModel> routeInfoModelArrayList, int routeIndexing) {
         Log.d("MapActivity", "onRouteSuccess called. Routes: " + routeInfoModelArrayList.size());
-
-        // if ( polylines != null) {
-        // for (Polyline line : polylines) {
-        // line.remove();
-        // }
-        // polylines.clear();
-        // }
         PolylineOptions polylineOptions = new PolylineOptions();
         // Generate a random color
 
@@ -1254,7 +1436,6 @@ public class PlanFragment extends Fragment
         return locationMap;
     }
 
-
     public HashMap<String, List<String>> getLocationNames() {
         HashMap<String, List<String>> locationName = new HashMap<>();
 
@@ -1310,7 +1491,7 @@ public class PlanFragment extends Fragment
         destinationItem.setLocation(destination);
         activityItems.add(originItem);
         activityItems.add(destinationItem);
-        RoutePlanner.fetchDistanceMatrix(activityItems, "driving", new DistanceMatrixCallback() {
+        RoutePlanner.fetchDistanceMatrix(activityItems, trafficMode.toLowerCase(), new DistanceMatrixCallback() {
             @Override
             public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
                 DistanceMatrixEntry entry = RoutePlanner.getDistanceMatrixEntry(distanceMatrix,
@@ -1355,6 +1536,23 @@ public class PlanFragment extends Fragment
         });
     }
 
+    private List<DistanceMatrixEntry> fetchDistanceMatrixByActivityItems(){
+        final List<DistanceMatrixEntry>[] returnedDistanceMatrix = new List[]{null};
+        RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
+            @Override
+            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
+                Log.d("PlanFragment", "DistanceMatrix: "+distanceMatrix);
+                returnedDistanceMatrix[0] = distanceMatrix;
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                Log.d("PlanFragment", "Failed to fetch Distance Matrix: " + e.getMessage());
+            }
+        });
+        return returnedDistanceMatrix[0];
+    }
+
     private int getActivityItemIndex(int planItemPosition) {
         int activityIndex = -1;
         for (int i = 0; i <= planItemPosition; i++) {
@@ -1383,8 +1581,5 @@ public class PlanFragment extends Fragment
         arrowAddActivity.setVisibility(visibility);
         arrowPlanSuggest.setVisibility(visibility);
     }
-
-
-
 
 }

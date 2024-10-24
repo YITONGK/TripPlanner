@@ -56,7 +56,7 @@ public class ActivityItem {
             calendar.setTime(startTime.toDate());
             return String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
         }
-        return "";
+        return "__:__";
     }
 
     public String getEndTimeString() {
@@ -65,7 +65,7 @@ public class ActivityItem {
             calendar.setTime(endTime.toDate());
             return String.format("%02d:%02d", calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE));
         }
-        return "";
+        return "__:__";
     }
 
     public String getLocationString() {

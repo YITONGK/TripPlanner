@@ -62,6 +62,12 @@ public class PlanViewModel extends ViewModel {
         updateTripPlans();
     }
 
+    public void clearActivitiesForDay(int dayIndex) {
+        ArrayList<ActivityItem> activities = getActivityItemArray(dayIndex);
+        activities.clear();  // Clear the list of activities for the specified day
+        updateTripPlans();   // Update the trip plans to reflect this change
+    }
+
     private void updateTripPlans() {
         // Convert activitiesPerDay to trip's plans
         Map<String, List<ActivityItem>> tripPlans = new HashMap<>();

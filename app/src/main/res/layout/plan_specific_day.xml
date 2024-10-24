@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/plan_specific_day_layout"
     android:layout_width="match_parent"
@@ -114,5 +115,33 @@
         app:layout_anchor="@id/planSuggest"
         app:layout_anchorGravity="top|start"
         android:visibility="visible"/>
+
+    <LinearLayout
+        android:id="@+id/planSuggestOptionsLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="100dp"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/buttonAISuggest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AI Suggest"
+            android:backgroundTint="#b8d2e4"
+            android:textColor="#350B7F"
+            android:layout_marginEnd="16dp"/>
+
+        <Button
+            android:id="@+id/buttonAIReplan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AI Replan"
+            android:backgroundTint="#b8d2e4"
+            android:textColor="#350B7F"/>
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,10 +1,12 @@
 package com.example.tripplanner;
 
 import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -26,21 +28,38 @@ import android.widget.Toast;
 
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.fragment.NumberPickerFragment;
+import com.example.tripplanner.utils.TimeUtils;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.prolificinteractive.materialcalendarview.CalendarDay;
+import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 import com.shawnlin.numberpicker.NumberPicker;
 
 import com.example.tripplanner.databinding.ActivityPlanSettingBinding;
 
+import java.sql.Time;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
 
 public class PlanSettingActivity extends AppCompatActivity implements NumberPickerFragment.OnNumberSelectedListener {
 
     private ActivityPlanSettingBinding binding;
     private EditText editTripName;
+    private TextView editTrafficMode;
     private TextView timeDuration;
     private int days;
+    private String startDate;
+
+    private TextView startDateTitle;
+//    private MaterialCalendarView calendarView;
+    private TextView textViewStartDate;
+//    private Button buttonDone;
+//    private CalendarDay selectedDate;
+    private String selectedDateString;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -57,13 +76,40 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
 
         editTripName = findViewById(R.id.edit_trip_name);
         editTripName.setText(getIntent().getStringExtra("tripName"));
+
+        editTrafficMode = findViewById(R.id.edit_traffic_mode);
+        editTrafficMode.setText(getIntent().getStringExtra("trafficMode"));
+        editTrafficMode.setOnClickListener(v -> {
+            showTrafficModeDialog();
+        });
+
         timeDuration = findViewById(R.id.edit_time_duration);
+        startDateTitle = findViewById(R.id.calendar_title);
+        textViewStartDate = findViewById(R.id.edit_start_date);
+//        calendarView = findViewById(R.id.calendar_view);
+//        buttonDone = findViewById(R.id.button_done);
+
+        // get intent extras
         days = getIntent().getIntExtra("days", 0);
-        timeDuration.setText(days + (days > 1 ? " days" : " day"));
+        startDate = getIntent().getStringExtra("startDate");
         String tripId = getIntent().getStringExtra("tripId");
+
+        // set texts
+        editTripName.setText(getIntent().getStringExtra("tripName"));
+        timeDuration.setText(days + (days > 1 ? " days" : " day"));
+        if (startDate != null) {
+            textViewStartDate.setText(startDate);
+        }
 
         timeDuration.setOnClickListener(v -> {
             loadNumberPickerFragment();
+            startDateTitle.setVisibility(View.GONE);
+            textViewStartDate.setVisibility(View.GONE);
+        });
+
+        textViewStartDate.setOnClickListener(v -> {
+            // textViewStartDate.setVisibility(View.GONE);
+            showDatePickerDialog();
         });
 
 
@@ -78,12 +124,13 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         ImageButton saveButton = findViewById(R.id.button_save);
         saveButton.setOnClickListener(v -> {
             String newTripName = editTripName.getText().toString();
-
+            String selectedTrafficMode = editTrafficMode.getText().toString();
             Intent resultIntent = new Intent();
             resultIntent.putExtra("tripName", newTripName);
+            resultIntent.putExtra("trafficMode", selectedTrafficMode);
             resultIntent.putExtra("days", days);
+            resultIntent.putExtra("startDate", selectedDateString);
             setResult(RESULT_OK, resultIntent);
-
             finish();
         });
 
@@ -103,6 +150,35 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
 
     }
 
+    private void showTrafficModeDialog() {
+        final String[] trafficModes = {"Driving", "Walking", "Bicycling", "Transit"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Traffic Mode");
+        builder.setItems(trafficModes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                editTrafficMode.setText(trafficModes[which]);
+            }
+        });
+        builder.show();
+    }
+
+    private void showDatePickerDialog() {
+        final Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, year1, month1, dayOfMonth) -> {
+            calendar.set(year1, month1, dayOfMonth);
+            selectedDateString = TimeUtils.convertDateToString(calendar.getTime(), TimeUtils.DEFAULT_DATE_FORMAT);
+            textViewStartDate.setText(TimeUtils.convertDateToString(calendar.getTime(), TimeUtils.CALENDAR_DATE_FORMAT));
+        }, year, month, day);
+
+        datePickerDialog.show();
+    }
+
     private void loadNumberPickerFragment() {
         NumberPickerFragment fragment = new NumberPickerFragment(days);
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -116,6 +192,9 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         days = selectedDays;
         timeDuration.setText(days + (days > 1 ? " days" : " day"));
         // The fragment removes itself, so no need to remove it here
+
+        startDateTitle.setVisibility(View.VISIBLE);
+        textViewStartDate.setVisibility(View.VISIBLE);
     }
 
     private void confirmAndDeleteTrip(String tripId) {
@@ -132,13 +211,12 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
     }
 
     private void deleteTrip(String tripId) {
-        FirestoreDB firestoreDB = FirestoreDB.getInstance();
 
         // Perform the deletion in a background thread
         new Thread(new Runnable() {
             @Override
             public void run() {
-                firestoreDB.deleteTripById(tripId, new OnSuccessListener<Void>() {
+                FirestoreDB.getInstance().deleteTripById(tripId, new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
                         // Handle successful deletion
