@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHolder> {
     private Context context;
@@ -69,7 +70,9 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
         } else {
             dayAndNight = days + " days" + " and " + (days - 1) + " nights";
         }
-        dayAndNight = dayAndNight + "\n" + formatTimestamp(allPlans.get(position).getStartDate()) + " ~ " + formatTimestamp(allPlans.get(position).getEndDate());
+        Date endDateMinusOneDay = new Date(allPlans.get(position).getEndDate().toDate().getTime() - TimeUnit.DAYS.toMillis(1));
+        Timestamp adjustedEndDate = new Timestamp(endDateMinusOneDay);
+        dayAndNight = dayAndNight + "\n" + formatTimestamp(allPlans.get(position).getStartDate()) + " ~ " + formatTimestamp(adjustedEndDate);
         holder.duration.setText(dayAndNight);
 
         // get the number of activities of the trip
