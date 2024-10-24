@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -29,10 +30,15 @@ import com.example.tripplanner.fragment.NumberPickerFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.prolificinteractive.materialcalendarview.CalendarDay;
+import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 import com.shawnlin.numberpicker.NumberPicker;
 
 import com.example.tripplanner.databinding.ActivityPlanSettingBinding;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
 
 public class PlanSettingActivity extends AppCompatActivity implements NumberPickerFragment.OnNumberSelectedListener {
@@ -41,6 +47,12 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
     private EditText editTripName;
     private TextView timeDuration;
     private int days;
+
+    private TextView startDateTitle;
+    private MaterialCalendarView calendarView;
+    private TextView textViewStartDate;
+    private Button buttonDone;
+    private CalendarDay selectedDate;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -56,14 +68,49 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         });
 
         editTripName = findViewById(R.id.edit_trip_name);
-        editTripName.setText(getIntent().getStringExtra("tripName"));
         timeDuration = findViewById(R.id.edit_time_duration);
+        startDateTitle = findViewById(R.id.calendar_title);
+        textViewStartDate = findViewById(R.id.edit_start_date);
+        calendarView = findViewById(R.id.calendar_view);
+        buttonDone = findViewById(R.id.button_done);
+
+        editTripName.setText(getIntent().getStringExtra("tripName"));
         days = getIntent().getIntExtra("days", 0);
         timeDuration.setText(days + (days > 1 ? " days" : " day"));
         String tripId = getIntent().getStringExtra("tripId");
 
         timeDuration.setOnClickListener(v -> {
             loadNumberPickerFragment();
+            startDateTitle.setVisibility(View.GONE);
+            textViewStartDate.setVisibility(View.GONE);
+        });
+
+        textViewStartDate.setOnClickListener(v -> {
+            textViewStartDate.setVisibility(View.GONE);
+            calendarView.setVisibility(View.VISIBLE);
+            buttonDone.setVisibility(View.VISIBLE);
+        });
+
+        calendarView.setOnDateChangedListener((widget, date, selected) -> {
+            if (selected) {
+                selectedDate = date;
+                Date javaDate = date.getDate();
+                SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM d, yyyy", Locale.getDefault());
+                String formattedDate = dateFormat.format(javaDate);
+                textViewStartDate.setText(formattedDate);
+                Log.d("PlanSettingActivity", "Selecting date: " + formattedDate);
+            }
+        });
+
+        buttonDone.setOnClickListener(v -> {
+            calendarView.setVisibility(View.GONE);
+            buttonDone.setVisibility(View.GONE);
+            textViewStartDate.setVisibility(View.VISIBLE);
+            if (selectedDate != null) {
+                // Save the selected start date
+                // Update your trip model or database here
+                Log.d("PlanSettingActivity", "Start date saved: " + selectedDate.getDate().toString());
+            }
         });
 
 
@@ -116,6 +163,9 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         days = selectedDays;
         timeDuration.setText(days + (days > 1 ? " days" : " day"));
         // The fragment removes itself, so no need to remove it here
+
+        startDateTitle.setVisibility(View.VISIBLE);
+        textViewStartDate.setVisibility(View.VISIBLE);
     }
 
     private void confirmAndDeleteTrip(String tripId) {

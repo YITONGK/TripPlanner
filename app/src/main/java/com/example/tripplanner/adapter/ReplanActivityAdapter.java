@@ -15,11 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReplanActivityAdapter extends ArrayAdapter<ActivityItem> {
-//    private List<ActivityItem> selectedItems;  // To track the selected state of each item
 
     public ReplanActivityAdapter(Context context, List<ActivityItem> items) {
         super(context, 0, items);
-//        this.selectedItems = new ArrayList<>();
     }
 
     @Override
@@ -40,30 +38,9 @@ public class ReplanActivityAdapter extends ArrayAdapter<ActivityItem> {
         nameTextView.setText(item.getName());
         locationTextView.setText(item.getLocation().getName());
 
-        // Set the background color based on whether the item is selected
-//        convertView.setBackgroundColor(selectedItems.contains(item) ? Color.LTGRAY : Color.TRANSPARENT);
-
-        // Set a click listener for the row
-//        convertView.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                if (selectedItems.contains(item)) {
-//                    selectedItems.remove(item);
-//                    v.setBackgroundColor(Color.TRANSPARENT);
-//                } else {
-//                    selectedItems.add(item);
-//                    v.setBackgroundColor(Color.LTGRAY);
-//                }
-//            }
-//        });
-
         // Return the completed view to render on screen
         return convertView;
     }
 
-    // Get the selected items
-//    public List<ActivityItem> getSelectedItems() {
-//        return selectedItems;
-//    }
 }
 
