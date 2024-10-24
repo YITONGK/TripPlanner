@@ -1107,7 +1107,7 @@ public class PlanFragment extends Fragment
                         // Notify the adapter that the data has changed
                         weatherAdapter.notifyDataSetChanged();
                     } else {
-                        Toast.makeText(getContext(), "Failed to fetch weather data", Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(getContext(), "Failed to fetch weather data", Toast.LENGTH_SHORT).show();
                     }
                     executor.shutdown(); // Shut down the executor
                 });
