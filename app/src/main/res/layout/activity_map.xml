@@ -30,21 +30,17 @@
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_layout_overview"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
         android:background="@android:color/transparent"
-        app:tabIndicatorColor="@android:color/black"
-        app:tabIndicatorHeight="2dp"
+        app:tabBackground="@drawable/capsule_shape"
+        app:tabGravity="fill"
+        app:tabMode="scrollable"
         app:tabSelectedTextColor="@android:color/black"
         app:tabTextColor="@android:color/darker_gray"
-        app:tabMode="scrollable"
-        app:tabMinWidth="80dp"
-        app:tabPaddingStart="8dp"
-        app:tabPaddingEnd="8dp"
-        app:tabBackground="@drawable/tab_background_selector"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         app:layout_constraintTop_toBottomOf="@id/imageView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
