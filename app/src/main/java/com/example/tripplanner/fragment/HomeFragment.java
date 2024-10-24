@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -52,15 +53,20 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.gson.Gson;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPlanInterface {
 
@@ -100,16 +106,30 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
 
 
                 firestoreDB.getPastTripsByUserId(currentUser.getUid(), trips -> {
-                    Log.d("DEBUG", "Trips: " + trips.size());
                     for (Trip trip : trips) {
-
+                        Set<String> keys = trip.getPlans().keySet();
                         List<LatLng> latLngList = new ArrayList<>();
+                        Map<String, List<ActivityItem>> plans = trip.getPlans();
+                        for (String key: keys){
+                            List<com.example.tripplanner.entity.ActivityItem> rawActivityItems = trip.getPlans().get(key);
+                            Log.d("test", "rawActivityItems: "+rawActivityItems.getClass());
+                            for (Object item : rawActivityItems) {
+                                String input = item.toString();
+                                String latitudeRegex = "latitude=([-+]?[0-9]*\\.?[0-9]+)";
+                                String longitudeRegex = "longitude=([-+]?[0-9]*\\.?[0-9]+)";
 
-                        for(List<ActivityItem> plan : trip.getPlans().values()){
-                            for(ActivityItem activity : plan){
-                                com.example.tripplanner.entity.Location location = activity.getLocation();
-                                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                                latLngList.add(latLng);
+                                Pattern latPattern = Pattern.compile(latitudeRegex);
+                                Matcher latMatcher = latPattern.matcher(input);
+                                Pattern lonPattern = Pattern.compile(longitudeRegex);
+                                Matcher lonMatcher = lonPattern.matcher(input);
+                                if (latMatcher.find() && lonMatcher.find()) {
+                                    String lat = latMatcher.group(1);
+                                    double latitude = Float.valueOf(lat);
+                                    String lon = lonMatcher.group(1);
+                                    double longitude = Float.valueOf(lon);
+                                    LatLng latLng = new LatLng(latitude, longitude);
+                                    latLngList.add(latLng);
+                                }
                             }
                         }
 
@@ -186,10 +206,28 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     Log.d("name", "name is "+ name);
                     Log.d("latLngList", "onMapReady: "+ latLngList.get(0));
                 }
-                getRoutePoints(latLngList, name);
+                getRoutePoints(latLngList, name, key);
 
             }
         }
+
+        // Set marker click listener
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                // Retrieve the tripId from the marker's tag
+                String tripId = (String) marker.getTag();
+                if (tripId != null) {
+                    // Start EditPlanActivity and pass the tripId
+                    Intent intent = new Intent(getActivity(), EditPlanActivity.class);
+                    intent.putExtra("tripId", tripId);
+                    intent.putExtra("From", "Map");
+                    startActivity(intent);
+                }
+                return true;
+            }
+        });
+
 //        Log.d("HomeFragment", "onMapReady called, map is ready");
 //        LatLng sydney = new LatLng(-34, 151);
 //        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
@@ -284,7 +322,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         showPastTripsBottomSheetIfPossible();
     }
 
-    private void getRoutePoints(List<LatLng> latLngList, String title) {
+    private void getRoutePoints(List<LatLng> latLngList, String title, String tripId) {
         if (latLngList == null || latLngList.size() < 2) {
             return;
         }
@@ -328,6 +366,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                                     LatLng middlePoint = routePoints.get(middleIndex);
                                     middlePoints.add(middlePoint);
                                     addMarkerForOverviewRoute(title);
+
+                                    addMarkerForOverviewRoute(title, tripId);
                                 }
                             }
                         }
@@ -348,24 +388,30 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
     }
 
     private Bitmap createCustomMarker(String text) {
-
-        Bitmap bitmap = Bitmap.createBitmap(200, 100, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-
-        //background
-        Paint backgroundPaint = new Paint();
-        backgroundPaint.setColor(Color.LTGRAY);
-        backgroundPaint.setStyle(Paint.Style.FILL);
-
-        canvas.drawRect(0, 0, 200, 100, backgroundPaint);
-
-        //text
         Paint textPaint = new Paint();
         textPaint.setTextSize(40);
         textPaint.setColor(Color.BLACK);
-        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextAlign(Paint.Align.LEFT);
 
-        canvas.drawText(text, 100, 60, textPaint);
+
+        Rect textBounds = new Rect();
+        textPaint.getTextBounds(text, 0, text.length(), textBounds);
+
+        int padding = 20;
+        int width = textBounds.width() + padding * 2;
+        int height = textBounds.height() + padding * 2;
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+
+        Paint backgroundPaint = new Paint();
+        backgroundPaint.setColor(Color.LTGRAY);
+        backgroundPaint.setStyle(Paint.Style.FILL);
+        canvas.drawRect(0, 0, width, height, backgroundPaint);
+
+        float textX = padding;
+        float textY = (height / 2) - (textPaint.descent() + textPaint.ascent()) / 2;  // 计算垂直居中的 y 坐标
+        canvas.drawText(text, textX, textY, textPaint);
 
         return bitmap;
     }
@@ -377,6 +423,20 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     .position(location)
                     .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(title))));
 
+        }
+    }
+
+    private void addMarkerForOverviewRoute(String title, String tripId) {
+        LatLng location = middlePoints.get(middlePoints.size() - 1);
+        if (location != null) {
+            Marker marker = mMap.addMarker(new MarkerOptions()
+                    .position(location)
+                    .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(title))));
+
+            // Store the tripId in the marker's tag
+            if (marker != null) {
+                marker.setTag(tripId);
+            }
         }
     }
 

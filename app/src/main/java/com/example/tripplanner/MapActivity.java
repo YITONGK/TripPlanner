@@ -189,19 +189,27 @@ public class MapActivity extends AppCompatActivity  {
         Intent intent = getIntent();
         receivedMap = (HashMap<String, List<Double[]>>) intent.getSerializableExtra("daysAndLocationsMap", HashMap.class);
         receivedLocationNames = (HashMap<String, List<String>>) intent.getSerializableExtra("locationNames", HashMap.class);
+//
+//        Bundle bundle = getIntent().getExtras();
+//
+//        if (bundle != null) {
+//            receivedMap = (HashMap<String, List<Double[]>>) bundle.getSerializable("daysAndLocationsMap");
+//            receivedLocationNames = (HashMap<String, List<String>>) bundle.getSerializable("locationNames");
+//        }
 
-//        if (receivedMap == null) {
-//            Log.e("MapActivity", "receivedMap is null!");
-//        } else {
-//            Log.d("MapActivity", "receivedMap has been received.");
-//        }
-//
-//
-//        if (receivedLocationNames == null) {
-//            Log.e("MapActivity", "locationNames is null!");
-//        } else {
-//            Log.d("MapActivity", "locationNames has been received.");
-//        }
+
+        if (receivedMap == null) {
+            Log.e("MapActivity", "receivedMap is null!");
+        } else {
+            Log.d("MapActivity", "receivedMap has been received.");
+        }
+
+
+        if (receivedLocationNames == null) {
+            Log.e("MapActivity", "locationNames is null!");
+        } else {
+            Log.d("MapActivity", "locationNames has been received.");
+        }
 
         int numDays = getIntent().getIntExtra("numDays", 0);
         TabLayout tabLayout = binding.tabLayoutOverview;
