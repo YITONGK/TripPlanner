@@ -49,4 +49,8 @@ public class TimeUtils {
         return convertStringToTimestamp(dateString, CALENDAR_DATE_FORMAT);
     }
 
+    public static String convertDateToString(Date date, SimpleDateFormat format){
+        return format.format(date);
+    }
+
 }

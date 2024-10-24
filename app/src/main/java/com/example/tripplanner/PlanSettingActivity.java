@@ -1,6 +1,7 @@
 package com.example.tripplanner;
 
 import android.annotation.SuppressLint;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -37,7 +38,9 @@ import com.shawnlin.numberpicker.NumberPicker;
 
 import com.example.tripplanner.databinding.ActivityPlanSettingBinding;
 
+import java.sql.Time;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
@@ -51,10 +54,10 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
     private String startDate;
 
     private TextView startDateTitle;
-    private MaterialCalendarView calendarView;
+//    private MaterialCalendarView calendarView;
     private TextView textViewStartDate;
-    private Button buttonDone;
-    private CalendarDay selectedDate;
+//    private Button buttonDone;
+//    private CalendarDay selectedDate;
     private String selectedDateString;
 
     @SuppressLint("SetTextI18n")
@@ -74,8 +77,8 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         timeDuration = findViewById(R.id.edit_time_duration);
         startDateTitle = findViewById(R.id.calendar_title);
         textViewStartDate = findViewById(R.id.edit_start_date);
-        calendarView = findViewById(R.id.calendar_view);
-        buttonDone = findViewById(R.id.button_done);
+//        calendarView = findViewById(R.id.calendar_view);
+//        buttonDone = findViewById(R.id.button_done);
 
         // get intent extras
         days = getIntent().getIntExtra("days", 0);
@@ -96,33 +99,34 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         });
 
         textViewStartDate.setOnClickListener(v -> {
-            textViewStartDate.setVisibility(View.GONE);
-            calendarView.setVisibility(View.VISIBLE);
-            buttonDone.setVisibility(View.VISIBLE);
+            // textViewStartDate.setVisibility(View.GONE);
+            showDatePickerDialog();
+            // calendarView.setVisibility(View.VISIBLE);
+            // buttonDone.setVisibility(View.VISIBLE);
         });
 
-        calendarView.setOnDateChangedListener((widget, date, selected) -> {
-            if (selected) {
-                selectedDate = date;
-                Date javaDate = date.getDate();
-                SimpleDateFormat dateFormat = TimeUtils.CALENDAR_DATE_FORMAT;
-                String formattedDate = dateFormat.format(javaDate);
-                textViewStartDate.setText(formattedDate);
-                Log.d("PlanSettingActivity", "Selecting date: " + formattedDate);
-            }
-        });
+        // calendarView.setOnDateChangedListener((widget, date, selected) -> {
+        //     if (selected) {
+        //         selectedDate = date;
+        //         Date javaDate = date.getDate();
+        //         SimpleDateFormat dateFormat = TimeUtils.CALENDAR_DATE_FORMAT;
+        //         String formattedDate = dateFormat.format(javaDate);
+        //         textViewStartDate.setText(formattedDate);
+        //         Log.d("PlanSettingActivity", "Selecting date: " + formattedDate);
+        //     }
+        // });
 
-        buttonDone.setOnClickListener(v -> {
-            calendarView.setVisibility(View.GONE);
-            buttonDone.setVisibility(View.GONE);
-            textViewStartDate.setVisibility(View.VISIBLE);
-            if (selectedDate != null) {
-                Date javaDate = selectedDate.getDate();
-                SimpleDateFormat dateFormat = TimeUtils.DEFAULT_DATE_FORMAT;
-                selectedDateString = dateFormat.format(javaDate);
-                Log.d("PlanSettingActivity", "Start date saved: " + selectedDateString);
-            }
-        });
+        // buttonDone.setOnClickListener(v -> {
+        //     calendarView.setVisibility(View.GONE);
+        //     buttonDone.setVisibility(View.GONE);
+        //     textViewStartDate.setVisibility(View.VISIBLE);
+        //     if (selectedDate != null) {
+        //         Date javaDate = selectedDate.getDate();
+        //         SimpleDateFormat dateFormat = TimeUtils.DEFAULT_DATE_FORMAT;
+        //         selectedDateString = dateFormat.format(javaDate);
+        //         Log.d("PlanSettingActivity", "Start date saved: " + selectedDateString);
+        //     }
+        // });
 
 
         ImageButton backButton = findViewById(R.id.button_back);
@@ -160,6 +164,21 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
                     .show();
         });
 
+    }
+
+    private void showDatePickerDialog() {
+        final Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this, (view, year1, month1, dayOfMonth) -> {
+            calendar.set(year1, month1, dayOfMonth);
+            selectedDateString = TimeUtils.convertDateToString(calendar.getTime(), TimeUtils.DEFAULT_DATE_FORMAT);
+            textViewStartDate.setText(TimeUtils.convertDateToString(calendar.getTime(), TimeUtils.CALENDAR_DATE_FORMAT));
+        }, year, month, day);
+
+        datePickerDialog.show();
     }
 
     private void loadNumberPickerFragment() {
