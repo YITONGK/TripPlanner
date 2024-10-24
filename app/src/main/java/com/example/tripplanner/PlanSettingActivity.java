@@ -26,6 +26,7 @@ import android.widget.Toast;
 
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.fragment.NumberPickerFragment;
+import com.example.tripplanner.fragment.PlanFragment;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
@@ -86,13 +87,12 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         saveButton.setOnClickListener(v -> {
             String newTripName = editTripName.getText().toString();
             String selectedTrafficMode = editTrafficMode.getText().toString();
-
+            Log.d("selected traffic mode", "mode: " + selectedTrafficMode);
             Intent resultIntent = new Intent();
             resultIntent.putExtra("tripName", newTripName);
             resultIntent.putExtra("trafficMode", selectedTrafficMode);
             resultIntent.putExtra("days", days);
             setResult(RESULT_OK, resultIntent);
-
             finish();
         });
 

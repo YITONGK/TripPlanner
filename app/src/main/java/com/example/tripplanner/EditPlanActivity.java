@@ -175,7 +175,9 @@ public class EditPlanActivity extends AppCompatActivity {
             tripName = newTripName;
             tripNameView.setText(newTripName);
             trip.setName(tripName);
-            trip.setTrafficMode(data.getStringExtra("trafficMode"));
+            String newTrafficMode = data.getStringExtra("trafficMode");
+            trip.setTrafficMode(newTrafficMode);
+            trafficMode = newTrafficMode;
             int newDays = data.getIntExtra("days", days);
             if (days != newDays) {
                 adjustFragmentsForNewDays(newDays);
@@ -186,6 +188,10 @@ public class EditPlanActivity extends AppCompatActivity {
                 refreshTabsAndFragments();
                 loadFragment(fragments.get(0));
             }
+
+            PlanViewModel planViewModel = new ViewModelProvider(this).get(PlanViewModel.class);
+            planViewModel.setTrip(trip);
+
             FirestoreDB firestoreDB = FirestoreDB.getInstance();
             firestoreDB.updateTrip(tripId, trip, listener -> {
                 // Handle success
