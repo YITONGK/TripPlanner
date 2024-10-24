@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -87,7 +88,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
     private int layout = R.layout.home_fragment_layout_plan;
     private GoogleMap mMap;
 
-    private ArrayList<Trip> allPlans = new ArrayList<>();;
+    private ArrayList<Trip> allPlans = new ArrayList<>();
 //    private List<LatLng> pointList = new ArrayList<>();
     private HashMap<String, HashMap<String, List<LatLng>>> tripLocationMap = new HashMap<>();
     private AllPlanAdapter adapter;
@@ -192,6 +193,19 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                 allPlans.clear();
                 allPlans.addAll(trips);
                 adapter.notifyDataSetChanged();
+
+                // display instruction if no trips in current account
+                TextView instruction = rootView.findViewById(R.id.instruction);
+                ImageView arrow = rootView.findViewById(R.id.instructionArrow);
+                Log.d("all plan count", String.valueOf(allPlans.size()));
+                if (!allPlans.isEmpty()) {
+                    arrow.setVisibility(View.INVISIBLE);
+                    instruction.setVisibility(View.INVISIBLE);
+                } else {
+                    arrow.setVisibility(View.VISIBLE);
+                    instruction.setVisibility(View.VISIBLE);
+                }
+
                 for (Trip trip : trips) {
                     Log.d("PLAN", "Trip: " + trip.toString());
                 }
@@ -202,7 +216,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
             Log.d("Debug", "No user is signed in.");
         }
 
-        //TODO: implement swipe to delete function
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
             @Override
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {

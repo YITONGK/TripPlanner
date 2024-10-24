@@ -92,9 +92,9 @@ public class AllPlanAdapter extends RecyclerView.Adapter<AllPlanAdapter.ViewHold
     private int getRandomColor(int len) {
         List<Integer> colorCode = new ArrayList<>();
         colorCode.add(R.color.blue);
-        colorCode.add(R.color.darkblue);
         colorCode.add(R.color.pink);
         colorCode.add(R.color.yellow);
+        colorCode.add(R.color.orange);
 
         return colorCode.get(len % colorCode.size());
     }
