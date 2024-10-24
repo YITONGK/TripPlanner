@@ -1,21 +1,16 @@
 package com.example.tripplanner;
 
-import android.Manifest;
-import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.pm.PackageManager;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.location.Location;
-import android.location.LocationManager;
+
 import android.os.Bundle;
 import android.content.Intent;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +19,7 @@ import java.util.Map;
 import java.util.Random;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
+
 
 import com.codebyashish.googledirectionapi.AbstractRouting;
 import com.codebyashish.googledirectionapi.ErrorHandling;
@@ -44,7 +39,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.api.LogDescriptor;
+
 
 
 public class MapActivity extends AppCompatActivity  {
@@ -65,6 +60,8 @@ public class MapActivity extends AppCompatActivity  {
         setContentView(binding.getRoot());
 
         setUpCloseButton();
+
+        initializeFragmentsAndTabs();
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map_overview);
@@ -90,50 +87,57 @@ public class MapActivity extends AppCompatActivity  {
             });
         }
 
-        initializeFragmentsAndTabs();
-
-
     }
 
     private void addMarkersToMap(int tabPosition) {
-        if (googleMap == null) {
+        if (googleMap == null || isMapValid(receivedMap, receivedLocationNames)) {
             return;
         }
-
         googleMap.clear();
-
-
-        if (receivedMap != null) {
-            if (tabPosition == 0) {
-                for (String key : receivedMap.keySet()) {
-                    List<Double[]> latLngList = receivedMap.get(key);
-                    String days = String.valueOf((Integer.parseInt(key)+1));
-                    //add bounds builder
-                    addboundsBuilder(latLngList, boundsBuilder);
-                    //Add route for all days
-                    getRoutePoints(latLngList, days);
-
-                }
-            } else {
-                String key = String.valueOf(tabPosition - 1);
+        if (tabPosition == 0) {
+            for (String key : receivedMap.keySet()) {
                 List<Double[]> latLngList = receivedMap.get(key);
                 List<String> nameList = receivedLocationNames.get(key);
-
-                if (latLngList == null || latLngList.isEmpty() || nameList == null) {
-                    googleMap.clear();
-                    return;
+                if (latLngList == null || nameList == null || latLngList.size() == 0 || nameList.size() == 0) {
+                    continue;
                 }
-
-                String days = String.valueOf((Integer.parseInt(key)+1));
-                addboundsBuilder(latLngList, boundsBuilder);
-
-                addMarkersForLatLngList(latLngList,nameList);
-                // Add route drawing for specific day
-                getRoutePoints(latLngList, days);
+                if (latLngList.size() > 1){
+                    String days = String.valueOf((Integer.parseInt(key)+1));
+                    addboundsBuilder(latLngList, boundsBuilder);
+                    getRoutePoints(latLngList, days);
+                    Log.d("MapActivity", "draw marker and route on overview map.");
+                }
+                else if (latLngList.size() == 1){
+                    Log.d("MapActivity", "latlngList(0) =  "+latLngList.get(0)[0]+latLngList.get(0)[1]);
+                    double latitude = latLngList.get(0)[0];
+                    double longitude = latLngList.get(0)[1];
+                    LatLng location  = new LatLng(latitude, longitude);
+                    Log.d("MapActivity", "nameList(0) =  "+nameList.get(0));
+                    addboundsBuilder(latLngList, boundsBuilder);
+                    Marker marker = googleMap.addMarker(new MarkerOptions().position(location));
+                    markerToTabPositionMap.put(marker, Integer.parseInt(key)+1);
+                }
             }
-            int padding = 100;
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding));
+        } else {
+            String key = String.valueOf(tabPosition - 1);
+            List<Double[]> latLngList = receivedMap.get(key);
+            List<String> nameList = receivedLocationNames.get(key);
+
+            if (latLngList == null || latLngList.isEmpty() || nameList == null) {
+                googleMap.clear();
+                return;
+            }
+
+            String days = String.valueOf((Integer.parseInt(key)+1));
+            addboundsBuilder(latLngList, boundsBuilder);
+
+            addMarkersForLatLngList(latLngList,nameList);
+            // Add route drawing for specific day
+            getRoutePoints(latLngList, days);
+            Log.d("MapActivity", "draw marker and route on specific map.");
         }
+        int padding = 100;
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding));
     }
 
     private void addMarkersForLatLngList(List<Double[]> latLngList, List<String> nameList) {
@@ -189,27 +193,6 @@ public class MapActivity extends AppCompatActivity  {
         Intent intent = getIntent();
         receivedMap = (HashMap<String, List<Double[]>>) intent.getSerializableExtra("daysAndLocationsMap", HashMap.class);
         receivedLocationNames = (HashMap<String, List<String>>) intent.getSerializableExtra("locationNames", HashMap.class);
-//
-//        Bundle bundle = getIntent().getExtras();
-//
-//        if (bundle != null) {
-//            receivedMap = (HashMap<String, List<Double[]>>) bundle.getSerializable("daysAndLocationsMap");
-//            receivedLocationNames = (HashMap<String, List<String>>) bundle.getSerializable("locationNames");
-//        }
-
-
-        if (receivedMap == null) {
-            Log.e("MapActivity", "receivedMap is null!");
-        } else {
-            Log.d("MapActivity", "receivedMap has been received.");
-        }
-
-
-        if (receivedLocationNames == null) {
-            Log.e("MapActivity", "locationNames is null!");
-        } else {
-            Log.d("MapActivity", "locationNames has been received.");
-        }
 
         int numDays = getIntent().getIntExtra("numDays", 0);
         TabLayout tabLayout = binding.tabLayoutOverview;
@@ -342,9 +325,30 @@ public class MapActivity extends AppCompatActivity  {
         return bitmap;
     }
 
+    private boolean isMapValid(HashMap<String, List<Double[]>> receivedMap, HashMap<String, List<String>> receivedLocationNames) {
+        // Check if receivedMap is null or empty
+        boolean isEmpty = true;
+        // Iterate through receivedMap and check if any list is null or empty
+        for (String key : receivedMap.keySet()) {
+            List<Double[]> latLngList = receivedMap.get(key);
+            if (latLngList.size() > 0) {
+                Log.d("MapActivity", "latlngList is not null ");
+                isEmpty = false;
+            }
+        }
+        // Iterate through receivedLocationNames and check if any list is null or empty
+        for (String key : receivedLocationNames.keySet()) {
+            List<String> nameList = receivedLocationNames.get(key);
+            if (nameList.size() > 0) {
+                Log.d("MapActivity", "nameList is not null ");
+                isEmpty = false;
+            }
+        }
+        return isEmpty;
+    }
 
 
-//    private android.location.Location getCurrentLocation() {
+    //    private android.location.Location getCurrentLocation() {
 //        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Activity.LOCATION_SERVICE);
 //        if (ActivityCompat.checkSelfPermission(getActivity(),
 //                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -362,5 +366,6 @@ public class MapActivity extends AppCompatActivity  {
 //        Log.d("SENSOR", "location: " + location);
 //        return location;
 //    }
+
 
 }

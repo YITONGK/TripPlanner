@@ -1284,11 +1284,13 @@ public class PlanFragment extends Fragment
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
+
                 Intent intent = new Intent(getActivity(), MapActivity.class);
                 intent.putExtra("daysAndLocationsMap", daysAndLocationsMap);
                 intent.putExtra("locationNames", locationNames);
                 intent.putExtra("numDays",viewModel.getTrip().getNumDays());
                 startActivity(intent);
+
             }
         });
     }
@@ -1433,7 +1435,6 @@ public class PlanFragment extends Fragment
         }
         return locationMap;
     }
-
 
     public HashMap<String, List<String>> getLocationNames() {
         HashMap<String, List<String>> locationName = new HashMap<>();
