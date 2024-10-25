@@ -12,7 +12,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -251,7 +250,6 @@ public class SensorDetector implements SensorEventListener {
             // gForce will be close to 1 when there is no movement.
             float gForce = (float) Math.sqrt(gX * gX + gY * gY + gZ * gZ);
 
-            Log.d("SENSOR", "gForce: "+gForce);
             if (gForce > SHAKE_THRESHOLD) {
                 final long now = System.currentTimeMillis();
                 // Ignore shake events too close to each other (500ms)

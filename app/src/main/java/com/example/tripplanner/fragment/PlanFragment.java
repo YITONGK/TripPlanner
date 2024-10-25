@@ -1218,6 +1218,25 @@ public class PlanFragment extends Fragment
             Log.d("PlanFragment", "daysAndLocationsMap = "+ daysAndLocationsMap.values());
             Log.d("PlanFragment", "locationNames = "+ locationNames.values());
 
+//            for (String key : daysAndLocationsMap.keySet()) {
+//                List<Double[]> latLngList = daysAndLocationsMap.get(key);
+//                String days = String.valueOf((Integer.parseInt(key) + 1));
+//
+//                if (latLngList != null && !latLngList.isEmpty()) {
+//                    for (Double[] coords : latLngList) {
+//                        if (coords != null && coords.length >= 2) {
+//                            LatLng point = new LatLng(coords[0], coords[1]);
+//                            mMap.addMarker(new MarkerOptions().position(point).title("DAY" + days));
+//                            boundsBuilder.include(point); // Include point in bounds
+//                        }
+//                    }
+//                }
+//            }
+            double sumLat = 0.0;
+            double sumLng = 0.0;
+            int count = 0;
+
+            // Loop through all days
             for (String key : daysAndLocationsMap.keySet()) {
                 List<Double[]> latLngList = daysAndLocationsMap.get(key);
                 String days = String.valueOf((Integer.parseInt(key) + 1));
@@ -1228,11 +1247,22 @@ public class PlanFragment extends Fragment
                             LatLng point = new LatLng(coords[0], coords[1]);
                             mMap.addMarker(new MarkerOptions().position(point).title("DAY" + days));
                             boundsBuilder.include(point); // Include point in bounds
-                            LatLngBounds bounds = boundsBuilder.build();
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
+
+                            // Accumulate coordinates
+                            sumLat += coords[0];
+                            sumLng += coords[1];
+                            count++;
                         }
                     }
                 }
+            }
+
+            // Calculate and add the middle point marker if there are any points
+            if (count > 0) {
+                double middleLat = sumLat / count;
+                double middleLng = sumLng / count;
+                LatLng middlePoint = new LatLng(middleLat, middleLng);
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(middlePoint));
             }
 
             mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
@@ -1251,6 +1281,7 @@ public class PlanFragment extends Fragment
 
 
     }
+
 
     public void setLastingDays(int lastingDays) {
         this.lastingDays = lastingDays;

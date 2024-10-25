@@ -93,46 +93,108 @@ public class MapActivity extends AppCompatActivity  {
             return;
         }
         googleMap.clear();
+//        if (tabPosition == 0) {
+//            for (String key : receivedMap.keySet()) {
+//                List<Double[]> latLngList = receivedMap.get(key);
+//                List<String> nameList = receivedLocationNames.get(key);
+//                if (latLngList == null || nameList == null || latLngList.size() == 0 || nameList.size() == 0) {
+//                    continue;
+//                }
+//                if (latLngList.size() > 1){
+//                    String days = String.valueOf((Integer.parseInt(key)+1));
+//                    addboundsBuilder(latLngList, boundsBuilder);
+//                    getRoutePoints(latLngList, days);
+//                }
+//                else if (latLngList.size() == 1){
+//                    double latitude = latLngList.get(0)[0];
+//                    double longitude = latLngList.get(0)[1];
+//                    LatLng location  = new LatLng(latitude, longitude);
+//                    addboundsBuilder(latLngList, boundsBuilder);
+//                    Marker marker = googleMap.addMarker(new MarkerOptions().position(location));
+//                    markerToTabPositionMap.put(marker, Integer.parseInt(key)+1);
+//                }
+//            }
+//        } else {
+//            String key = String.valueOf(tabPosition - 1);
+//            List<Double[]> latLngList = receivedMap.get(key);
+//            List<String> nameList = receivedLocationNames.get(key);
+//
+//            if (latLngList == null || latLngList.isEmpty() || nameList == null) {
+//                googleMap.clear();
+//                return;
+//            }
+//
+//            String days = String.valueOf((Integer.parseInt(key)+1));
+//            addboundsBuilder(latLngList, boundsBuilder);
+//
+//            addMarkersForLatLngList(latLngList,nameList);
+//            // Add route drawing for specific day
+//            getRoutePoints(latLngList, days);
+//        }
+
+        // Variables to store accumulated coordinates and counts
+        double sumLat = 0.0;
+        double sumLng = 0.0;
+        int count = 0;
+
         if (tabPosition == 0) {
+            // Loop through all days to add markers and accumulate coordinates
             for (String key : receivedMap.keySet()) {
                 List<Double[]> latLngList = receivedMap.get(key);
-                List<String> nameList = receivedLocationNames.get(key);
-                if (latLngList == null || nameList == null || latLngList.size() == 0 || nameList.size() == 0) {
+                if (latLngList == null || latLngList.isEmpty()) {
                     continue;
                 }
-                if (latLngList.size() > 1){
-                    String days = String.valueOf((Integer.parseInt(key)+1));
-                    addboundsBuilder(latLngList, boundsBuilder);
-                    getRoutePoints(latLngList, days);
-                }
-                else if (latLngList.size() == 1){
-                    double latitude = latLngList.get(0)[0];
-                    double longitude = latLngList.get(0)[1];
-                    LatLng location  = new LatLng(latitude, longitude);
-                    addboundsBuilder(latLngList, boundsBuilder);
-                    Marker marker = googleMap.addMarker(new MarkerOptions().position(location));
-                    markerToTabPositionMap.put(marker, Integer.parseInt(key)+1);
+
+                for (Double[] coords : latLngList) {
+                    if (coords != null && coords.length >= 2) {
+                        double latitude = coords[0];
+                        double longitude = coords[1];
+                        LatLng location = new LatLng(latitude, longitude);
+                        googleMap.addMarker(new MarkerOptions().position(location).title("Day " + (Integer.parseInt(key)+1)));
+                        boundsBuilder.include(location);
+
+                        // Accumulate coordinates
+                        sumLat += latitude;
+                        sumLng += longitude;
+                        count++;
+                    }
                 }
             }
         } else {
+            // Process a specific day
             String key = String.valueOf(tabPosition - 1);
             List<Double[]> latLngList = receivedMap.get(key);
-            List<String> nameList = receivedLocationNames.get(key);
+            if (latLngList != null && !latLngList.isEmpty()) {
+                for (Double[] coords : latLngList) {
+                    double latitude = coords[0];
+                    double longitude = coords[1];
+                    LatLng location = new LatLng(latitude, longitude);
+                    googleMap.addMarker(new MarkerOptions().position(location).title("Day " + (Integer.parseInt(key)+1)));
+                    boundsBuilder.include(location);
 
-            if (latLngList == null || latLngList.isEmpty() || nameList == null) {
-                googleMap.clear();
-                return;
+                    // Accumulate coordinates
+                    sumLat += latitude;
+                    sumLng += longitude;
+                    count++;
+                }
             }
-
-            String days = String.valueOf((Integer.parseInt(key)+1));
-            addboundsBuilder(latLngList, boundsBuilder);
-
-            addMarkersForLatLngList(latLngList,nameList);
-            // Add route drawing for specific day
-            getRoutePoints(latLngList, days);
         }
-        int padding = 100;
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding));
+
+        // Calculate and add the middle point marker if there are coordinates accumulated
+        if (count > 0) {
+            double middleLat = sumLat / count;
+            double middleLng = sumLng / count;
+            LatLng middlePoint = new LatLng(middleLat, middleLng);
+
+            // Optionally add a marker at the middle point
+            googleMap.addMarker(new MarkerOptions()
+                    .position(middlePoint)
+                    .title("Central Point")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))); // Use a distinctive color
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(middlePoint, 10)); // Adjust zoom level as necessary
+        }
+//        int padding = 100;
+//        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding));
     }
 
     private void addMarkersForLatLngList(List<Double[]> latLngList, List<String> nameList) {
