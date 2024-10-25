@@ -17,10 +17,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.R;
 import com.example.tripplanner.entity.Trip;
+import com.example.tripplanner.utils.TimeUtils;
+import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -168,7 +172,9 @@ public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.View
             // Bind data to views here (similar to AllPlanAdapter.ViewHolder.bind(trip))
             // Example:
             locations.setText(trip.getLocationsString());
-            duration.setText(trip.getDurationString());
+            Date endDateMinusOneDay = new Date(trip.getEndDate().toDate().getTime() - TimeUnit.DAYS.toMillis(1));
+            Timestamp adjustedEndDate = new Timestamp(endDateMinusOneDay);
+            duration.setText(trip.getDurationString() + "\n" + TimeUtils.formatTimestampForUI(trip.getStartDate()) + " ~ " + TimeUtils.formatTimestampForUI(adjustedEndDate));
             numActivity.setText(trip.getActivityCountString());
             img.setImageResource(trip.getCityDrawable());
             plan.setCardBackgroundColor(itemView.getResources().getColor(getRandomColor(trip.getLocationsString().length())));

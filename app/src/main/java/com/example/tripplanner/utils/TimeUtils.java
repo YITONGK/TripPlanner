@@ -53,4 +53,10 @@ public class TimeUtils {
         return format.format(date);
     }
 
+    public static String formatTimestampForUI(Timestamp timestamp) {
+        Date date = timestamp.toDate();
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd yyyy");
+        return sdf.format(date);
+    }
+
 }
