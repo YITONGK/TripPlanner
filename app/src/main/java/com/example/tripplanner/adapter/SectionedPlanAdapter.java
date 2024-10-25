@@ -171,6 +171,18 @@ public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.View
             duration.setText(trip.getDurationString());
             numActivity.setText(trip.getActivityCountString());
             img.setImageResource(trip.getCityDrawable());
+            plan.setCardBackgroundColor(itemView.getResources().getColor(getRandomColor(trip.getLocationsString().length())));
+
+        }
+
+        private int getRandomColor(int len) {
+            List<Integer> colorCode = new ArrayList<>();
+            colorCode.add(R.color.blue);
+            colorCode.add(R.color.pink);
+            colorCode.add(R.color.yellow);
+            colorCode.add(R.color.orange);
+
+            return colorCode.get(len % colorCode.size());
         }
     }
 

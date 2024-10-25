@@ -53,6 +53,22 @@ public class Trip {
         this.trafficMode = "Driving";
     }
 
+    public Trip(String name, Timestamp startDate, int numDays, List<Location> locations, List<String> userIds) {
+        this.name = name;
+        this.startDate = startDate;
+        this.numDays = numDays;
+        this.endDate = new Timestamp(startDate.getSeconds() + TimeUnit.DAYS.toSeconds(numDays), 0);
+        this.locations = locations;
+        this.note = "";
+        this.plans = new HashMap<>();
+        for (int i = 0; i < numDays; i++) {
+            plans.put(String.valueOf(i), new ArrayList<>());
+        }
+        this.userIds = userIds;
+        this.trafficMode = "Driving";
+    }
+
+
     public Trip(String name, Timestamp startDate, Timestamp endDate, List<Location> locations, String userId) {
         this.name = name;
         this.endDate = endDate;
@@ -66,6 +82,20 @@ public class Trip {
         }
         this.userIds = new ArrayList<>();
         this.userIds.add(userId);
+    }
+
+    public Trip(String name, Timestamp startDate, Timestamp endDate, List<Location> locations, List<String> userIds) {
+        this.name = name;
+        this.endDate = endDate;
+        this.startDate = startDate;
+        this.locations = locations;
+        this.note = "";
+        this.numDays = (int) TimeUnit.SECONDS.toDays(endDate.getSeconds() - startDate.getSeconds());
+        this.plans = new HashMap<>();
+        for (int i = 0; i < numDays; i++) {
+            plans.put(String.valueOf(i), new ArrayList<>());
+        }
+        this.userIds = userIds;
     }
 
     public void uploadTrip() {

@@ -9,6 +9,7 @@ import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.entity.User;
 import com.example.tripplanner.entity.UserTripStatistics;
+import com.example.tripplanner.utils.TimeUtils;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.Timestamp;
@@ -78,10 +79,9 @@ public class FirestoreDB {
 
     public void getTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener,
             OnFailureListener onFailureListener) {
-        Timestamp now = getCurrentDate();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
-                .whereGreaterThanOrEqualTo("startDate", now)
+                .whereGreaterThanOrEqualTo("endDate", Timestamp.now())
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
 
@@ -130,18 +130,15 @@ public class FirestoreDB {
 
     public void getPastTripsByUserId(String userId, OnSuccessListener<List<Trip>> onSuccessListener,
             OnFailureListener onFailureListener) {
-        Timestamp now = getCurrentDate();
         firestore.collection("trips")
                 .whereArrayContains("userIds", userId)
-                .whereLessThan("startDate", now)
+                .whereLessThan("endDate", Timestamp.now())
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
 
                     List<Trip> trips = new ArrayList<>();
                     for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
                         Log.d("PLAN", String.valueOf(document));
-                        // Trip trip = document.toObject(Trip.class);
-                        // trips.add(trip);
                         try {
                             // Manually parse the fields
                             String name = document.getString("name");
@@ -166,7 +163,7 @@ public class FirestoreDB {
                                     .get("plans");
                             List<String> userIds = (List<String>) document.get("userIds");
 
-                            Trip trip = new Trip(name, startDate, endDate, locations, userIds.get(0));
+                            Trip trip = new Trip(name, startDate, endDate, locations, userIds);
                             trip.setId(document.getId());
                             trip.setNote(note);
                             trip.setPlans(plans);
