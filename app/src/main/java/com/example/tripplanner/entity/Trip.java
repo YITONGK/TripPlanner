@@ -170,7 +170,7 @@ public class Trip {
     }
 
     public String getTrafficMode() {
-        return trafficMode;
+        return trafficMode != null ? trafficMode : "driving";
     }
 
     public void setTrafficMode(String trafficMode) {
