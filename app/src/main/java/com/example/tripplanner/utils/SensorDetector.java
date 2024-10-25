@@ -51,8 +51,9 @@ public class SensorDetector implements SensorEventListener {
     
     // Shake Sensor and Threshold
     private Sensor accelerometer;
-    private static final float SHAKE_THRESHOLD = 1.0f;
-    private static final int SHAKE_WAIT_TIME_MS = 250;
+    private static final float SHAKE_THRESHOLD = 2.0f;
+    private static final int SHAKE_WAIT_TIME_MS = 3000;
+    private static boolean isShaken = false;
     private long mShakeTime = 0;
     private boolean isAccelerometerAvailable;
 
@@ -303,7 +304,7 @@ public class SensorDetector implements SensorEventListener {
             if (gForce > SHAKE_THRESHOLD) {
                 final long now = System.currentTimeMillis();
                 // Ignore shake events too close to each other (500ms)
-                if (mShakeTime + SHAKE_WAIT_TIME_MS > now) {
+                if (mShakeTime + SHAKE_WAIT_TIME_MS > now || isShaken) {
                     return;
                 }
                 mShakeTime = now;
@@ -311,6 +312,7 @@ public class SensorDetector implements SensorEventListener {
                 // Handle shake event here
                 if (onShakeListener != null) {
                     onShakeListener.onShake();
+                    isShaken = true;
                 }
             }
         }
@@ -331,6 +333,10 @@ public class SensorDetector implements SensorEventListener {
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // Handle sensor accuracy changes if needed
+    }
+
+    public static void setIsShaken(boolean isShaken) {
+        SensorDetector.isShaken = isShaken;
     }
 
     protected void onDestroy() {

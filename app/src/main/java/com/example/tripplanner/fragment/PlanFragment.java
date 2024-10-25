@@ -1070,7 +1070,8 @@ public class PlanFragment extends Fragment
             // currentTime.getSeconds());
             Log.d("start date index", String.valueOf(startDateIndex));
             int endDateIndex = startDateIndex + lastingDays;
-
+            Log.d("SENSOR", "LastingDays: "+lastingDays);
+            Log.d("Sensor", "startDateIndex: "+startDateIndex);
             // Adjust start index if today is after start date
             if (startDateIndex < 0) {
                 startDateIndex = 0;
@@ -1100,8 +1101,10 @@ public class PlanFragment extends Fragment
                 handler.post(() -> {
                     if (!isAdded()) {
                         // Fragment is not attached to the activity anymore, so we can't proceed.
+                        Log.d("SENSOR", "Fragment is not attached to the activity anymore, so we can't proceed.");
                         return;
                     }
+                    Log.d("SENSOR", "WeatherData:"+weatherData);
                     if (weatherData != null && !weatherData.isEmpty()) {
                         allWeatherData.add(weatherData);
                         // Notify the adapter that the data has changed
