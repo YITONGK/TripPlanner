@@ -40,6 +40,7 @@ import com.example.tripplanner.adapter.AllPlanInterface;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Trip;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -262,16 +263,38 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
+        if (tripLocationMap.keySet() == null) {
+            return;
+        }
         mMap = googleMap;
 
-        for (String key: tripLocationMap.keySet()){
+        double sumLat = 0.0;
+        double sumLng = 0.0;
+        int count = 0;
+
+        for (String key : tripLocationMap.keySet()) {
             HashMap<String, List<LatLng>> locationMap = tripLocationMap.get(key);
-            for(String name:locationMap.keySet()){
+            for (String name : locationMap.keySet()) {
                 List<LatLng> latLngList = locationMap.get(name);
                 getRoutePoints(latLngList, name, key);
 
+                // Accumulate coordinates for the central point
+                for (LatLng latLng : latLngList) {
+                    sumLat += latLng.latitude;
+                    sumLng += latLng.longitude;
+                    count++;
+                }
             }
+        }
+
+        // Calculate the central point
+        if (count > 0) {
+            double centralLat = sumLat / count;
+            double centralLng = sumLng / count;
+            LatLng centralPoint = new LatLng(centralLat, centralLng);
+
+            // Move camera to the central point with a fixed zoom level
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(centralPoint, 10)); // Adjust zoom level as needed
         }
 
         // Set marker click listener
@@ -295,6 +318,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
         // Show the bottom sheet when the map is ready
         showPastTripsBottomSheetIfPossible();
     }
+
 
     // Recommended method to generate new LayoutDemoFragment
     // Instead of calling new LayoutDemoFragment() directly
