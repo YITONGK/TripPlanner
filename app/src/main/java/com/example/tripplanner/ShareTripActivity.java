@@ -3,10 +3,8 @@ package com.example.tripplanner;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -74,7 +72,6 @@ public class ShareTripActivity  extends AppCompatActivity {
             Bitmap bitmap = barcodeEncoder.encodeBitmap(tripId, com.google.zxing.BarcodeFormat.QR_CODE, 400, 400);
             return bitmap;
         } catch(Exception e) {
-            Log.d("PLAN", "Error generating QR code: " + e.getMessage());
             return null;
         }
     }

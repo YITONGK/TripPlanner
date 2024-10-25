@@ -3,16 +3,10 @@ package com.example.tripplanner.adapter;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
-
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 
 import com.example.tripplanner.R;
 import com.example.tripplanner.entity.Location;
-
-import org.json.JSONArray;
-import org.json.JSONException;
 
 import java.util.List;
 
@@ -39,10 +33,6 @@ public class ButtonDecorator {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public void clearAllButtons() {
-        linearLayout.removeAllViews();
     }
 
     public void addSingleButton(String location, int index) {

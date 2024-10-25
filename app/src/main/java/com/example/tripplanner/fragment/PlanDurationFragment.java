@@ -7,7 +7,6 @@ import java.util.Collections;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,7 +48,6 @@ public class PlanDurationFragment extends Fragment {
         super.onAttach(context);
         try {
             mListener = (OnFragmentInteractionListener) context;
-            Log.d("PlanDurationFragment", "onAttach: mListener set");
         } catch (ClassCastException e) {
             throw new ClassCastException(context.toString()
                     + " must implement OnFragmentInteractionListener");
@@ -138,13 +136,11 @@ public class PlanDurationFragment extends Fragment {
                 materialCalendarView.clearSelection();
                 if (pressCount == 0) {
                     // choose start date
-//                    Log.d("presscount0", "Current press count0: " + pressCount);
                     startDate = date;
                     rangeDecorator.setDateRange(Collections.singletonList(startDate));
                     endDate = date;
                     pressCount += 1;
                 } else if (pressCount == 1) {
-//                    Log.d("presscount1", "Current press count1: " + pressCount);
                     // choose end date
                     if (date.isBefore(startDate)) {
                         // if end date earlier than start date, replace start date to end date
@@ -168,7 +164,6 @@ public class PlanDurationFragment extends Fragment {
                     }
                 } else if (pressCount == 2) {
                     // choose again
-//                    Log.d("presscount2", "Current press count2: " + pressCount);
                     startDate = date;
                     endDate = null;
                     rangeDecorator.setDateRange(Collections.singletonList(startDate));

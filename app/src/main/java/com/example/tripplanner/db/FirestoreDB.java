@@ -1,7 +1,5 @@
 package com.example.tripplanner.db;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 
 import com.example.tripplanner.entity.ActivityItem;
@@ -22,15 +20,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class FirestoreDB {
 
@@ -87,9 +82,6 @@ public class FirestoreDB {
 
                     List<Trip> trips = new ArrayList<>();
                     for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
-                        Log.d("PLAN", String.valueOf(document));
-                        // Trip trip = document.toObject(Trip.class);
-                        // trips.add(trip);
                         try {
                             // Manually parse the fields
                             String name = document.getString("name");
@@ -120,7 +112,7 @@ public class FirestoreDB {
                             trip.setPlans(plans);
                             trips.add(trip);
                         } catch (Exception e) {
-                            Log.e("PLAN", "Error parsing trip document", e);
+                            e.printStackTrace();
                         }
                     }
                     onSuccessListener.onSuccess(trips);
@@ -139,9 +131,6 @@ public class FirestoreDB {
 
                     List<Trip> trips = new ArrayList<>();
                     for (DocumentSnapshot document : queryDocumentSnapshots.getDocuments()) {
-                        Log.d("PLAN", String.valueOf(document));
-                        // Trip trip = document.toObject(Trip.class);
-                        // trips.add(trip);
                         try {
                             // Manually parse the fields
                             String name = document.getString("name");
@@ -172,7 +161,7 @@ public class FirestoreDB {
                             trip.setPlans(plans);
                             trips.add(trip);
                         } catch (Exception e) {
-                            Log.e("PLAN", "Error parsing trip document", e);
+                            e.printStackTrace();
                         }
                     }
                     onSuccessListener.onSuccess(trips);
@@ -185,13 +174,11 @@ public class FirestoreDB {
                 .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                     @Override
                     public void onSuccess(DocumentReference documentReference) {
-                        Log.d("PLAN", "DocumentSnapshot written with ID: " + documentReference.getId());
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.w("PLAN", "Error adding document", e);
                     }
                 });
         ;
@@ -204,7 +191,6 @@ public class FirestoreDB {
                 .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
                     @Override
                     public void onSuccess(DocumentReference documentReference) {
-                        Log.d("PLAN", "DocumentSnapshot written with ID: " + documentReference.getId());
                         // Update the original Trip object with the new ID
                         trip.setId(documentReference.getId());
 
@@ -215,7 +201,6 @@ public class FirestoreDB {
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.w("PLAN", "Error adding document", e);
                     }
                 });
         ;
@@ -224,13 +209,11 @@ public class FirestoreDB {
     public void getTripByTripId(String tripId, OnSuccessListener<Trip> onSuccessListener,
             OnFailureListener onFailureListener) {
         if (tripId == null || tripId.isEmpty()) {
-            Log.e("FirestoreDB", "Invalid trip ID: " + tripId);
             if (onFailureListener != null) {
                 onFailureListener.onFailure(new IllegalArgumentException("Trip ID cannot be null or empty"));
             }
             return;
         }
-        Log.d("FirestoreDB", tripId);
         firestore.collection("trips")
                 .document(tripId)
                 .get()
@@ -311,7 +294,6 @@ public class FirestoreDB {
 
                             onSuccessListener.onSuccess(trip);
                         } catch (Exception e) {
-                            Log.e("PLAN", "Error parsing trip document", e);
                             onFailureListener.onFailure(e);
                         }
                     } else {
@@ -356,7 +338,7 @@ public class FirestoreDB {
                                 }
                             }
                         } catch (Exception e) {
-                            Log.e("PLAN", "Error parsing trip document", e);
+                            e.printStackTrace();
                             // Continue to next trip
                         }
                     }
@@ -383,31 +365,26 @@ public class FirestoreDB {
                         if (userIds == null || userIds.isEmpty()) {
                             // Delete the trip if no users are left
                             tripRef.delete().addOnSuccessListener(aVoid2 -> {
-                                Log.d("PLAN", "Trip with ID: " + tripId + " has been successfully deleted.");
                                 if (onSuccessListener != null) {
                                     onSuccessListener.onSuccess(aVoid2);
                                 }
                             }).addOnFailureListener(e -> {
-                                Log.e("PLAN", "Error deleting trip with ID: " + tripId, e);
                                 if (onFailureListener != null) {
                                     onFailureListener.onFailure(e);
                                 }
                             });
                         } else {
-                            Log.d("PLAN", "User " + userId + " removed from trip with ID: " + tripId);
                             if (onSuccessListener != null) {
                                 onSuccessListener.onSuccess(aVoid);
                             }
                         }
                     }).addOnFailureListener(e -> {
-                        Log.e("PLAN", "Error fetching trip with ID: " + tripId, e);
                         if (onFailureListener != null) {
                             onFailureListener.onFailure(e);
                         }
                     });
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("PLAN", "Error removing user from trip with ID: " + tripId, e);
                     if (onFailureListener != null) {
                         onFailureListener.onFailure(e);
                     }
@@ -421,13 +398,11 @@ public class FirestoreDB {
 
         tripRef.update("userIds", FieldValue.arrayUnion(newUserId))
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("PLAN", "User " + newUserId + " added to trip with ID: " + tripId);
                     if (onSuccessListener != null) {
                         onSuccessListener.onSuccess(aVoid);
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("PLAN", "Error adding user to trip with ID: " + tripId, e);
                     if (onFailureListener != null) {
                         onFailureListener.onFailure(e);
                     }
@@ -451,13 +426,11 @@ public class FirestoreDB {
         firestore.collection("users").document(userId)
                 .set(userData)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("FirestoreDB", "User with ID: " + userId + " has been successfully updated.");
                     if (onSuccessListener != null) {
                         onSuccessListener.onSuccess(aVoid);
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("FirestoreDB", "Error updating user with ID: " + userId, e);
                     if (onFailureListener != null) {
                         onFailureListener.onFailure(e);
                     }
@@ -480,7 +453,6 @@ public class FirestoreDB {
                             User user = new User(userId, username, email, preference);
                             onSuccessListener.onSuccess(user);
                         } catch (Exception e) {
-                            Log.e("FirestoreDB", "Error parsing user document", e);
                             onFailureListener.onFailure(e);
                         }
                     } else {
@@ -488,24 +460,6 @@ public class FirestoreDB {
                     }
                 })
                 .addOnFailureListener(onFailureListener);
-    }
-
-    public void createUser(User user, OnSuccessListener<Void> onSuccessListener,
-                           OnFailureListener onFailureListener) {
-        Map<String, Object> userData = user.convertUserToMap();
-        firestore.collection("users").add(userData)
-                .addOnSuccessListener(documentReference -> {
-                    Log.d("FirestoreDB", "User created with ID: " + documentReference.getId());
-                    if (onSuccessListener != null) {
-                        onSuccessListener.onSuccess(null); // or pass any relevant data
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("FirestoreDB", "Error creating user", e);
-                    if (onFailureListener != null) {
-                        onFailureListener.onFailure(e);
-                    }
-                });
     }
 
 }

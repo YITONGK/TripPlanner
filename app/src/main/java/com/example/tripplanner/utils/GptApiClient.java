@@ -1,22 +1,13 @@
 package com.example.tripplanner.utils;
 
-import android.os.Handler;
-import android.os.Looper;
-import android.util.Log;
-
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.entity.Trip;
-import com.example.tripplanner.entity.Weather;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.FetchPlaceRequest;
-import com.google.android.libraries.places.api.net.FetchPlaceResponse;
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.firebase.Timestamp;
@@ -80,8 +71,6 @@ public class GptApiClient {
             "- Please ensure that the location is real and exists. \n"+
             "- Please take the weather forecast into account when making your plans. If it's going to rain, plan indoor activities."+
             "- Please consider the trip plans outlined for each day in the context. Make sure there are no duplicate activities in your plan.";
-//            "- Please ensure that the returned data is wrapped in {}. \n" +
-//            "- Please do not output any prompt words or markdown code format such as ```json. \n";
 
     private static final String SHAKE_PROMPT = "You are a trip planner generating activity items for one day in a trip based on the following details which will be given by users:\n"+
             "- Nearby places\n"+
@@ -107,7 +96,6 @@ public class GptApiClient {
     }
 
     public static void getChatCompletion(String prompt, String userMessage, GptApiCallback callback) {
-        Log.d("PLAN", "[getChatCompletion] START");
         OkHttpClient client = new OkHttpClient();
         JSONObject jsonObject = new JSONObject();
         try {
@@ -121,12 +109,8 @@ public class GptApiClient {
                     .put("content", userMessage)));
         } catch (Exception e) {
             callback.onFailure(e.getMessage());
-            Log.d("PLAN", "[getChatCompletion]"+e.getMessage());
             return;
         }
-
-        Log.d("PLAN", "[getChatCompletion] Data ready");
-
         RequestBody body = RequestBody.create(MediaType.parse("application/json"), jsonObject.toString());
         Request request = new Request.Builder()
                 .url(GPT_API_URL)
@@ -134,21 +118,16 @@ public class GptApiClient {
                 .addHeader("Authorization", "Bearer " + API_KEY)
                 .build();
 
-        Log.d("PLAN", "[getChatCompletion] Got response");
-
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Request request, IOException e) {
                 callback.onFailure(e.getMessage());
-                Log.d("PLAN", "[getChatCompletion]"+e.getMessage());
             }
 
             @Override
             public void onResponse(Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    Log.d("GptApiClient", "[getChatCompletion] success");
                     String responseBody = response.body().string();
-                    Log.d("GptApiClient", "Response: " + responseBody);
 
                     try {
                         JSONObject jsonResponse = new JSONObject(responseBody);
@@ -162,13 +141,6 @@ public class GptApiClient {
                             callback.onFailure("Response was too long and incomplete.");
                             return;
                         }
-
-//                        if (message.has("refusal")) {
-//                            // Handle refusal
-//                            String refusalReason = message.getString("refusal");
-//                            callback.onFailure("Request refused: " + refusalReason);
-//                            return;
-//                        }
 
                         if ("content_filter".equals(finishReason)) {
                             // Handle content filter
@@ -188,7 +160,6 @@ public class GptApiClient {
 
 
                 } else {
-                    Log.d("PLAN", "[getChatCompletion] failed: "+response.message());
                     callback.onFailure(response.message());
                 }
             }
@@ -203,8 +174,6 @@ public class GptApiClient {
             "- User Preferences: " + userPreferences + "\n" +
             "- Context: " + tripData + "\n";
 
-        Log.d("PlanFragment", "User Message: "+userMessage);
-
         getChatCompletion(RECOMMENDATION_PROMPT, userMessage, callback);
     }
 
@@ -216,14 +185,11 @@ public class GptApiClient {
                     .append("\n");
         }
         String placesString = placesStringBuilder.toString();
-        Log.d("SENSOR", "Places: " + placesString);
 
         String userMessage =
                 "- Nearby places: " + placesString + "\n"+
                 "- Environment: " + sensorData +  "\n" +
                 "- User Preferences: " + userPreferences + "\n\n";
-
-        Log.d("PlanFragment", "User Message: "+userMessage);
 
         getChatCompletion(SHAKE_PROMPT, userMessage, callback);
     }
@@ -240,7 +206,7 @@ public class GptApiClient {
             response = cleanJsonResponse(response);
             value = new JSONObject(response).optString(key, "New");
         } catch (JSONException e){
-            Log.d("GptApiClient", "[getStringFromJsonResponse] Invalid json");
+            e.printStackTrace();
         }
         return value;
     }
@@ -269,8 +235,6 @@ public class GptApiClient {
                 "- Weather Forecast: " + weather + "\n" +
                 "- Distance Matrix: " + distanceMatrix + "\n" +
                 "- Context: " + tripData + "\n\n";
-
-        Log.d("PlanFragment", "User Message: "+userMessage);
 
         getChatCompletion(REPLAN_PROMPT, userMessage, callback);
     }
@@ -319,8 +283,6 @@ public class GptApiClient {
                     public void onPlaceFetched(Location location) {
                         activityItem.setLocation(location);
                         activityItems.add(activityItem);
-                        Log.d("GptApiClient", "Add into activity: " + activityItem);
-
                         if (remainingItems.decrementAndGet() == 0) {
                             listener.onActivityItemsParsed(activityItems);
                         }
@@ -328,8 +290,6 @@ public class GptApiClient {
 
                     @Override
                     public void onError(String errorMessage) {
-                        Log.d("GptApiClient", "Error in finding location generated by gpt: " + finalLocationName);
-
                         if (remainingItems.decrementAndGet() == 0) {
                             listener.onActivityItemsParsed(activityItems);
                         }
@@ -338,7 +298,6 @@ public class GptApiClient {
                 });
             }
         } catch (JSONException e) {
-            Log.d("GptApiClient", "Error in parseActivityItemsFromJson: " + e.getMessage());
             listener.onActivityItemsParsed(activityItems);
         }
         return activityItems;
@@ -380,16 +339,13 @@ public class GptApiClient {
                                     listener.onPlaceFetched(location);
                                 })
                                 .addOnFailureListener(e -> {
-                                    Log.d("GptApiClient", "Error fetching place details for ID: " + placeId);
                                     listener.onPlaceFetched(null);
                                 });
                     } else {
-                        Log.d("GptApiClient", "No autocomplete predictions found for: " + locationName);
                         listener.onPlaceFetched(null);
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.d("GptApiClient", "Error finding autocomplete predictions for: " + locationName);
                     listener.onPlaceFetched(null);
                 });
     }

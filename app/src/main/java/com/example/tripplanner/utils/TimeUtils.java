@@ -1,7 +1,5 @@
 package com.example.tripplanner.utils;
 
-import android.util.Log;
-
 import com.google.firebase.Timestamp;
 
 import java.text.ParseException;
@@ -36,7 +34,7 @@ public class TimeUtils {
                 return new Timestamp(date);
             }
         } catch (ParseException e) {
-            Log.e("PLAN", "Error parsing date string", e);
+            e.printStackTrace();
         }
         return null;
     }

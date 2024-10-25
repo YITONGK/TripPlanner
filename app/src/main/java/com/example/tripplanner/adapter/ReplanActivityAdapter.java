@@ -1,7 +1,6 @@
 package com.example.tripplanner.adapter;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,7 +10,6 @@ import android.widget.TextView;
 import com.example.tripplanner.R;
 import com.example.tripplanner.entity.ActivityItem;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ReplanActivityAdapter extends ArrayAdapter<ActivityItem> {
