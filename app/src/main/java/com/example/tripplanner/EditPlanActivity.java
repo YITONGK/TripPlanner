@@ -319,6 +319,7 @@ public class EditPlanActivity extends AppCompatActivity {
             dayAndNightText = days + " days and " + (days - 1) + " nights";
         }
         Date endDateMinusOneDay = new Date(trip.getEndDate().toDate().getTime() - TimeUnit.DAYS.toMillis(1));
+
         Timestamp adjustedEndDate = new Timestamp(endDateMinusOneDay);
         dayAndNightText = dayAndNightText + "\n" + formatTimestamp(trip.getStartDate()) + " ~ " + formatTimestamp(adjustedEndDate);
         TextView daysAndNight = findViewById(R.id.textViewDaysAndNights);

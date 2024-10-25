@@ -12,6 +12,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -50,7 +51,7 @@ public class SensorDetector implements SensorEventListener {
     
     // Shake Sensor and Threshold
     private Sensor accelerometer;
-    private static final float SHAKE_THRESHOLD = 2.0f;
+    private static final float SHAKE_THRESHOLD = 1.5f;
     private static final int SHAKE_WAIT_TIME_MS = 3000;
     private static boolean isShaken = false;
     private long mShakeTime = 0;
