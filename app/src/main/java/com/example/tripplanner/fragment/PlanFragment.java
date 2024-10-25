@@ -28,7 +28,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -137,7 +136,7 @@ public class PlanFragment extends Fragment
     public static List<Location> locationList;
     public static Timestamp endDate;
     public static String trafficMode;
-    private int lastingDays;
+    public static int lastingDays;
 
     private PlacesClient placesClient;
     private AutocompleteAdapter autocompleteAdapter;
@@ -201,6 +200,7 @@ public class PlanFragment extends Fragment
                     PlanFragment.startDate = trip.getStartDate();
                     PlanFragment.endDate = trip.getEndDate();
                     PlanFragment.trafficMode = trip.getTrafficMode();
+                    PlanFragment.lastingDays = trip.getLastingDays();
 
                     if (layout == PLAN_SPECIFIC_DAY && dayIndex >= 0) {
                         preparePlanItems();
@@ -241,6 +241,12 @@ public class PlanFragment extends Fragment
                     PlanFragment.startDate = trip.getStartDate();
                     PlanFragment.endDate = trip.getEndDate();
                     PlanFragment.trafficMode = trip.getTrafficMode();
+                    PlanFragment.lastingDays = trip.getLastingDays();
+
+                    if (layout == OVERVIEW) {
+                        weatherAPIClient = new WeatherAPIClient();
+                        fetchAndDisplayWeatherData(view);
+                    }
 
                     if (layout == PLAN_SPECIFIC_DAY && dayIndex >= 0) {
                         preparePlanItems();
@@ -259,11 +265,6 @@ public class PlanFragment extends Fragment
         if (this.layout == PLAN_SPECIFIC_DAY) {
             rootView = inflater.inflate(R.layout.plan_specific_day, container, false);
 
-            if (endDate != null && endDate.compareTo(Timestamp.now()) < 0) {
-                ImageButton planSuggest = rootView.findViewById(R.id.planSuggest);
-                planSuggest.setVisibility(View.GONE);
-            }
-
             addActivityLocation = rootView.findViewById(R.id.addActivityLocation);
             planSuggestButton = rootView.findViewById(R.id.planSuggest);
             textViewAddActivity = rootView.findViewById(R.id.textView_add_activity);
@@ -275,6 +276,10 @@ public class PlanFragment extends Fragment
             planSuggestOptionsLayout = rootView.findViewById(R.id.planSuggestOptionsLayout);
             buttonAISuggest = rootView.findViewById(R.id.buttonAISuggest);
             buttonAIReplan = rootView.findViewById(R.id.buttonAIReplan);
+
+            if (endDate != null && endDate.compareTo(Timestamp.now()) < 0) {
+                planSuggestOptionsLayout.setVisibility(View.GONE);
+            }
 
             if (activityItemArray == null || activityItemArray.isEmpty()) {
                 showInstruction(View.VISIBLE);
@@ -1006,6 +1011,9 @@ public class PlanFragment extends Fragment
         weatherAdapter = new WeatherAdapter(rootView.getContext(), allWeatherData);
         recyclerView.setAdapter(weatherAdapter);
 
+        allWeatherData.clear();
+        weatherAdapter.notifyDataSetChanged();
+
         if (locationList == null) {
             return;
         }
@@ -1037,8 +1045,9 @@ public class PlanFragment extends Fragment
             Duration duration = Duration.between(start, stop);
 
             int startDateIndex = (int) duration.toDays();
-            Log.d("start date index", String.valueOf(startDateIndex));
             int endDateIndex = startDateIndex + lastingDays;
+
+
 
             // Adjust start index if today is after start date
             if (startDateIndex < 0) {
