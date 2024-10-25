@@ -4,9 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -23,7 +21,6 @@ import androidx.fragment.app.FragmentTransaction;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.view.LayoutInflater;
 import android.widget.Toast;
 
 import com.example.tripplanner.db.FirestoreDB;
@@ -31,34 +28,23 @@ import com.example.tripplanner.fragment.NumberPickerFragment;
 import com.example.tripplanner.utils.TimeUtils;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.auth.FirebaseAuth;
-import com.prolificinteractive.materialcalendarview.CalendarDay;
-import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
-import com.shawnlin.numberpicker.NumberPicker;
-
 import com.example.tripplanner.databinding.ActivityPlanSettingBinding;
 
-import java.sql.Time;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Objects;
 
 public class PlanSettingActivity extends AppCompatActivity implements NumberPickerFragment.OnNumberSelectedListener {
 
     private ActivityPlanSettingBinding binding;
     private EditText editTripName;
-    private TextView editTrafficMode;
     private TextView timeDuration;
     private int days;
     private String startDate;
 
     private TextView startDateTitle;
-//    private MaterialCalendarView calendarView;
     private TextView textViewStartDate;
-//    private Button buttonDone;
-//    private CalendarDay selectedDate;
+    private TextView trafficModeTitle;
+    private TextView editTrafficMode;
     private String selectedDateString;
 
     @SuppressLint("SetTextI18n")
@@ -77,6 +63,7 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         editTripName = findViewById(R.id.edit_trip_name);
         editTripName.setText(getIntent().getStringExtra("tripName"));
 
+        trafficModeTitle = findViewById(R.id.traffic_mode);
         editTrafficMode = findViewById(R.id.edit_traffic_mode);
         editTrafficMode.setText(getIntent().getStringExtra("trafficMode"));
         editTrafficMode.setOnClickListener(v -> {
@@ -86,8 +73,6 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
         timeDuration = findViewById(R.id.edit_time_duration);
         startDateTitle = findViewById(R.id.calendar_title);
         textViewStartDate = findViewById(R.id.edit_start_date);
-//        calendarView = findViewById(R.id.calendar_view);
-//        buttonDone = findViewById(R.id.button_done);
 
         // get intent extras
         days = getIntent().getIntExtra("days", 0);
@@ -105,10 +90,11 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
             loadNumberPickerFragment();
             startDateTitle.setVisibility(View.GONE);
             textViewStartDate.setVisibility(View.GONE);
+            trafficModeTitle.setVisibility(View.GONE);
+            editTrafficMode.setVisibility(View.GONE);
         });
 
         textViewStartDate.setOnClickListener(v -> {
-            // textViewStartDate.setVisibility(View.GONE);
             showDatePickerDialog();
         });
 
@@ -195,6 +181,8 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
 
         startDateTitle.setVisibility(View.VISIBLE);
         textViewStartDate.setVisibility(View.VISIBLE);
+        trafficModeTitle.setVisibility(View.VISIBLE);
+        editTrafficMode.setVisibility(View.VISIBLE);
     }
 
     private void confirmAndDeleteTrip(String tripId) {
@@ -220,8 +208,6 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
                     @Override
                     public void onSuccess(Void aVoid) {
                         // Handle successful deletion
-                        Log.d("PLAN", "Trip successfully deleted.");
-
                         // After deletion, return to MainActivity
                         runOnUiThread(new Runnable() {
                             @Override
@@ -248,8 +234,6 @@ public class PlanSettingActivity extends AppCompatActivity implements NumberPick
                 }, new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        // Handle deletion failure
-                        Log.e("PLAN", "Error deleting trip", e);
                     }
                 });
             }

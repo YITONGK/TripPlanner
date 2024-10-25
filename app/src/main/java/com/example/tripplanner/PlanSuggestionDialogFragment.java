@@ -10,7 +10,6 @@ import androidx.appcompat.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
-import com.example.tripplanner.R;
 
 public class PlanSuggestionDialogFragment extends DialogFragment {
 

@@ -14,17 +14,14 @@ import android.graphics.Rect;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -37,19 +34,15 @@ import com.codebyashish.googledirectionapi.RouteInfoModel;
 import com.codebyashish.googledirectionapi.RouteListener;
 import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.MainActivity;
-import com.example.tripplanner.MapActivity;
-import com.example.tripplanner.PlanSettingActivity;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.AllPlanAdapter;
 import com.example.tripplanner.adapter.AllPlanInterface;
 import com.example.tripplanner.db.FirestoreDB;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.Trip;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.AdvancedMarkerOptions;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -61,17 +54,13 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.gson.Gson;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -89,7 +78,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
     private GoogleMap mMap;
 
     private ArrayList<Trip> allPlans = new ArrayList<>();
-//    private List<LatLng> pointList = new ArrayList<>();
     private HashMap<String, HashMap<String, List<LatLng>>> tripLocationMap = new HashMap<>();
     private AllPlanAdapter adapter;
 
@@ -115,7 +103,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                 FirebaseUser currentUser = mAuth.getCurrentUser();
                 FirestoreDB firestoreDB = FirestoreDB.getInstance();
 
-
                 firestoreDB.getPastTripsByUserId(currentUser.getUid(), trips -> {
                     for (Trip trip : trips) {
                         Set<String> keys = trip.getPlans().keySet();
@@ -123,7 +110,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                         Map<String, List<ActivityItem>> plans = trip.getPlans();
                         for (String key: keys){
                             List<com.example.tripplanner.entity.ActivityItem> rawActivityItems = trip.getPlans().get(key);
-                            Log.d("test", "rawActivityItems: "+rawActivityItems.getClass());
                             for (Object item : rawActivityItems) {
                                 String input = item.toString();
                                 String latitudeRegex = "latitude=([-+]?[0-9]*\\.?[0-9]+)";
@@ -153,7 +139,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     mapFragment.getMapAsync(this);
 
                 }, e -> {
-                    Log.d("DEBUG", "Error in getting past trips");
                 });
             }
         } else {
@@ -189,7 +174,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
             FirestoreDB firestoreDB = FirestoreDB.getInstance();
             firestoreDB.getTripsByUserId(userId, trips -> {
                 // Handle the list of trips
-                Log.d("PLAN", "getting trips: " + trips.size());
                 allPlans.clear();
                 allPlans.addAll(trips);
                 adapter.notifyDataSetChanged();
@@ -197,7 +181,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                 // display instruction if no trips in current account
                 TextView instruction = rootView.findViewById(R.id.instruction);
                 ImageView arrow = rootView.findViewById(R.id.instructionArrow);
-                Log.d("all plan count", String.valueOf(allPlans.size()));
                 if (!allPlans.isEmpty()) {
                     arrow.setVisibility(View.INVISIBLE);
                     instruction.setVisibility(View.INVISIBLE);
@@ -206,14 +189,8 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     instruction.setVisibility(View.VISIBLE);
                 }
 
-                for (Trip trip : trips) {
-                    Log.d("PLAN", "Trip: " + trip.toString());
-                }
             }, e -> {
-                Log.d("PLAN", "Error getting trips: " + e.getMessage());
             });
-        } else {
-            Log.d("Debug", "No user is signed in.");
         }
 
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
@@ -269,7 +246,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     @Override
                     public void onSuccess(Void aVoid) {
                         // Handle successful deletion
-                        Log.d("PLAN", "Trip successfully deleted.");
                         Intent intent = new Intent(getContext(), MainActivity.class);
                         startActivity(intent);
                     }
@@ -277,7 +253,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     @Override
                     public void onFailure(@NonNull Exception e) {
                         // Handle deletion failure
-                        Log.e("PLAN", "Error deleting trip", e);
                     }
                 });
             }
@@ -294,10 +269,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
             HashMap<String, List<LatLng>> locationMap = tripLocationMap.get(key);
             for(String name:locationMap.keySet()){
                 List<LatLng> latLngList = locationMap.get(name);
-                if (latLngList.size() > 1){
-                    Log.d("name", "name is "+ name);
-                    Log.d("latLngList", "onMapReady: "+ latLngList.get(0));
-                }
                 getRoutePoints(latLngList, name, key);
 
             }
@@ -320,42 +291,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
             }
         });
 
-//        Log.d("HomeFragment", "onMapReady called, map is ready");
-//        LatLng sydney = new LatLng(-34, 151);
-//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 10));
-//        LatLng sydney = new LatLng(-34, 151);
-//
-//        // Get the current location
-//        Location currentLocation = getCurrentLocation();
-//        if (currentLocation != null) {
-//            LatLng currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-//            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15)); // Zoom level can be adjusted
-//        } else {
-//            // Fallback to a default location if current location is not available
-//            mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-//        }
-//
-//        // mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in
-//        // Sydney"));
-//        TextView textView = new TextView(this.getContext());
-//        textView.setText("Hello!!");
-//        textView.setBackgroundColor(Color.BLACK);
-//        textView.setTextColor(Color.YELLOW);
-//
-//        Marker marker = mMap.addMarker(
-//                new AdvancedMarkerOptions()
-//                        .position(sydney)
-//                        .iconView(textView));
-//        marker.setTag(0);
-
-        // getCurrentLocation();
-
-        // LatLng PERTH = new LatLng(-31.952854, 115.857342);
-        // Marker markerPerth = mMap.addMarker(new MarkerOptions()
-        // .position(PERTH)
-        // .title("Perth"));
-        // markerPerth.setTag(0);
         shouldShowPastTripsBottomSheet = true;
         // Show the bottom sheet when the map is ready
         showPastTripsBottomSheetIfPossible();
@@ -374,8 +309,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
     @Override
     public void onItemClick(int position) {
         // Navigate to specific plan detail page
-        Log.d("TAG", "click on card");
-        Log.d("TAG", getActivity().toString());
         Intent i = new Intent(getActivity(), EditPlanActivity.class);
         i.putExtra("tripId", allPlans.get(position).getId());
         i.putExtra("From", "Main");
@@ -392,7 +325,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
             return null;
         }
         Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        Log.d("SENSOR", "location: " + location);
         return location;
     }
 
@@ -428,12 +360,10 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     .withListener(new RouteListener() {
                         @Override
                         public void onRouteFailure(ErrorHandling e) {
-                            Log.e("HomeFragment", "Route calculation failed: " + e.getMessage());
                         }
 
                         @Override
                         public void onRouteStart() {
-                            Log.d("TAG", "yes started");
                         }
 
                         @Override
@@ -441,8 +371,6 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
 
                             PolylineOptions polylineOptions = new PolylineOptions();
                             int randomColor = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256));
-
-                            Log.d("RouteSuccess", "Drawing route for index: " + routeIndexing);
 
                             for (int i = 0; i < routeInfoModelArrayList.size(); i++) {
                                 if (i == routeIndexing) {
@@ -466,16 +394,14 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
 
                         @Override
                         public void onRouteCancelled() {
-                            Log.d("TAG", "route canceled");
                         }
                     })
                     .alternativeRoutes(true)
                     .waypoints(waypoints)
                     .build();
-            Log.d("HomeFragment", "Executing RouteDrawing");
             routeDrawing.execute();
         } catch (Exception e) {
-            Log.e("HomeFragment", "Error in RouteDrawing setup", e);
+            e.printStackTrace();
         }
     }
 
