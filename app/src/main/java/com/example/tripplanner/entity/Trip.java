@@ -1,13 +1,9 @@
 package com.example.tripplanner.entity;
 
 import com.example.tripplanner.R;
-import com.example.tripplanner.db.DatabaseInterface;
 import com.google.firebase.Timestamp;
 
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,15 +13,12 @@ import java.util.stream.Collectors;
 public class Trip {
     private String id;
     private String name;
-    // private LocalDate startDate;
-    // private LocalDate endDate;
     private Timestamp startDate;
     private Timestamp endDate;
     private int numDays;
     private List<Location> locations;
     private String note;
     private Map<String, List<ActivityItem>> plans;
-    private DatabaseInterface database;
     private List<String> userIds;
     private String trafficMode;
 
@@ -98,12 +91,6 @@ public class Trip {
         this.userIds = userIds;
     }
 
-    public void uploadTrip() {
-        Map<String, Object> tripData = convertTripToMap();
-        database.insert("trips", tripData); 
-        System.out.println("Uploading trip to database...");
-
-    }
 
     // Convert Trip object to Map for Firestore
     public Map<String, Object> convertTripToMap() {
@@ -112,7 +99,6 @@ public class Trip {
         map.put("startDate", startDate);
         map.put("endDate", endDate);
         map.put("numDays", numDays);
-        // map.put("locations", locations);
         map.put("locations", locations.stream()
                                           .map(Location::convertLocationToMap)
                                           .collect(Collectors.toList()));
@@ -232,7 +218,6 @@ public class Trip {
                 ", note='" + note + '\'' +
                 ", plans=" + plans +
                 ", traffic mode=" + trafficMode +
-                ", database=" + database +
                 ", userIds=" + userIds +
                 '}';
     }

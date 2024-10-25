@@ -27,7 +27,7 @@ public class PlacesClientProvider {
             adapter.notifyDataSetChanged();
         }).addOnFailureListener(exception -> {
             if (exception instanceof ApiException) {
-                ApiException apiException = (ApiException) exception;
+                exception.printStackTrace();
             }
         });
     }

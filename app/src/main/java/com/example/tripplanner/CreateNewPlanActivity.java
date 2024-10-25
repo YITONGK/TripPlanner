@@ -6,7 +6,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -18,7 +17,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.example.tripplanner.entity.Location;
 import com.example.tripplanner.utils.PlacesClientProvider;
-import com.example.tripplanner.utils.GptApiClient;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
@@ -86,34 +84,6 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             }
         });
 
-//        Button gptPlanButton = findViewById(R.id.gptPlanButton);
-//        gptPlanButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                String userInput = editTextMessage.getText().toString().trim();
-//                if (!userInput.isEmpty()) {
-//                    GptApiClient.getTripPlan("Melbourne", new GptApiClient.GptApiCallback() {
-//                        @Override
-//                        public void onSuccess(String response) {
-//                            runOnUiThread(() -> {
-//                                // Parse and display the response
-//                                Toast.makeText(CreateNewPlanActivity.this, "GPT Response: " + response, Toast.LENGTH_LONG).show();
-//                            });
-//                        }
-//
-//                        @Override
-//                        public void onFailure(String error) {
-//                            runOnUiThread(() -> {
-//                                Toast.makeText(CreateNewPlanActivity.this, "Error: " + error, Toast.LENGTH_LONG).show();
-//                            });
-//                        }
-//                    });
-//                } else {
-//                    Toast.makeText(CreateNewPlanActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
-//                }
-//            }
-//        });
-
     }
 
     private void fetchPlaceFromPlaceId(String placeId) {
@@ -133,8 +103,6 @@ public class CreateNewPlanActivity extends AppCompatActivity {
             handlePlaceSelection(place);
         }).addOnFailureListener((exception) -> {
             if (exception instanceof ApiException) {
-                ApiException apiException = (ApiException) exception;
-                int statusCode = apiException.getStatusCode();
                 Toast.makeText(CreateNewPlanActivity.this, "Place not found: " + exception.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
@@ -163,8 +131,6 @@ public class CreateNewPlanActivity extends AppCompatActivity {
                 place.getLatLng().longitude,
                 country
         );
-
-        Log.d("new_location", loc.toString());
 
         intent.putExtra("selectedPlace", loc);
 

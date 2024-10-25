@@ -1,9 +1,7 @@
 package com.example.tripplanner;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,12 +17,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthResult;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.UserProfileChangeRequest;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.util.HashMap;
-import java.util.Map;
 
 public class SignupActivity extends AppCompatActivity {
     private ActivitySignupBinding binding;
@@ -40,8 +34,6 @@ public class SignupActivity extends AppCompatActivity {
 
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
-
-
 
         TextView username = (TextView) findViewById(R.id.username);
         TextView email = (TextView) findViewById(R.id.emailAddress);
@@ -100,7 +92,6 @@ public class SignupActivity extends AppCompatActivity {
                                         .addOnSuccessListener(new OnSuccessListener<Void>() {
                                             @Override
                                             public void onSuccess(Void aVoid) {
-                                                Log.d("TAG", "User document added with UID: " + uid);
                                                 Toast.makeText(SignupActivity.this, "Sign up successfully", Toast.LENGTH_SHORT).show();
                                                 // Navigate to MainActivity
                                                 Intent intent = new Intent(SignupActivity.this, MainActivity.class);
@@ -110,14 +101,12 @@ public class SignupActivity extends AppCompatActivity {
                                         .addOnFailureListener(new OnFailureListener() {
                                             @Override
                                             public void onFailure(@NonNull Exception e) {
-                                                Log.w("TAG", "Error adding user document", e);
                                                 Toast.makeText(SignupActivity.this, "Failed to add user to Firestore", Toast.LENGTH_SHORT).show();
                                             }
                                         });
                             }
                         } else {
                             // If sign up fails, display a message to the user
-                            Log.w("TAG", "createUserWithEmail:failure", task.getException());
                             Toast.makeText(SignupActivity.this, "Authentication failed: " + task.getException().getMessage(),
                                     Toast.LENGTH_SHORT).show();
                         }

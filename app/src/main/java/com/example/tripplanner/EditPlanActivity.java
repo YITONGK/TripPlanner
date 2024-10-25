@@ -73,7 +73,6 @@ public class EditPlanActivity extends AppCompatActivity {
             fetchTripData(tripId);
         } else {
             // Handle the case where neither tripId nor planDetails are provided
-            Log.d("TAG", "No trip ID or plan details provided.");
             // Optionally, finish the activity or show an error message
             finish();
         }
@@ -95,8 +94,6 @@ public class EditPlanActivity extends AppCompatActivity {
     private void fetchTripData(String tripId) {
         FirestoreDB firestoreDB = FirestoreDB.getInstance();
         firestoreDB.getTripByTripId(tripId, this::onTripDataFetched, e -> {
-            Log.d("PLAN", "Error getting trip by trip ID: " + e.getMessage());
-            // Handle the error appropriately (e.g., show an error message to the user)
         });
     }
 
@@ -126,7 +123,6 @@ public class EditPlanActivity extends AppCompatActivity {
         if (sb.length() > 0) {
             sb.setLength(sb.length() - 2);
         }
-        selectedPlace = sb.toString();
         startDate = trip.getStartDate();
         days = trip.getNumDays();
         trafficMode = trip.getTrafficMode();
@@ -245,7 +241,6 @@ public class EditPlanActivity extends AppCompatActivity {
         tabLayout.addTab(tabLayout.newTab().setText("Overview"));
         PlanFragment overviewFragment = PlanFragment.newInstance(PlanFragment.OVERVIEW, startDate, -1);
         overviewFragment.setLocationList(trip.getLocations());
-        overviewFragment.setStartDate(trip.getStartDate().toString());
         overviewFragment.setLastingDays(days);
         transaction.add(R.id.fragmentContainerView, overviewFragment, "fragment_overview");
         fragments.add(overviewFragment);

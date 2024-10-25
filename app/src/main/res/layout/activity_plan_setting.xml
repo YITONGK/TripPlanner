@@ -67,39 +67,13 @@
         android:layout_marginEnd="8dp" />
 
     <TextView
-        android:id="@+id/traffic_mode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Traffic Mode"
-        android:textSize="24sp"
-        android:padding="8dp"
-        android:layout_below="@id/edit_trip_name"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp" />
-
-    <TextView
-        android:id="@+id/edit_traffic_mode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/traffic_mode"
-        android:layout_marginTop="8dp"
-        android:padding="8dp"
-        android:textSize="16sp"
-        android:background="@drawable/rounded_edittext"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:clickable="true"
-        android:focusable="false" />
-
-    <TextView
         android:id="@+id/time_duration"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Time Duration"
         android:textSize="24sp"
         android:padding="8dp"
-        android:layout_below="@id/edit_traffic_mode"
+        android:layout_below="@id/edit_trip_name"
         android:layout_marginTop="16dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp" />
@@ -202,5 +176,31 @@
             android:layout_marginStart="8dp" />
 
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/traffic_mode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Traffic Mode"
+        android:textSize="24sp"
+        android:padding="8dp"
+        android:layout_below="@id/edit_start_date"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp" />
+
+    <TextView
+        android:id="@+id/edit_traffic_mode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/traffic_mode"
+        android:layout_marginTop="8dp"
+        android:padding="8dp"
+        android:textSize="16sp"
+        android:background="@drawable/rounded_edittext"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:clickable="true"
+        android:focusable="false" />
 
 </RelativeLayout>

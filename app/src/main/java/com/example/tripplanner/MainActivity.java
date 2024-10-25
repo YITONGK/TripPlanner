@@ -24,7 +24,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
-import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.model.PlaceLikelihood;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
@@ -42,13 +41,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
-import androidx.navigation.ui.AppBarConfiguration;
 
 import com.example.tripplanner.databinding.ActivityMainBinding;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -75,10 +72,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
 
-    private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
 
-    private GoogleMap mMap;
     private PlacesClient placesClient;
 
     private SensorDetector sensorDetector;
@@ -106,8 +101,6 @@ public class MainActivity extends AppCompatActivity {
         if (currentUser != null) {
             uid = currentUser.getUid();
             loadUserProfile();
-        } else {
-            Log.e("MainActivity", "User not login");
         }
 
         handleIntent(getIntent());
@@ -129,6 +122,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // Setting for Navigation Bar
+        binding.navView.setSelectedItemId(R.id.navigation_plan);
         binding.navView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
             @SuppressLint("NonConstantResourceId")
             @Override
@@ -190,14 +184,12 @@ public class MainActivity extends AppCompatActivity {
                                 public void onClick(View v) {
                                     String tripID = tripIDView.getText().toString().trim();
                                     if (!tripID.isEmpty()) {
-                                        Log.d("SHARE", tripID);
                                         // Validate the trip ID
                                         FirestoreDB firestoreDB = FirestoreDB.getInstance();
                                         firestoreDB.getTripByTripId(tripID,
                                                 new OnSuccessListener<Trip>() {
                                                     @Override
                                                     public void onSuccess(Trip trip) {
-                                                        Log.d("IMPORT PLAN", "Trip ID Verified");
                                                         // Ensure currentUser is not null
                                                         FirebaseUser currentUser = FirebaseAuth.getInstance()
                                                                 .getCurrentUser();
@@ -207,8 +199,6 @@ public class MainActivity extends AppCompatActivity {
                                                             // Add user to the trip
                                                             firestoreDB.addUserToTrip(tripID, userId,
                                                                     (Void) -> {
-                                                                        Log.d("IMPORT PLAN",
-                                                                                "Successfully added user to trip");
                                                                         importPlanBottomSheet.dismiss();
                                                                         // Navigate to added trip details
                                                                         Intent i = new Intent(MainActivity.this,
@@ -217,21 +207,16 @@ public class MainActivity extends AppCompatActivity {
                                                                         i.putExtra("From", "Main");
                                                                         startActivity(i);
                                                                     },
-                                                                    e -> Log.e("IMPORT PLAN",
-                                                                            "Failed to add user to trip: "
-                                                                                    + e.getMessage()));
+                                                                    e -> {});
                                                         }
                                                     }
                                                 },
                                                 e -> {
-                                                    Log.d("IMPORT PLAN", "Trip ID Invalid: " + e.getMessage());
                                                     // Notify user of invalid trip ID
                                                     Toast.makeText(MainActivity.this,
                                                             "Invalid Trip ID. Please try again.", Toast.LENGTH_SHORT)
                                                             .show();
                                                 });
-                                    } else {
-                                        Log.e("SHARE", "Trip ID is empty");
                                     }
                                 }
                             });
@@ -277,32 +262,27 @@ public class MainActivity extends AppCompatActivity {
                         loadingDialog.show();
 
                         // Get current location and search nearby places
-                        Log.d("SENSOR", "Shake event detected");
                         sensorDetector.getCurrentLocation(location -> {
-                            Log.d("SENSOR", "Location: " + location);
                             searchNearbyPlaces(location, places -> {
 
                                 // Access temperature and humidity
                                 float temperature = sensorDetector.getAmbientTemperature();
                                 float humidity = sensorDetector.getRelativeHumidity();
                                 String sensorData = "Temperature: " + temperature + ", Humidity: " + humidity;
-                                Log.d("SENSOR", sensorData);
 
                                 AtomicReference<String> userPreferences = new AtomicReference<>("Enjoy cafe and bakery");
                                 FirestoreDB.getInstance().getUserById(FirestoreDB.getCurrentUserId(), (user) -> {
                                     userPreferences.set(user.getPreference());
                                 }, e -> {
-                                    Log.d("SENSOR", "Error in getting user ");
                                 });
 
-                                Log.d("SENSOR", "Places: " + places.get(0).getAddress());
                                 // Split the string by commas
                                 String country = "Australia";
                                 try {
                                     String[] parts = places.get(0).getAddress().split(",");
                                     country = parts[parts.length - 1].trim();
                                 } catch (Exception ex) {
-                                    Log.d("SENSOR", "Error: "+ex);
+                                    ex.printStackTrace();
                                 }
 
                                 String finalCountry = country;
@@ -311,7 +291,6 @@ public class MainActivity extends AppCompatActivity {
                                     public void onSuccess(String response) {
                                         // Handle the successful response here
                                         loadingDialog.dismiss();
-                                        Log.d("SENSOR", "Trip plan recommended: " + response);
 
                                         String tripName = GptApiClient.getStringFromJsonResponse(response, "tripName");
                                         
@@ -319,7 +298,6 @@ public class MainActivity extends AppCompatActivity {
                                         GptApiClient.parseActivityItemsFromJson(finalCountry, response, placesClient, new GptApiClient.OnActivityItemsParsedListener() {
                                             @Override
                                             public void onActivityItemsParsed(List<ActivityItem> recommendedActivities) {
-                                                Log.d("SENSOR", "RecommendActivities: "+recommendedActivities);
 
                                                 // Show a popup window to let users select which activities to add to plan
                                                 ListView listView = new ListView(MainActivity.this);
@@ -386,7 +364,6 @@ public class MainActivity extends AppCompatActivity {
                                     public void onFailure(String error) {
                                         // Handle the error here
                                         loadingDialog.dismiss();
-                                        Log.e("SENSOR", "Failed to recommend trip plan: " + error);
                                         Toast.makeText(MainActivity.this, "Failed to recommend trip plan", Toast.LENGTH_SHORT).show();
                                     }
                                     });
@@ -398,11 +375,6 @@ public class MainActivity extends AppCompatActivity {
                 .show();
 
         });
-//        sensorDetector.simulateShakeEvent();
-
-
-        // Detect weather and plan trip
-        // weatherTripPlanner.detectWeatherAndPlanTrip();
 
     }
 
@@ -428,9 +400,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void searchNearbyPlaces( android.location.Location location, OnSuccessListener<List<Place>> listener) {
-        Log.d("SENSOR", "searchNearbyPlaces start");
-        LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-
         // Define the place fields to return
         List<Place.Field> placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS, Place.Field.TYPES);
 
@@ -451,16 +420,12 @@ public class MainActivity extends AppCompatActivity {
                     List<Place> places = new ArrayList<>();
                     for (PlaceLikelihood placeLikelihood : response.getPlaceLikelihoods()) {
                         places.add(placeLikelihood.getPlace());
-                        Log.i("PLACES", String.format("Place '%s' has likelihood: %f",
-                                placeLikelihood.getPlace().getName(),
-                                placeLikelihood.getLikelihood()));
                     }
                     listener.onSuccess(places);
                 } else {
                     Exception exception = task.getException();
                     if (exception instanceof ApiException) {
-                        ApiException apiException = (ApiException) exception;
-                        Log.e("PLACES", "Place not found: " + apiException.getMessage());
+                        exception.printStackTrace();
                     }
                 }
             }
@@ -469,18 +434,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleIntent(Intent intent) {
         if (intent != null && intent.getBooleanExtra("select_navigation_plan", false)) {
-
-            Log.d("go back to", "all plan");
-
             binding.navView.setSelectedItemId(R.id.navigation_plan);
-
             Fragment planFragment = HomeFragment.newInstance(HomeFragment.PLAN);
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragmentContainerView, planFragment)
                     .commit();
         } else {
-            Log.d("go back to", "memory");
             binding.navView.setSelectedItemId(R.id.navigation_map);
 
             Fragment planFragment = HomeFragment.newInstance(HomeFragment.LOCATION);
@@ -518,14 +478,13 @@ public class MainActivity extends AppCompatActivity {
                         // Add user to the trip
                         firestoreDB.addUserToTrip(tripID, userId,
                             (Void) -> {
-                                Log.d("IMPORT PLAN", "Successfully added user to trip");
                                 // Navigate to added trip details
                                 Intent intent = new Intent(MainActivity.this, EditPlanActivity.class);
                                 intent.putExtra("tripId", tripID);
                                 intent.putExtra("From", "Main");
                                 startActivity(intent);
                             },
-                            e -> Log.e("IMPORT PLAN", "Failed to add user to trip: " + e.getMessage())
+                            e -> {}
                         );
                     }
 
@@ -552,11 +511,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     profileBtn.setImageResource(R.drawable.woman);
                 }
-            } else {
-                Log.d("MainActivity", "user document does not exist");
             }
         }).addOnFailureListener(e -> {
-            Log.e("MainActivity", "fetch user data failed", e);
         });
     }
 }

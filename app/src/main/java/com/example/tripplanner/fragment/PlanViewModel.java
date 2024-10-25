@@ -1,7 +1,5 @@
 package com.example.tripplanner.fragment;
 
-import android.util.Log;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -84,13 +82,7 @@ public class PlanViewModel extends ViewModel {
         Trip currentTrip = tripLiveData.getValue();
         if (currentTrip != null) {
             FirestoreDB firestoreDB = FirestoreDB.getInstance();
-            Log.d("trip saved", currentTrip.toString());
             firestoreDB.updateTrip(currentTrip.getId(), currentTrip, success -> {
-                if (success) {
-                    Log.d("trip saved", "saveTripToDatabase: success");
-                } else {
-                    Log.e("trip saved", "saveTripToDatabase: fail");
-                }
             });
         }
     }

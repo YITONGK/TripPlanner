@@ -2,7 +2,6 @@ package com.example.tripplanner;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -21,7 +20,6 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class ProfileActivity extends AppCompatActivity {
@@ -32,7 +30,6 @@ public class ProfileActivity extends AppCompatActivity {
     private User userData;
 
     private String uid;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,13 +44,10 @@ public class ProfileActivity extends AppCompatActivity {
         if (user != null) {
             uid = user.getUid();
             loadUserProfile();
-        } else {
-            Log.e("ProfileActivity", "User not login");
         }
 
         TextView username = findViewById(R.id.username);
         TextView email = findViewById(R.id.emailAddress);
-        ImageView profilePicture = findViewById(R.id.profilePicture);
         TextView preference = findViewById(R.id.preference);
 
         // get user details from database
@@ -65,27 +59,13 @@ public class ProfileActivity extends AppCompatActivity {
 
             FirestoreDB.getInstance().getUserById(uid, returnedUser ->{
                 userData = returnedUser;
-                Log.d("FirestoreDB", "UserData: "+userData);
 
                 username.setText(userData.getUsername());
                 email.setText(userData.getEmail());
                 preference.setText(userData.getPreference());
 
             }, (e) -> {
-                Log.d("FirestoreDB", "error in fetching user by id: "+e);
             });
-
-//            DocumentReference docRef = db.collection("users").document(uid);
-//            docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-//                @Override
-//                public void onSuccess(DocumentSnapshot documentSnapshot) {
-//                    Log.d("TAG", "successfully read the user data");
-//                    User userData = documentSnapshot.toObject(User.class);
-//                    Log.d("TAG", userData.getUsername());
-//                    username.setText(userData.getUsername());
-//                    email.setText(userData.getEmail());
-//                }
-//            });
 
             fetchUserTripStatistics(uid);
         }
@@ -144,16 +124,10 @@ public class ProfileActivity extends AppCompatActivity {
                 numTrip.setText(String.valueOf(totalTrips));
                 numLocation.setText(String.valueOf(totalUniqueLocations));
                 numDay.setText(String.valueOf(totalDays));
-
-                Log.d("STATISTICS", "Total Trips: " + totalTrips);
-                Log.d("STATISTICS", "Total Unique Locations: " + totalUniqueLocations);
-                Log.d("STATISTICS", "Total Days: " + totalDays);
             }
         }, new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                // Handle the error
-                Log.e("STATISTICS", "Error retrieving trip statistics", e);
             }
         });
     }
@@ -175,11 +149,8 @@ public class ProfileActivity extends AppCompatActivity {
                 } else {
                     profile.setImageResource(R.drawable.woman);
                 }
-            } else {
-                Log.d("ProfileActivity", "user document does not exist");
             }
         }).addOnFailureListener(e -> {
-            Log.e("ProfileActivity", "fetch user data failed", e);
         });
     }
 

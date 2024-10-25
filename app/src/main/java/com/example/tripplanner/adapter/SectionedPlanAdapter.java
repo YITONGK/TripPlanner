@@ -1,20 +1,16 @@
 package com.example.tripplanner.adapter;
 
 import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.tripplanner.EditPlanActivity;
 import com.example.tripplanner.R;
 import com.example.tripplanner.entity.Trip;
 import com.example.tripplanner.utils.TimeUtils;
@@ -72,47 +68,12 @@ public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.View
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof SectionViewHolder) {
-            Log.d("DEBUG", "[SectionedPlanAdaptor] Bind item to SectionViewHolder");
             ((SectionViewHolder) holder).sectionTitle.setText((String) items.get(position));
         } else if (holder instanceof TripViewHolder) {
-            Log.d("DEBUG", "[SectionedPlanAdaptor] Bind trip to all plan");
             Trip trip = (Trip) items.get(position);
             ((TripViewHolder) holder).bind(trip);
         }
     }
-
-
-//    @Override
-//    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-//        if (holder instanceof SectionViewHolder) {
-//            Log.d("DEBUG", "[SectionedPlanAdaptor] Bind item to SectionViewHolder");
-//            ((SectionViewHolder) holder).sectionTitle.setText((String) items.get(position));
-//        } else if (holder instanceof AllPlanAdapter.ViewHolder) {
-//            Log.d("DEBUG", "[SectionedPlanAdaptor] Bind trip to all plan");
-////            Trip trip = (Trip) items.get(position);
-////            ((AllPlanAdapter.ViewHolder) holder).bind(trip); // Ensure bind method is used
-//        }
-//    }
-//     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-//         // if (getItemViewType(position) == VIEW_TYPE_SECTION) {
-//         //     Log.d("DEBUG", "[SectionedPlanAdaptor] Bind item to SectionViewHolder");
-//         //     ((SectionViewHolder) holder).bind((String) items.get(position));
-//         // } else {
-//         //     Log.d("DEBUG", "[SectionedPlanAdaptor] Bind trip to all plan");
-//         //     Trip trip = (Trip) items.get(position);
-//         //     ((AllPlanAdapter.ViewHolder) holder).bind(trip);
-//         // }
-//         if (holder instanceof SectionViewHolder) {
-//             Log.d("DEBUG", "[SectionedPlanAdaptor] Bind item to SectionViewHolder");
-//            ((SectionViewHolder) holder).sectionTitle.setText((String) items.get(position));
-//        } else if (holder instanceof AllPlanAdapter.ViewHolder) {
-//             Log.d("DEBUG", "[SectionedPlanAdaptor] Bind trip to all plan");
-//           Trip trip = (Trip) items.get(position);
-//           allPlanAdapter.onBindViewHolder((AllPlanAdapter.ViewHolder) holder, position);
-// //           ((AllPlanAdapter.ViewHolder) holder).locations.setText(trip.getName());
-
-//        }
-//     }
 
     @Override
     public int getItemCount() {
@@ -125,10 +86,6 @@ public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.View
         public SectionViewHolder(@NonNull View itemView) {
             super(itemView);
             sectionTitle = itemView.findViewById(R.id.sectionTitle);
-        }
-
-        public void bind(String city) {
-            sectionTitle.setText(city);
         }
     }
 
@@ -155,10 +112,7 @@ public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.View
                         if (pos != RecyclerView.NO_POSITION) {
                             Trip trip = (Trip) items.get(pos);
                             sectionedPlanInterface.onTripClick(trip);
-                            Log.d("DEBUG", "Clicked on trip: " + trip.getName());
                         }
-                    } else {
-                        Log.d("DEBUG", "sectionedPlanInterface is null");
                     }
                 }
             });
@@ -166,7 +120,6 @@ public class SectionedPlanAdapter extends RecyclerView.Adapter<RecyclerView.View
 
         public void bind(Trip trip) {
             if (trip == null){
-                Log.d("MEMORY", "Trip is null");
                 return;
             }
             // Bind data to views here (similar to AllPlanAdapter.ViewHolder.bind(trip))

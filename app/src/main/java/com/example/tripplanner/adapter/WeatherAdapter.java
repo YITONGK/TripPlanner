@@ -26,7 +26,6 @@ public class WeatherAdapter extends RecyclerView.Adapter<WeatherAdapter.ViewHold
     public WeatherAdapter(Context context, ArrayList<Map<Integer, Weather>> allWeatherData) {
         this.context = context;
         this.allWeatherData = allWeatherData;
-
     }
 
     @NonNull

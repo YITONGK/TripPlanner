@@ -3,7 +3,6 @@ package com.example.tripplanner;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.FrameLayout;
@@ -259,7 +258,7 @@ public class PlanDurationActivity extends AppCompatActivity
                                 tripDays = revivedCalendarDays;
                             }
                         } catch (ParseException e) {
-                            Log.d("PLAN", "Failed to parse date: " + e);
+                            e.printStackTrace();
                         }
                         Timestamp startDate = new Timestamp(parsedDate);
 
@@ -276,9 +275,6 @@ public class PlanDurationActivity extends AppCompatActivity
                         }
                         tripName.setLength(tripName.length() - 2);
 
-                        Log.d("PLAN", "Start Date: " + receivedStartDate);
-                        Log.d("PLAN", "Start Date: " + startDate);
-                        Log.d("PLAN", "Start Date: " + startDate.toDate());
                         // Create Trip object
                         Trip trip = new Trip(tripName.toString(), startDate, tripDays, locationList, userId);
 
@@ -294,19 +290,12 @@ public class PlanDurationActivity extends AppCompatActivity
                                 Intent intent = new Intent(PlanDurationActivity.this, EditPlanActivity.class);
                                 intent.putExtra("tripId", tripId);
                                 startActivity(intent);
-                                // You can perform additional actions with the updated trip if needed
-                                Log.d("PLAN", "Trip created with ID: " + trip.getId());
-                                Log.d("PLAN", trip.toString());
-                                Log.d("PLAN", updatedTrip.toString());
                             }
                         }, new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-                                Log.w("PLAN", "Error creating trip", e);
                             }
                         });
-                    } else {
-                        Log.d("PLAN", "[PlanDurationActivity] No user is signed in.");
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);

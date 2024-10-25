@@ -1,13 +1,10 @@
 package com.example.tripplanner.utils;
 
-import android.util.Log;
-
 import com.example.tripplanner.BuildConfig;
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
 import com.example.tripplanner.entity.ActivityItem;
 import com.example.tripplanner.entity.DistanceMatrixEntry;
 import com.example.tripplanner.entity.Location;
-import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -17,14 +14,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RoutePlanner {
     private static final String API_KEY = BuildConfig.MAPS_API_KEY;
-//    private List<DistanceMatrixEntry> distanceMatrix;
 
     public static void fetchDistanceMatrix(List<ActivityItem> activityItems, String mode, DistanceMatrixCallback callback) {
         List<Location> locations = new ArrayList<>();
@@ -41,13 +36,11 @@ public class RoutePlanner {
 
         try {
             String url = buildDirectionsUrl(locations, mode);
-            Log.d("RoutePlanner", url);
             OkHttpClient client = new OkHttpClient();
             Request request = new Request.Builder().url(url).build();
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Request request, IOException e) {
-                    Log.e("RoutePlannerUtil", "Error fetching distance matrix: " + e.getMessage());
                     callback.onFailure(e);
                 }
 
@@ -56,24 +49,20 @@ public class RoutePlanner {
                     if (response.isSuccessful()) {
                         String responseData = response.body().string();
                         List<DistanceMatrixEntry> distanceMatrix = parseDistanceMatrixResponse(responseData, locations, mode);
-                        Log.d("RoutePlannerUtil", "DistanceMatrix: "+distanceMatrix);
 
                         callback.onSuccess(distanceMatrix);
                     } else {
-                        Log.e("RoutePlannerUtil", "Error: " + response.code());
                         callback.onFailure(new IOException("Error: " + response.code()));
                     }
                 }
             });
         } catch (Exception e) {
-            Log.e("RoutePlannerUtil", "Error building URL: " + e.getMessage());
             callback.onFailure(e);
         }
     }
 
     private static List<DistanceMatrixEntry> parseDistanceMatrixResponse(String jsonResponse, List<Location> locations, String mode) {
         List<DistanceMatrixEntry> entries = new ArrayList<>();
-        Log.d("Route", "Response: "+ jsonResponse);
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
             JSONArray rows = jsonObject.getJSONArray("rows");
@@ -96,7 +85,6 @@ public class RoutePlanner {
                                 duration
                         ));
                     } else {
-                        Log.w("RoutePlannerUtil", "No route found between " + locations.get(i).getNonNullIdOrName() + " and " + locations.get(j).getNonNullIdOrName() + ". Status: " + status);
                         entries.add(new DistanceMatrixEntry(
                                 locations.get(i).getNonNullIdOrName(),
                                 locations.get(j).getNonNullIdOrName(),
@@ -108,7 +96,7 @@ public class RoutePlanner {
                 }
             }
         } catch (Exception e) {
-            Log.e("RoutePlannerUtil", "Error parsing JSON response: " + e.getMessage());
+            e.printStackTrace();
         }
         return entries;
     }
@@ -124,12 +112,6 @@ public class RoutePlanner {
                 }
                 locationBuilder.append("place_id:").append(URLEncoder.encode(location.getId(), "UTF-8"));
             }
-//            else if (location.getLatitude() != 0 && location.getLongitude() != 0) {
-//                if (locationBuilder.length() > 0) {
-//                    locationBuilder.append("|");
-//                }
-//                locationBuilder.append(location.getLatitude()).append(",").append(location.getLongitude());
-//            }
             else if (location.getName() != null && !location.getName().isEmpty()) {
                 if (locationBuilder.length() > 0) {
                     locationBuilder.append("|");
@@ -137,7 +119,6 @@ public class RoutePlanner {
                 locationBuilder.append(URLEncoder.encode(location.getName(), "UTF-8"));
             }
             else {
-                Log.w("RoutePlannerUtil", "Invalid location with no ID or name, skipping.");
                 continue;
             }
         }

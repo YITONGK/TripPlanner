@@ -8,7 +8,6 @@ import android.graphics.Paint;
 
 import android.os.Bundle;
 import android.content.Intent;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -105,14 +104,11 @@ public class MapActivity extends AppCompatActivity  {
                     String days = String.valueOf((Integer.parseInt(key)+1));
                     addboundsBuilder(latLngList, boundsBuilder);
                     getRoutePoints(latLngList, days);
-                    Log.d("MapActivity", "draw marker and route on overview map.");
                 }
                 else if (latLngList.size() == 1){
-                    Log.d("MapActivity", "latlngList(0) =  "+latLngList.get(0)[0]+latLngList.get(0)[1]);
                     double latitude = latLngList.get(0)[0];
                     double longitude = latLngList.get(0)[1];
                     LatLng location  = new LatLng(latitude, longitude);
-                    Log.d("MapActivity", "nameList(0) =  "+nameList.get(0));
                     addboundsBuilder(latLngList, boundsBuilder);
                     Marker marker = googleMap.addMarker(new MarkerOptions().position(location));
                     markerToTabPositionMap.put(marker, Integer.parseInt(key)+1);
@@ -134,7 +130,6 @@ public class MapActivity extends AppCompatActivity  {
             addMarkersForLatLngList(latLngList,nameList);
             // Add route drawing for specific day
             getRoutePoints(latLngList, days);
-            Log.d("MapActivity", "draw marker and route on specific map.");
         }
         int padding = 100;
         googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), padding));
@@ -224,14 +219,12 @@ public class MapActivity extends AppCompatActivity  {
 
     private void getRoutePoints(List<Double[]> latLngList, String days) {
         if (latLngList == null || latLngList.size() < 2) {
-            Log.d("MapActivity", "Not enough waypoints to draw route");
             return;
         }
 
         List<LatLng> waypoints = new ArrayList<>();
         for (Double[] location : latLngList) {
             waypoints.add(new LatLng(location[0], location[1]));
-            Log.d("location", "lat: "+location[0]+" lon: "+ location[1]);
         }
 
         try {
@@ -241,12 +234,10 @@ public class MapActivity extends AppCompatActivity  {
                     .withListener(new RouteListener() {
                         @Override
                         public void onRouteFailure(ErrorHandling e) {
-                            Log.e("MapActivity", "Route calculation failed: " + e.getMessage());
                         }
 
                         @Override
                         public void onRouteStart() {
-                            Log.d("TAG", "yes started");
                         }
 
                         @Override
@@ -282,17 +273,15 @@ public class MapActivity extends AppCompatActivity  {
 
                         @Override
                         public void onRouteCancelled() {
-                            Log.d("TAG", "route canceled");
                             // restart your route drawing
                         }
                     })
                     .alternativeRoutes(true)
                     .waypoints(waypoints)
                     .build();
-            Log.d("MapActivity", "Executing RouteDrawing");
             routeDrawing.execute();
         } catch (Exception e) {
-            Log.e("MapActivity", "Error in RouteDrawing setup", e);
+            e.printStackTrace();
         }
     }
 
@@ -332,7 +321,6 @@ public class MapActivity extends AppCompatActivity  {
         for (String key : receivedMap.keySet()) {
             List<Double[]> latLngList = receivedMap.get(key);
             if (latLngList.size() > 0) {
-                Log.d("MapActivity", "latlngList is not null ");
                 isEmpty = false;
             }
         }
@@ -340,32 +328,10 @@ public class MapActivity extends AppCompatActivity  {
         for (String key : receivedLocationNames.keySet()) {
             List<String> nameList = receivedLocationNames.get(key);
             if (nameList.size() > 0) {
-                Log.d("MapActivity", "nameList is not null ");
                 isEmpty = false;
             }
         }
         return isEmpty;
     }
-
-
-    //    private android.location.Location getCurrentLocation() {
-//        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Activity.LOCATION_SERVICE);
-//        if (ActivityCompat.checkSelfPermission(getActivity(),
-//                android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//            // Request location permission
-//            ActivityCompat.requestPermissions(getActivity(), new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
-//                    1);
-//            return null;
-//        }
-//        // Location location =
-//        // locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-//        // if (location != null) {
-//        // return location;
-//        // }
-//        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-//        Log.d("SENSOR", "location: " + location);
-//        return location;
-//    }
-
 
 }
