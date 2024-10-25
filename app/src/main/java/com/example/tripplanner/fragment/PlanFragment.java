@@ -123,7 +123,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class PlanFragment extends Fragment
-        implements OnMapReadyCallback, ActivityItemAdapter.OnStartDragListener, RouteListener {
+        implements OnMapReadyCallback, ActivityItemAdapter.OnStartDragListener {
 
     public static final int OVERVIEW = 0;
     public static final int PLAN_SPECIFIC_DAY = 1;
@@ -185,6 +185,7 @@ public class PlanFragment extends Fragment
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRetainInstance(true);
         placesClient = PlacesClientProvider.getPlacesClient();
 
         // Get ViewModel instance
@@ -381,11 +382,9 @@ public class PlanFragment extends Fragment
             weatherAPIClient = new WeatherAPIClient();
             fetchAndDisplayWeatherData(rootView);
             showTripNote(rootView);
-
         }
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
-                .findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
@@ -1196,15 +1195,31 @@ public class PlanFragment extends Fragment
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
-        boolean hasPoints = false; // Variable to track if points are included
 
         HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
 
         HashMap<String, List<String>> locationNames = getLocationNames();
 
-        if (daysAndLocationsMap == null) {
-            return;
+        if (googleMap == null || isMapValid(daysAndLocationsMap, locationNames)) {
+            mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+                @Override
+                public void onMapClick(LatLng latLng) {
+
+                    Intent intent = new Intent(getActivity(), MapActivity.class);
+                    intent.putExtra("daysAndLocationsMap", daysAndLocationsMap);
+                    intent.putExtra("locationNames", locationNames);
+                    intent.putExtra("numDays",viewModel.getTrip().getNumDays());
+                    startActivity(intent);
+
+                }
+            });
         }
+        else{
+
+        }
+
+        Log.d("PlanFragment", "daysAndLocationsMap = "+ daysAndLocationsMap.values());
+        Log.d("PlanFragment", "locationNames = "+ locationNames.values());
 
         for (String key : daysAndLocationsMap.keySet()) {
             List<Double[]> latLngList = daysAndLocationsMap.get(key);
@@ -1216,41 +1231,13 @@ public class PlanFragment extends Fragment
                         LatLng point = new LatLng(coords[0], coords[1]);
                         mMap.addMarker(new MarkerOptions().position(point).title("DAY" + days));
                         boundsBuilder.include(point); // Include point in bounds
-                        hasPoints = true; // Set to true since we've added a point
+                        LatLngBounds bounds = boundsBuilder.build();
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100));
                     }
                 }
-                // Add route for all days
-                getRoutePoints(latLngList);
             }
         }
 
-        int padding = 100;
-        if (hasPoints) {
-            final LatLngBounds bounds = boundsBuilder.build();
-            final View mapView = getView().findViewById(R.id.map); // Ensure this is the correct ID
-
-            if (mapView.getViewTreeObserver().isAlive()) {
-                mapView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @SuppressWarnings("deprecation")
-                    @Override
-                    public void onGlobalLayout() {
-                        // Remove the listener to prevent multiple calls
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-                            mapView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                        } else {
-                            mapView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                        }
-
-                        // Now that the layout has happened, move the camera
-                        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding));
-                    }
-                });
-            }
-        } else {
-            // Handle the case where no points are included
-            LatLng defaultLocation = new LatLng(0, 0); // Replace with a meaningful default location
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 1));
-        }
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
@@ -1265,98 +1252,6 @@ public class PlanFragment extends Fragment
         });
     }
 
-    private void getRoutePoints(List<Double[]> latLngList) {
-        if (latLngList == null || latLngList.size() < 2) {
-            return;
-        }
-
-        List<LatLng> waypoints = new ArrayList<>();
-        for (Double[] location : latLngList) {
-            waypoints.add(new LatLng(location[0], location[1]));
-        }
-
-        try {
-            RouteDrawing routeDrawing = new RouteDrawing.Builder()
-                    .context(PlanFragment.this.getContext())
-                    .travelMode(AbstractRouting.TravelMode.DRIVING)
-                    .withListener(PlanFragment.this)
-                    .alternativeRoutes(true)
-                    .waypoints(waypoints)
-                    .build();
-            routeDrawing.execute();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void onRouteFailure(ErrorHandling e) {
-    }
-
-    @Override
-    public void onRouteStart() {
-    }
-
-    @Override
-    public void onRouteSuccess(ArrayList<RouteInfoModel> routeInfoModelArrayList, int routeIndexing) {
-        PolylineOptions polylineOptions = new PolylineOptions();
-        // Generate a random color
-
-        int randomColor = Color.argb(255, random.nextInt(256), random.nextInt(256), random.nextInt(256));
-        for (int i = 0; i < routeInfoModelArrayList.size(); i++) {
-            if (i == routeIndexing) {
-                polylineOptions.color(randomColor);
-                polylineOptions.width(12);
-                polylineOptions.addAll(routeInfoModelArrayList.get(routeIndexing).getPoints());
-                polylineOptions.startCap(new RoundCap());
-                polylineOptions.endCap(new RoundCap());
-                Polyline polyline = mMap.addPolyline(polylineOptions);
-                polylines.add(polyline);
-            }
-        }
-    }
-
-    @Override
-    public void onRouteCancelled() {
-    }
-
-    private void addMarkersForLatLngList(List<Double[]> latLngList, String title, LatLngBounds.Builder boundsBuilder) {
-        for (Double[] latLng : latLngList) {
-            double latitude = latLng[0];
-            double longitude = latLng[1];
-            LatLng location = new LatLng(latitude, longitude);
-
-            mMap.addMarker(new MarkerOptions()
-                    .position(location)
-                    .icon(BitmapDescriptorFactory.fromBitmap(createCustomMarker(title))));
-            boundsBuilder.include(location);
-        }
-    }
-
-    private Bitmap createCustomMarker(String text) {
-
-        Bitmap bitmap = Bitmap.createBitmap(200, 100, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-
-        // background
-        Paint backgroundPaint = new Paint();
-        backgroundPaint.setColor(Color.LTGRAY);
-        backgroundPaint.setStyle(Paint.Style.FILL);
-
-        // background size
-        canvas.drawRect(0, 0, 200, 100, backgroundPaint);
-
-        // text
-        Paint textPaint = new Paint();
-        textPaint.setTextSize(40);
-        textPaint.setColor(Color.BLACK);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-
-        canvas.drawText(text, 100, 60, textPaint);
-
-        return bitmap;
-    }
-
     public void setLastingDays(int lastingDays) {
         this.lastingDays = lastingDays;
     }
@@ -1364,7 +1259,6 @@ public class PlanFragment extends Fragment
     public void setLocationList(List<Location> locationList) {
         this.locationList = locationList;
     }
-
 
     public HashMap<String, List<Double[]>> getDaysAndLocations() {
         HashMap<String, List<Double[]>> locationMap = new HashMap<>();
@@ -1529,4 +1423,30 @@ public class PlanFragment extends Fragment
         arrowPlanSuggest.setVisibility(visibility);
     }
 
+    private boolean isMapValid(HashMap<String, List<Double[]>> receivedMap, HashMap<String, List<String>> receivedLocationNames) {
+        // Check if receivedMap is null or empty
+        boolean isEmpty = true;
+        // Iterate through receivedMap and check if any list is null or empty
+        if (receivedMap.keySet() == null || receivedLocationNames.keySet() == null){
+            Log.d("PlanFragment", "receivedMap and receivedLocationNames keyset = null");
+            isEmpty = false;
+        }
+
+        for (String key : receivedMap.keySet()) {
+            List<Double[]> latLngList = receivedMap.get(key);
+            Log.d("PlanFragment", "latLngList= null");
+            if (latLngList.size() > 0) {
+                isEmpty = false;
+            }
+        }
+        // Iterate through receivedLocationNames and check if any list is null or empty
+        for (String key : receivedLocationNames.keySet()) {
+            List<String> nameList = receivedLocationNames.get(key);
+            Log.d("PlanFragment", "nameList= null");
+            if (nameList.size() > 0) {
+                isEmpty = false;
+            }
+        }
+        return isEmpty;
+    }
 }

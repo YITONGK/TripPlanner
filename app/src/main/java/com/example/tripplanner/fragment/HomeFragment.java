@@ -97,7 +97,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
 
         if (this.layout == R.layout.home_fragment_layout_location) {
             SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
-                    .findFragmentById(R.id.map);
+                    .findFragmentById(R.id.map_fragment);
             if (mapFragment != null) {
                 FirebaseAuth mAuth = FirebaseAuth.getInstance();
                 FirebaseUser currentUser = mAuth.getCurrentUser();
