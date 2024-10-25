@@ -51,7 +51,7 @@ public class SensorDetector implements SensorEventListener {
     
     // Shake Sensor and Threshold
     private Sensor accelerometer;
-    private static final float SHAKE_THRESHOLD = 12.0f; 
+    private static final float SHAKE_THRESHOLD = 1.0f;
     private static final int SHAKE_WAIT_TIME_MS = 250;
     private long mShakeTime = 0;
     private boolean isAccelerometerAvailable;
@@ -61,8 +61,6 @@ public class SensorDetector implements SensorEventListener {
     // Initialize ExecutorService and Handler
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
     private Handler mainHandler = new Handler(Looper.getMainLooper());
-
-    private static final String WEATHER_API_KEY = "eacef29cbb687c3d27f59dd48cdbd5fb";
 
     public SensorDetector(Activity activity) {
         this.activity = activity;
@@ -301,6 +299,7 @@ public class SensorDetector implements SensorEventListener {
             // gForce will be close to 1 when there is no movement.
             float gForce = (float) Math.sqrt(gX * gX + gY * gY + gZ * gZ);
 
+            Log.d("SENSOR", "gForce: "+gForce);
             if (gForce > SHAKE_THRESHOLD) {
                 final long now = System.currentTimeMillis();
                 // Ignore shake events too close to each other (500ms)
