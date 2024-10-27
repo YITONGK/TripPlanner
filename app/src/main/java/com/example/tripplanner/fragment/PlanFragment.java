@@ -1197,41 +1197,25 @@ public class PlanFragment extends Fragment
         LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
 
         HashMap<String, List<Double[]>> daysAndLocationsMap = getDaysAndLocations();
-
         HashMap<String, List<String>> locationNames = getLocationNames();
 
-        if (googleMap == null || isMapValid(daysAndLocationsMap, locationNames)) {
+        if (daysAndLocationsMap == null || locationNames == null) {
+            return;
+        }
+
+        if (googleMap == null) {
             mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
                 @Override
                 public void onMapClick(LatLng latLng) {
-
                     Intent intent = new Intent(getActivity(), MapActivity.class);
                     intent.putExtra("daysAndLocationsMap", daysAndLocationsMap);
                     intent.putExtra("locationNames", locationNames);
                     intent.putExtra("numDays",viewModel.getTrip().getNumDays());
                     startActivity(intent);
-
                 }
             });
         }
         else{
-            Log.d("PlanFragment", "daysAndLocationsMap = "+ daysAndLocationsMap.values());
-            Log.d("PlanFragment", "locationNames = "+ locationNames.values());
-
-//            for (String key : daysAndLocationsMap.keySet()) {
-//                List<Double[]> latLngList = daysAndLocationsMap.get(key);
-//                String days = String.valueOf((Integer.parseInt(key) + 1));
-//
-//                if (latLngList != null && !latLngList.isEmpty()) {
-//                    for (Double[] coords : latLngList) {
-//                        if (coords != null && coords.length >= 2) {
-//                            LatLng point = new LatLng(coords[0], coords[1]);
-//                            mMap.addMarker(new MarkerOptions().position(point).title("DAY" + days));
-//                            boundsBuilder.include(point); // Include point in bounds
-//                        }
-//                    }
-//                }
-//            }
             double sumLat = 0.0;
             double sumLng = 0.0;
             int count = 0;
@@ -1262,7 +1246,8 @@ public class PlanFragment extends Fragment
                 double middleLat = sumLat / count;
                 double middleLng = sumLng / count;
                 LatLng middlePoint = new LatLng(middleLat, middleLng);
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(middlePoint));
+                Log.d("PlanFragment", "onMapReady: "+middlePoint);
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(middlePoint, 5));
             }
 
             mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
@@ -1454,30 +1439,4 @@ public class PlanFragment extends Fragment
         arrowPlanSuggest.setVisibility(visibility);
     }
 
-    private boolean isMapValid(HashMap<String, List<Double[]>> receivedMap, HashMap<String, List<String>> receivedLocationNames) {
-        // Check if receivedMap is null or empty
-        boolean isEmpty = true;
-        // Iterate through receivedMap and check if any list is null or empty
-        if (receivedMap.keySet() == null || receivedLocationNames.keySet() == null){
-            Log.d("PlanFragment", "receivedMap and receivedLocationNames keyset = null");
-            isEmpty = false;
-        }
-
-        for (String key : receivedMap.keySet()) {
-            List<Double[]> latLngList = receivedMap.get(key);
-            Log.d("PlanFragment", "latLngList= null");
-            if (latLngList.size() > 0) {
-                isEmpty = false;
-            }
-        }
-        // Iterate through receivedLocationNames and check if any list is null or empty
-        for (String key : receivedLocationNames.keySet()) {
-            List<String> nameList = receivedLocationNames.get(key);
-            Log.d("PlanFragment", "nameList= null");
-            if (nameList.size() > 0) {
-                isEmpty = false;
-            }
-        }
-        return isEmpty;
-    }
 }

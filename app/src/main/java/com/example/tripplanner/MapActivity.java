@@ -165,7 +165,7 @@ public class MapActivity extends AppCompatActivity  {
             double middleLng = sumLng / count;
             LatLng middlePoint = new LatLng(middleLat, middleLng);
 
-            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(middlePoint, 10));
+            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(middlePoint, 15));
         }
     }
 

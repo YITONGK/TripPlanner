@@ -294,7 +294,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
             LatLng centralPoint = new LatLng(centralLat, centralLng);
 
             // Move camera to the central point with a fixed zoom level
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(centralPoint, 10)); // Adjust zoom level as needed
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(centralPoint, 5)); // Adjust zoom level as needed
         }
 
         // Set marker click listener
