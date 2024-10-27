@@ -258,7 +258,6 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                SensorDetector.setIsShaken(false);
                                 // Show loading dialog
                                 ProgressDialog loadingDialog = new ProgressDialog(MainActivity.this);
                                 loadingDialog.setMessage("Loading...");
@@ -319,24 +318,9 @@ public class MainActivity extends AppCompatActivity {
                                                     builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
                                                         @Override
                                                         public void onClick(DialogInterface dialog, int id) {
+                                                            SensorDetector.setIsShaken(false);
                                                             // Get only the selected items
                                                             List<ActivityItem> selectedItems = recommentActivityAdapter.getSelectedItems();
-
-//                                                            trip.setName(tripName);
-//                                                            trip.setNumDays(1);
-//                                                            trip.setStartDate(Timestamp.now());
-//                                                            // Set end date to the end of the current day
-//                                                            Calendar calendar = Calendar.getInstance();
-//                                                            calendar.setTime(new Date()); // Set to current date
-//                                                            calendar.set(Calendar.HOUR_OF_DAY, 23);
-//                                                            calendar.set(Calendar.MINUTE, 59);
-//                                                            calendar.set(Calendar.SECOND, 59);
-//                                                            calendar.set(Calendar.MILLISECOND, 999);
-//                                                            Date endDate = calendar.getTime();
-//                                                            trip.setEndDate(new Timestamp(endDate.getTime() / 1000, (int) ((endDate.getTime() % 1000) * 1000000)));
-//
-//                                                            trip.addUser(FirestoreDB.getCurrentUserId());
-//                                                            trip.addLocation(recommendedActivities.get(0).getLocation());
                                                             List<Location> newloc = new ArrayList<>();
                                                             newloc.add(recommendedActivities.get(0).getLocation());
                                                             Trip trip = new Trip(tripName, Timestamp.now(), 1, newloc, FirestoreDB.getCurrentUserId());
@@ -362,6 +346,7 @@ public class MainActivity extends AppCompatActivity {
                                                     builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                                                         @Override
                                                         public void onClick(DialogInterface dialogInterface, int i) {
+                                                            SensorDetector.setIsShaken(false);
                                                             dialogInterface.dismiss();
                                                         }
                                                     });
