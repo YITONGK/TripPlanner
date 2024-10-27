@@ -203,6 +203,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
                 new AlertDialog.Builder(getContext())
+                    .setCancelable(false)
                     .setTitle("Delete Trip")
                     .setMessage("Are you sure you want to delete this trip?")
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
