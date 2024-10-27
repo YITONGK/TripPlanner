@@ -33,6 +33,7 @@ import com.codebyashish.googledirectionapi.RouteDrawing;
 import com.codebyashish.googledirectionapi.RouteInfoModel;
 import com.codebyashish.googledirectionapi.RouteListener;
 import com.example.tripplanner.EditPlanActivity;
+import com.example.tripplanner.LoginActivity;
 import com.example.tripplanner.MainActivity;
 import com.example.tripplanner.R;
 import com.example.tripplanner.adapter.AllPlanAdapter;
@@ -104,43 +105,48 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                 FirebaseUser currentUser = mAuth.getCurrentUser();
                 FirestoreDB firestoreDB = FirestoreDB.getInstance();
 
-                firestoreDB.getPastTripsByUserId(currentUser.getUid(), trips -> {
-                    for (Trip trip : trips) {
-                        Set<String> keys = trip.getPlans().keySet();
-                        List<LatLng> latLngList = new ArrayList<>();
-                        Map<String, List<ActivityItem>> plans = trip.getPlans();
-                        for (String key: keys){
-                            List<com.example.tripplanner.entity.ActivityItem> rawActivityItems = trip.getPlans().get(key);
-                            for (Object item : rawActivityItems) {
-                                String input = item.toString();
-                                String latitudeRegex = "latitude=([-+]?[0-9]*\\.?[0-9]+)";
-                                String longitudeRegex = "longitude=([-+]?[0-9]*\\.?[0-9]+)";
+                if (currentUser == null) {
+                    Intent intent = new Intent(getContext(), LoginActivity.class);
+                    startActivity(intent);
+                } else {
+                    firestoreDB.getPastTripsByUserId(currentUser.getUid(), trips -> {
+                        for (Trip trip : trips) {
+                            Set<String> keys = trip.getPlans().keySet();
+                            List<LatLng> latLngList = new ArrayList<>();
+                            Map<String, List<ActivityItem>> plans = trip.getPlans();
+                            for (String key : keys) {
+                                List<com.example.tripplanner.entity.ActivityItem> rawActivityItems = trip.getPlans().get(key);
+                                for (Object item : rawActivityItems) {
+                                    String input = item.toString();
+                                    String latitudeRegex = "latitude=([-+]?[0-9]*\\.?[0-9]+)";
+                                    String longitudeRegex = "longitude=([-+]?[0-9]*\\.?[0-9]+)";
 
-                                Pattern latPattern = Pattern.compile(latitudeRegex);
-                                Matcher latMatcher = latPattern.matcher(input);
-                                Pattern lonPattern = Pattern.compile(longitudeRegex);
-                                Matcher lonMatcher = lonPattern.matcher(input);
-                                if (latMatcher.find() && lonMatcher.find()) {
-                                    String lat = latMatcher.group(1);
-                                    double latitude = Float.valueOf(lat);
-                                    String lon = lonMatcher.group(1);
-                                    double longitude = Float.valueOf(lon);
-                                    LatLng latLng = new LatLng(latitude, longitude);
-                                    latLngList.add(latLng);
+                                    Pattern latPattern = Pattern.compile(latitudeRegex);
+                                    Matcher latMatcher = latPattern.matcher(input);
+                                    Pattern lonPattern = Pattern.compile(longitudeRegex);
+                                    Matcher lonMatcher = lonPattern.matcher(input);
+                                    if (latMatcher.find() && lonMatcher.find()) {
+                                        String lat = latMatcher.group(1);
+                                        double latitude = Float.valueOf(lat);
+                                        String lon = lonMatcher.group(1);
+                                        double longitude = Float.valueOf(lon);
+                                        LatLng latLng = new LatLng(latitude, longitude);
+                                        latLngList.add(latLng);
+                                    }
                                 }
                             }
+
+                            HashMap<String, List<LatLng>> locationMap = new HashMap<>();
+                            locationMap.put(trip.getName(), latLngList);
+
+                            tripLocationMap.put(trip.getId(), locationMap);
                         }
 
-                        HashMap<String, List<LatLng>> locationMap = new HashMap<>();
-                        locationMap.put(trip.getName(), latLngList);
+                        mapFragment.getMapAsync(this);
 
-                        tripLocationMap.put(trip.getId(), locationMap);
-                    }
-
-                    mapFragment.getMapAsync(this);
-
-                }, e -> {
-                });
+                    }, e -> {
+                    });
+                }
             }
         } else {
             rootView = inflater.inflate(R.layout.home_fragment_layout_plan, container, false);
