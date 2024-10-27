@@ -386,6 +386,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         // Register sensor listeners when the activity is resumed
         sensorDetector.registerSensorListeners();
+        loadUserProfile();
     }
 
     @Override

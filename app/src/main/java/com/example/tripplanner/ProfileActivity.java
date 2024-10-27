@@ -130,6 +130,12 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadUserProfile();
+    }
+
     private void loadUserProfile() {
         DocumentReference userRef = db.collection("users").document(uid);
 
