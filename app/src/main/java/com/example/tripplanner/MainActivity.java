@@ -21,8 +21,6 @@ import com.example.tripplanner.fragment.HomeFragment;
 import com.example.tripplanner.utils.SensorDetector;
 import com.example.tripplanner.utils.CaptureAct;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
@@ -66,8 +64,6 @@ import com.journeyapps.barcodescanner.ScanOptions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,19 +88,23 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        if (!Places.isInitialized()) {
-            Places.initialize(getApplicationContext(), BuildConfig.PLACES_API_KEY);
-        }
-        placesClient = Places.createClient(this);
-        PlacesClientProvider.initialize(placesClient);
-
         db = FirebaseFirestore.getInstance();
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
         if (currentUser != null) {
             uid = currentUser.getUid();
             loadUserProfile();
+        } else {
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
         }
+
+        if (!Places.isInitialized()) {
+            Places.initialize(getApplicationContext(), BuildConfig.PLACES_API_KEY);
+        }
+        placesClient = Places.createClient(this);
+        PlacesClientProvider.initialize(placesClient);
+
 
         handleIntent(getIntent());
 
