@@ -258,6 +258,7 @@ public class MainActivity extends AppCompatActivity {
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
+                                SensorDetector.setIsShaken(false);
                                 // Show loading dialog
                                 ProgressDialog loadingDialog = new ProgressDialog(MainActivity.this);
                                 loadingDialog.setMessage("Loading...");
@@ -382,7 +383,13 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                 )
-                .setNegativeButton("No", null)
+                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // Reset isShaken flag
+                            SensorDetector.setIsShaken(false);
+                        }
+                    })
                 .show();
 
         });
