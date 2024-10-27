@@ -307,7 +307,7 @@ public class HomeFragment extends Fragment implements OnMapReadyCallback, AllPla
                     // Start EditPlanActivity and pass the tripId
                     Intent intent = new Intent(getActivity(), EditPlanActivity.class);
                     intent.putExtra("tripId", tripId);
-                    intent.putExtra("From", "Map");
+                    intent.putExtra("From", "Memory");
                     startActivity(intent);
                 }
                 return true;
