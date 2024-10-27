@@ -57,11 +57,6 @@ public class SensorDetector implements SensorEventListener {
     private boolean isAccelerometerAvailable;
 
     private OnShakeListener onShakeListener;
-
-    // Initialize ExecutorService and Handler
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private Handler mainHandler = new Handler(Looper.getMainLooper());
-
     public SensorDetector(Activity activity) {
         this.activity = activity;
         initializeSensors();
@@ -99,16 +94,6 @@ public class SensorDetector implements SensorEventListener {
         this.onShakeListener = listener;
     }
 
-    public void detectWeatherAndPlanTrip() {
-        if (isTemperatureSensorAvailable && isHumiditySensorAvailable) {
-            // Use sensor data
-            registerSensorListeners();
-        } else {
-            // Fallback to weather API
-            Location location = getCurrentLocation();
-        }
-    }
-
     public void registerSensorListeners() {
         if (isTemperatureSensorAvailable) {
             sensorManager.registerListener(this, temperatureSensor, SensorManager.SENSOR_DELAY_NORMAL);
@@ -123,111 +108,6 @@ public class SensorDetector implements SensorEventListener {
 
     public void unregisterSensorListeners() {
         sensorManager.unregisterListener(this);
-    }
-
-    private Location getCurrentLocation() {
-        LocationManager locationManager = (LocationManager) activity.getSystemService(Activity.LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Request location permission
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            return null;
-        }
-        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        return location;
-    }
-
-    public void getCurrentLocation(OnSuccessListener<Location> listener) {
-        if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            return;
-        }
-        fusedLocationClient.getLastLocation()
-            .addOnSuccessListener(activity, listener)
-            .addOnFailureListener(e -> {});
-    }
-
-    public void simulateShakeEvent() {
-        if (onShakeListener != null) {
-            onShakeListener.onShake();
-        }
-    }
-
-
-    private void decideNotification(JSONObject weatherData) {
-        try {
-            JSONObject main = weatherData.getJSONObject("main");
-            double temperature = main.getDouble("temp");
-            int humidity = main.getInt("humidity");
-            String weatherCondition = weatherData.getJSONArray("weather")
-                    .getJSONObject(0).getString("main");
-
-            boolean needReplan = weatherCondition.equalsIgnoreCase("Rain") ||
-                    temperature > 35 || temperature < 5;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            notifyUser("Error processing weather data.");
-        }
-    }
-
-    private void decideNotificationWithSensorData(float temperature, float humidity) {
-        boolean needReplan = temperature > 35 || humidity < 5;
-
-        if (needReplan) {
-            showSuggestedPlan("Here is testing");
-        }
-
-        // Unregister sensors after use
-        unregisterSensorListeners();
-    }
-
-    private void requestGptReplan(String condition, double temp, double humidity) {
-        String prompt = String.format(Locale.US,
-                "Given that the weather is %s with a temperature of %.1f°C and humidity of %.1f%%, suggest a new travel plan.",
-                condition, temp, humidity);
-
-        executorService.execute(() -> {
-            // Perform the GPT API call in the background thread
-        });
-    }
-
-    private void showSuggestedPlan(String plan) {
-        String message = "Due to adverse weather conditions, we suggest the following plan:";
-        PlanSuggestionDialogFragment dialogFragment = PlanSuggestionDialogFragment.newInstance(message, plan);
-        dialogFragment.show(((AppCompatActivity) activity).getSupportFragmentManager(), "PlanSuggestionDialog");
-    }
-
-    private void notifyUser(String message) {
-        Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
-    }
-
-    // Placeholder methods for network calls (implement with proper network code)
-    private JSONObject makeNetworkCall(String apiUrl) {
-        OkHttpClient client = new OkHttpClient();
-
-        Request request = new Request.Builder()
-                .url(apiUrl)
-                .build();
-
-        try {
-            // Synchronous network call
-            Response response = client.newCall(request).execute();
-
-            if (response.isSuccessful() && response.body() != null) {
-                String responseBody = response.body().string();
-                // Parse the response body to JSON
-                return new JSONObject(responseBody);
-            } else {
-                // Handle unsuccessful response
-                return null;
-            }
-        } catch (IOException e) {
-            // Handle network I/O exceptions
-            return null;
-        } catch (JSONException e) {
-            // Handle JSON parsing exceptions
-            return null;
-        }
     }
 
     // SensorEventListener methods
@@ -284,10 +164,5 @@ public class SensorDetector implements SensorEventListener {
     public static void setIsShaken(boolean isShaken) {
         SensorDetector.isShaken = isShaken;
     }
-
-    protected void onDestroy() {
-        executorService.shutdown();
-    }
-
 
 }
