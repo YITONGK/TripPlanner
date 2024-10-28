@@ -6,22 +6,16 @@ import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 
 import android.view.Window;
 import android.view.WindowManager;
@@ -38,11 +32,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
-import com.codebyashish.googledirectionapi.AbstractRouting;
-import com.codebyashish.googledirectionapi.ErrorHandling;
-import com.codebyashish.googledirectionapi.RouteDrawing;
-import com.codebyashish.googledirectionapi.RouteInfoModel;
-import com.codebyashish.googledirectionapi.RouteListener;
 import com.example.tripplanner.MapActivity;
 
 import com.example.tripplanner.adapter.DistanceMatrixCallback;
@@ -91,6 +80,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -304,34 +294,32 @@ public class PlanFragment extends Fragment
                 @Override
                 public int getMovementFlags(@NonNull RecyclerView recyclerView,
                                             @NonNull RecyclerView.ViewHolder viewHolder) {
-                    int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
-                    int swipeFlags = 0;
-                    return makeMovementFlags(dragFlags, swipeFlags);
+                    PlanItem item = planItems.get(viewHolder.getAdapterPosition());
+                    if (item.getType() == PlanItem.TYPE_ACTIVITY) {
+                        int dragFlags = ItemTouchHelper.UP | ItemTouchHelper.DOWN;
+                        int swipeFlags = 0;
+                        return makeMovementFlags(dragFlags, swipeFlags);
+                    } else {
+                        return 0;
+                    }
                 }
 
                 @Override
                 public boolean onMove(@NonNull RecyclerView recyclerView,
                                       @NonNull RecyclerView.ViewHolder viewHolder,
                                       @NonNull RecyclerView.ViewHolder target) {
+                    PlanItem fromItem = planItems.get(viewHolder.getAdapterPosition());
+                    PlanItem toItem = planItems.get(target.getAdapterPosition());
+
+                    if (fromItem.getType() != PlanItem.TYPE_ACTIVITY || toItem.getType() != PlanItem.TYPE_ACTIVITY) {
+                        return false;
+                    }
                     int fromPosition = viewHolder.getAdapterPosition();
                     int toPosition = target.getAdapterPosition();
 
-                    PlanItem fromItem = planItems.get(fromPosition);
-                    if (fromItem.getType() == PlanItem.TYPE_ACTIVITY) {
-                        int fromActivityIndex = getActivityItemIndex(fromPosition);
-                        int toActivityIndex = getActivityItemIndexForMove(toPosition);
-
-                        if (toActivityIndex == -1) {
-                            toActivityIndex = 0;
-                        }
-                        ActivityItem movedActivityItem = activityItemArray.remove(fromActivityIndex);
-                        activityItemArray.add(toActivityIndex, movedActivityItem);
-                        PlanItem movedPlanItem = planItems.remove(fromPosition);
-                        planItems.add(toPosition, movedPlanItem);
-                        adapter.notifyItemMoved(fromPosition, toPosition);
-                        return true;
-                    }
-                    return false;
+                    Collections.swap(planItems, fromPosition, toPosition);
+                    adapter.notifyItemMoved(fromPosition, toPosition);
+                    return true;
                 }
 
                 @Override
@@ -341,12 +329,17 @@ public class PlanFragment extends Fragment
                 @Override
                 public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
                     super.clearView(recyclerView, viewHolder);
+                    activityItemArray.clear();
+                    for (PlanItem item : planItems) {
+                        if (item.getType() == PlanItem.TYPE_ACTIVITY) {
+                            activityItemArray.add(item.getActivityItem());
+                        }
+                    }
                     preparePlanItems();
                     adapter.notifyDataSetChanged();
                     viewModel.updateActivityList(dayIndex, activityItemArray);
                     viewModel.saveTripToDatabase();
                 }
-
             };
 
             itemTouchHelper = new ItemTouchHelper(callback);
@@ -1077,10 +1070,8 @@ public class PlanFragment extends Fragment
                 handler.post(() -> {
                     if (!isAdded()) {
                         // Fragment is not attached to the activity anymore, so we can't proceed.
-                        Log.d("SENSOR", "Fragment is not attached to the activity anymore, so we can't proceed.");
                         return;
                     }
-                    Log.d("SENSOR", "WeatherData:"+weatherData);
                     if (weatherData != null && !weatherData.isEmpty()) {
                         allWeatherData.add(weatherData);
                         // Notify the adapter that the data has changed
@@ -1246,7 +1237,6 @@ public class PlanFragment extends Fragment
                 double middleLat = sumLat / count;
                 double middleLng = sumLng / count;
                 LatLng middlePoint = new LatLng(middleLat, middleLng);
-                Log.d("PlanFragment", "onMapReady: "+middlePoint);
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(middlePoint, 5));
             }
 
