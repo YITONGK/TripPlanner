@@ -60,7 +60,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -86,8 +85,6 @@ import java.util.List;
 
 import com.example.tripplanner.adapter.AutocompleteAdapter;
 import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.android.gms.maps.model.RoundCap;
 import com.google.android.libraries.places.api.model.AddressComponent;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
 import com.google.android.libraries.places.api.model.Place;
@@ -1385,35 +1382,9 @@ public class PlanFragment extends Fragment
         });
     }
 
-    private List<DistanceMatrixEntry> fetchDistanceMatrixByActivityItems(){
-        final List<DistanceMatrixEntry>[] returnedDistanceMatrix = new List[]{null};
-        RoutePlanner.fetchDistanceMatrix(activityItemArray, "driving", new DistanceMatrixCallback() {
-            @Override
-            public void onSuccess(List<DistanceMatrixEntry> distanceMatrix) {
-                returnedDistanceMatrix[0] = distanceMatrix;
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-            }
-        });
-        return returnedDistanceMatrix[0];
-    }
-
     private int getActivityItemIndex(int planItemPosition) {
         int activityIndex = -1;
         for (int i = 0; i <= planItemPosition; i++) {
-            PlanItem item = planItems.get(i);
-            if (item.getType() == PlanItem.TYPE_ACTIVITY) {
-                activityIndex++;
-            }
-        }
-        return activityIndex;
-    }
-
-    private int getActivityItemIndexForMove(int planItemPosition) {
-        int activityIndex = 0;
-        for (int i = 0; i < planItemPosition; i++) {
             PlanItem item = planItems.get(i);
             if (item.getType() == PlanItem.TYPE_ACTIVITY) {
                 activityIndex++;
